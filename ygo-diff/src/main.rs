@@ -50,6 +50,8 @@ fn hex(b: &[u8]) -> String {
 }
 
 thread_local! {
+    /// By card code: (activations (MSG_CHAINING), summons (MSG_SUMMONING/SPSUMMONING/FLIPSUMMONING))
+    static COVERAGE: std::cell::RefCell<std::collections::HashMap<u32, (u64, u64)>> = std::cell::RefCell::new(std::collections::HashMap::new());
     /// (decisions, total clone time, max clone time, cards, effects)
     static CLONE_STATS: std::cell::RefCell<(u64, Duration, Duration, u64, u64)> = const { std::cell::RefCell::new((0, Duration::ZERO, Duration::ZERO, 0, 0)) };
 }
@@ -256,6 +258,19 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
             let types: Vec<String> = mc.iter().map(|m| m[0].to_string()).collect();
             format!("game {game} (seed {:?}), decision {}: {e}\n  messages since the last decision: {}", seed, out.decisions, types.join(" "))
         })?;
+        COVERAGE.with(|cov| {
+            let mut cov = cov.borrow_mut();
+            for m in &mc {
+                if m.len() >= 5 {
+                    let code = u32::from_le_bytes(m[1..5].try_into().unwrap());
+                    match m[0] as u32 {
+                        MSG_CHAINING => cov.entry(code).or_default().0 += 1,
+                        MSG_SUMMONING | MSG_SPSUMMONING | MSG_FLIPSUMMONING => cov.entry(code).or_default().1 += 1,
+                        _ => {}
+                    }
+                }
+            }
+        });
         history.extend(mc.iter().cloned());
         if history.len() > 64 {
             history.drain(..history.len() - 64);
@@ -365,6 +380,17 @@ fn main() {
         let cs = cs.borrow();
         if cs.0 > 0 {
             println!("clone: {} states, mean {:.1} us, max {:.1} us (mean {} cards, {} effects)", cs.0, cs.1.as_secs_f64() * 1e6 / cs.0 as f64, cs.2.as_secs_f64() * 1e6, cs.3 / cs.0, cs.4 / cs.0);
+        }
+    });
+    COVERAGE.with(|cov| {
+        let cov = cov.borrow();
+        let mut v: Vec<String> = scripted.iter().map(|c| {
+            let (a, s) = cov.get(c).copied().unwrap_or_default();
+            format!("{c}: {a} activations, {s} summons")
+        }).collect();
+        v.sort();
+        if !v.is_empty() && v.len() <= 50 {
+            println!("coverage of the scripted cards:\n  {}", v.join("\n  "));
         }
     });
     println!("{ok}/{} games identical ({ended} ended, the others reached --max-decisions), {decisions} decisions; core {:.3}s, rust {:.3}s", args.games, tc.as_secs_f64(), tr.as_secs_f64());

@@ -102,7 +102,7 @@ always `d: &mut Duel` (or `&Duel`):
 | `Duel.SpecialSummonStep(c, ...)` / `Duel.SpecialSummonComplete()` | `duel::special_summon_step(d, c, sumtype, sp, tp, nocheck, nolimit, pos, None)` / `duel::special_summon_complete(d)` |
 | `Duel.RegisterEffect(e, tp)`            | `duel::register_effect(d, e, tp)`                  |
 | `e:SetLabelObject(g)` / `e:GetLabelObject()` (a group) | `effect::set_label_object(d, e, Value::Group(g))` / `effect::get_label_object(d, e).as_group().cloned()` (`.nil()` where the Lua indexes it) |
-| `c:SetUniqueOnField(1, 0, function(c) ... end)` | `card::set_unique_on_field(d, c, 1, 0, UniqueCode::Function(lua_fn(f)), None)`; `f` reads the card as `a.c(0)` |
+| `c:SetUniqueOnField(1, 0, function(c) ... end)` | `card::set_unique_on_field(d, c, 1, 0, card::UniqueCode::Function(lua_fn(f)), None)` (or `card::UniqueCode::Code(ID)`); `f` reads the card as `a.c(0)` |
 | `aux.SelectUnselectGroup(g, e, tp, 1, 2, s.rescon, ...)` | `aux::select_unselect_group(...)` with `rescon: fn(d, sg: &CardSet, e: Option<EffectId>, tp: u8, mg: &CardSet, c: Option<CardId>) -> (bool, bool)` (`(res, stop)`, see "Library") |
 | `aux.bfgcost(e,tp,eg,ep,ev,re,r,rp,0)` (a library cost called from a card) | `aux::bfgcost().call(d, &[Value::Effect(a.e), Value::Int(a.tp as i64), ...9 values]).truthy()` |
 

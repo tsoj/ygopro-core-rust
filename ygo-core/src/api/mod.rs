@@ -3,7 +3,106 @@
 //! `libdebug.cpp`), as free functions named after the Lua ones: `e:SetType(v)` is
 //! `effect::set_type(d, e, v)`, `Duel.Destroy(g, r)` is `duel::destroy(d, g, r, ..)`.
 
+pub mod card;
 pub mod effect;
 pub mod ocg;
 
 pub use ocg::{NewCardInfo, QueryInfo};
+pub mod group;
+
+use std::panic::{catch_unwind, resume_unwind, AssertUnwindSafe};
+
+use crate::duel::Duel;
+use crate::lua::LuaError;
+use crate::types::*;
+
+/// A card filter of a script (`function(c, ...)`: the extra arguments are captured).
+pub type Filter<'a> = &'a dyn Fn(&mut Duel, CardId) -> bool;
+/// A value function of a script (`function(c, ...)` returning a number).
+pub type ValueFn<'a> = &'a dyn Fn(&mut Duel, CardId) -> i64;
+
+/// The card or group to leave out (`ex` of the Lua API: nil, a card or a group).
+#[derive(Clone, Copy)]
+pub enum Exclude<'a> {
+    None,
+    Card(CardId),
+    Group(&'a CardSet),
+}
+/// No exclusion (Lua `nil`).
+pub const NO_EX: Exclude<'static> = Exclude::None;
+
+impl From<CardId> for Exclude<'_> {
+    fn from(c: CardId) -> Self {
+        Exclude::Card(c)
+    }
+}
+impl From<Option<CardId>> for Exclude<'_> {
+    fn from(c: Option<CardId>) -> Self {
+        c.map_or(Exclude::None, Exclude::Card)
+    }
+}
+impl<'a> From<&'a CardSet> for Exclude<'a> {
+    fn from(g: &'a CardSet) -> Self {
+        Exclude::Group(g)
+    }
+}
+impl<'a> From<Option<&'a CardSet>> for Exclude<'a> {
+    fn from(g: Option<&'a CardSet>) -> Self {
+        g.map_or(Exclude::None, Exclude::Group)
+    }
+}
+
+impl Exclude<'_> {
+    /// Removes the excluded cards from `cset`.
+    pub fn remove_from(&self, cset: &mut CardSet) {
+        match self {
+            Exclude::None => {}
+            Exclude::Card(c) => {
+                cset.remove(*c);
+            }
+            Exclude::Group(g) => {
+                for c in g.iter() {
+                    cset.remove(c);
+                }
+            }
+        }
+    }
+    pub fn contains(&self, c: CardId) -> bool {
+        match self {
+            Exclude::None => false,
+            Exclude::Card(x) => *x == c,
+            Exclude::Group(g) => g.contains(c),
+        }
+    }
+}
+
+/// Runs a script callback; a Lua error in it is logged and gives `default` (as the core's
+/// `check_matching`/`get_operation_value`).
+pub fn protected<T>(d: &mut Duel, default: T, f: impl FnOnce(&mut Duel) -> T) -> T {
+    match catch_unwind(AssertUnwindSafe(|| f(d))) {
+        Ok(v) => v,
+        Err(payload) => match payload.downcast::<LuaError>() {
+            Ok(e) => {
+                d.handle_message(&e.0, 0);
+                default
+            }
+            Err(other) => resume_unwind(other),
+        },
+    }
+}
+/// `interpreter::check_matching`
+pub fn check_matching(d: &mut Duel, f: Filter, c: CardId) -> bool {
+    protected(d, false, |d| f(d, c))
+}
+/// `interpreter::get_operation_value`
+pub fn get_operation_value(d: &mut Duel, f: ValueFn, c: CardId) -> i64 {
+    protected(d, 0, |d| f(d, c))
+}
+/// `push_return_cards`: the selected cards, `None` if the selection was canceled and cancelable.
+pub fn return_cards(d: &Duel, cancelable: bool) -> Option<CardSet> {
+    if d.return_cards.canceled {
+        if cancelable { None } else { Some(CardSet::new()) }
+    } else {
+        Some(CardSet::from_iter(d.return_cards.list.iter().copied()))
+    }
+}

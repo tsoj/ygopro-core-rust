@@ -206,7 +206,7 @@ impl Duel {
         self.core.reason_player = triggering_player;
         let args = std::mem::take(&mut self.params);
         self.call_depth += 1;
-        let ret = f.call(self, &args);
+        let ret = self.protected_call(&f, &args).unwrap_or(Value::Nil);
         self.call_depth -= 1;
         if self.call_depth == 0 {
             self.restore_assumes();

@@ -28,6 +28,8 @@ pub mod ns {
     pub const CHAIN_DATA: u32 = 3;
     /// Mutable upvalues of library closures (`cell`)
     pub const CELLS: u32 = 4;
+    /// Values the library keeps per card (`card_var`)
+    pub const CARD_VARS: u32 = 5;
     /// Keys from here on in a card's namespace are fields the library sets on the card's script
     /// table (`class`); a card's own `s_var` keys stay below.
     pub const CLASS_FIELDS: u64 = 1 << 40;
@@ -56,6 +58,22 @@ pub mod cell {
     }
 }
 
+/// Values the library keeps per card (fields of a card's own table in Lua, e.g.
+/// `mt.ritual_matching_function[c]`): `(ns::CARD_VARS, card << 8 | field)`.
+pub mod card_var {
+    use crate::ns::CARD_VARS;
+    use ygo_core::duel::Duel;
+    use ygo_core::types::{CardId, Value};
+    /// `ritual_matching_function[c]` (`Ritual.CreateProc`)
+    pub const RITUAL_MATCHING_FUNCTION: u64 = 1;
+    pub fn get(d: &Duel, c: CardId, field: u64) -> Value {
+        d.script_var((CARD_VARS, ((c.0 as u64) << 8) | field))
+    }
+    pub fn set(d: &mut Duel, c: CardId, field: u64, v: Value) {
+        d.set_script_var((CARD_VARS, ((c.0 as u64) << 8) | field), v);
+    }
+}
+
 /// Fields the library sets on a card's script table at run time (e.g. `Xyz.AddProcedure` sets
 /// `s.minxyzct`): `Duel::script_var((script code, ns::CLASS_FIELDS + field))`.
 pub mod class {
@@ -69,6 +87,20 @@ pub mod class {
     pub const MATERIAL_COUNT: u64 = CLASS_FIELDS + 4;
     pub const MIN_MATERIAL_COUNT: u64 = CLASS_FIELDS + 5;
     pub const MAX_MATERIAL_COUNT: u64 = CLASS_FIELDS + 6;
+    /// `old_union` (`aux.AddUnionProcedure` with the old rules)
+    pub const OLD_UNION: u64 = CLASS_FIELDS + 7;
+    /// `min_tribute_req`, `max_tribute_req` (`aux.AddNormalSummonProcedure`/`AddNormalSetProcedure`)
+    pub const MIN_TRIBUTE_REQ: u64 = CLASS_FIELDS + 8;
+    pub const MAX_TRIBUTE_REQ: u64 = CLASS_FIELDS + 9;
+    /// `fit_monster` (`Ritual.AddProcCode`; overrides `s.fit_monster`)
+    pub const FIT_MONSTER: u64 = CLASS_FIELDS + 10;
+    /// `c.fit_monster`
+    pub fn fit_monster(d: &ygo_core::duel::Duel, c: ygo_core::types::CardId) -> Vec<u32> {
+        match get(d, c, FIT_MONSTER) {
+            ygo_core::types::Value::Multi(m) => m.iter().map(|v| v.int() as u32).collect(),
+            _ => crate::card_info(d, c).fit_monster.to_vec(),
+        }
+    }
     /// `c.material`: the procedure's list if it set one, else the script's `s.material`
     pub fn material(d: &ygo_core::duel::Duel, c: ygo_core::types::CardId) -> Vec<u32> {
         match get(d, c, MATERIAL) {
@@ -132,6 +164,10 @@ pub struct ScriptInfo {
     pub dark_calling: bool,
     /// `s.pendulum_level`: the Level a Pendulum Summon checks (monsters without a Level)
     pub pendulum_level: Option<u32>,
+    /// `s.mat_filter(c, tp)`: the Ritual Monster's own material restriction
+    pub mat_filter: Option<fn(&mut ygo_core::duel::Duel, ygo_core::types::CardId, u8) -> bool>,
+    /// `s.ritual_custom_check(e, tp, g, c)`: (the materials are valid, stop adding materials)
+    pub ritual_custom_check: Option<fn(&mut ygo_core::duel::Duel, ygo_core::types::EffectId, u8, &ygo_core::types::CardSet, ygo_core::types::CardId) -> (bool, bool)>,
 }
 
 impl ScriptInfo {
@@ -149,6 +185,8 @@ impl ScriptInfo {
         counter_place_list: &[],
         dark_calling: false,
         pendulum_level: None,
+        mat_filter: None,
+        ritual_custom_check: None,
     };
 }
 

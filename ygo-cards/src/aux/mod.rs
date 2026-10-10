@@ -846,3 +846,11 @@ mod workaround;
 pub use workaround::*;
 /// `aux.RemainFieldCost`, `aux.RemainFieldDisabled`, `aux.bfgcost` (= `Cost.SelfBanish`)
 pub use crate::cost::{remain_field_cost, remain_field_disabled, self_banish as bfgcost};
+mod equip;
+pub use equip::*;
+mod persistent;
+pub use persistent::*;
+mod union;
+pub use union::*;
+mod normal;
+pub use normal::*;

@@ -5,9 +5,12 @@ use crate::prelude::*;
 use std::sync::Arc;
 
 pub mod fusion;
+pub mod gemini;
 mod fusion_spell;
 pub mod link;
 pub mod pendulum;
+pub mod ritual;
+pub mod spirit;
 pub mod synchro;
 pub mod xyz;
 

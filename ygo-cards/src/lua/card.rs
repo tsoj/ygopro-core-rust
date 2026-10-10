@@ -694,7 +694,7 @@ pub fn lists_code(d: &Duel, c: CardId, codes: &[u32]) -> bool {
     if !info.listed_names.is_empty() {
         codes.iter().any(|w| info.listed_names.contains(w))
     } else {
-        codes.iter().any(|w| info.fit_monster.contains(w))
+        codes.iter().any(|w| crate::class::fit_monster(d, c).contains(w))
     }
 }
 pub fn lists_code_with_archetype(d: &Duel, c: CardId, setcodes: &[u32]) -> bool {
@@ -858,6 +858,10 @@ pub fn equip_by_effect_and_limit_register(d: &mut Duel, c: CardId, e: EffectId, 
 }
 /// `c:GetTributeRequirement()`: the script's `min_tribute_req`/`max_tribute_req` if it declares them
 pub fn get_tribute_requirement(d: &mut Duel, c: CardId) -> (i32, i32) {
+    let (lo, hi) = (crate::class::get(d, c, crate::class::MIN_TRIBUTE_REQ), crate::class::get(d, c, crate::class::MAX_TRIBUTE_REQ));
+    if !lo.is_nil() && !hi.is_nil() {
+        return (lo.int() as i32, hi.int() as i32);
+    }
     match crate::card_info(d, c).tribute_req {
         Some((lo, hi)) => (lo as i32, hi as i32),
         None => raw::get_tribute_requirement(d, c),
@@ -886,3 +890,5 @@ pub fn is_reincarnation_summoned(d: &mut Duel, c: CardId) -> bool {
 }
 /// `c:IsRikkaReleasable(tp)` (cards_specific_functions.lua)
 pub use crate::aux::is_rikka_releasable;
+/// `Card.IsGeminiStatus`/`Card.EnableGeminiStatus` (proc_gemini.lua aliases)
+pub use raw::{enable_gemini_state as enable_gemini_status, is_gemini_state as is_gemini_status};

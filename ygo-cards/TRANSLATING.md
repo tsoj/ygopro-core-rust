@@ -146,6 +146,8 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - `c:IsHasEffect(code)` returns a `Vec` (all effects): `not c:IsHasEffect(X)` is `.is_empty()`.
 - Event codes: copy them exactly (`EVENT_PHASE_START|PHASE_STANDBY` is not `EVENT_PHASE|PHASE_STANDBY`).
 - `local e2=e1:Clone()` is `let e2 = effect::clone(d, e1);`.
+- `c.material` (of any card) is `crate::class::material(d, c)`: procedures such as `Fusion.AddProcMix` set it at
+  run time, so `card_info(d, c).material` (the static declaration only) is wrong.
 - `c:Race(v)` / `c:Attribute(v)` / `c:Level()` ... (the printed data, `CARD_INFO_FUNC` in libcard.cpp) are
   `card::info_race(d, c, Some(v))` / `card::info_level(d, c, None)` and so on (`info_` + snake name).
 - `Duel.LoadCardScript("c980973.lua")` does nothing in Rust (all scripts are compiled in): leave it out and

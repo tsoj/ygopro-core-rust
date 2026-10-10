@@ -126,11 +126,11 @@ fn spcostfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
     // return c:IsType(TYPE_FUSION) and not c:IsPublic() and c.material
     //     and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp,table.unpack(c.material))
     // (an empty list stands for a nil `c.material`: a Fusion Monster's script always lists its materials)
-    let material = crate::card_info(d, c).material;
+    let material = crate::class::material(d, c);
     card::is_type(d, c, TYPE_FUSION)
         && !card::is_public(d, c)
         && !material.is_empty()
-        && duel::is_existing_matching_card(d, Some(&|d, x| spfilter(d, x, e, tp, material)), tp, LOCATION_GRAVE, 0, 1, NO_EX)
+        && duel::is_existing_matching_card(d, Some(&|d, x| spfilter(d, x, e, tp, &material)), tp, LOCATION_GRAVE, 0, 1, NO_EX)
 }
 /// `s.spfilter(c,e,tp,...)`: `c:IsCode(...)` and it can be Special Summoned face-down
 fn spfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8, codes: &[u32]) -> bool {
@@ -155,7 +155,7 @@ fn spcost(d: &mut Duel, a: &EffArgs) -> bool {
     // Duel.ShuffleExtra(tp)
     duel::shuffle_extra(d, tp);
     // e:SetLabel(table.unpack(sc.material))
-    let labels: Vec<i64> = crate::card_info(d, sc).material.iter().map(|&m| m as i64).collect();
+    let labels: Vec<i64> = crate::class::material(d, sc).iter().map(|&m| m as i64).collect();
     effect::set_label(d, e, &labels);
     true
 }

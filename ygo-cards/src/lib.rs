@@ -197,6 +197,9 @@ pub struct ScriptInfo {
     pub material_location: Option<u32>,
     /// `s.max_metalmorph_stats={level, race}`
     pub max_metalmorph_stats: Option<(u32, u64)>,
+    /// `s.rum_limit(mc, e)`: whether a Rank-Up-Magic may use `mc` (the monster to rank up) for this
+    /// card (read as `c.rum_limit` by the Rank-Up-Magic scripts; absent = no limit)
+    pub rum_limit: Option<fn(&mut ygo_core::duel::Duel, ygo_core::types::CardId, ygo_core::types::EffectId) -> bool>,
 }
 
 impl ScriptInfo {
@@ -229,6 +232,7 @@ impl ScriptInfo {
         material_race: None,
         material_location: None,
         max_metalmorph_stats: None,
+        rum_limit: None,
     };
 }
 

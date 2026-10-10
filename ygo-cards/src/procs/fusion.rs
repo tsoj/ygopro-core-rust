@@ -90,17 +90,17 @@ fn forced_zone(d: &Duel) -> Option<u32> {
 }
 
 /// The arguments of the procedure's material functions: `(c, fc, sub, sub2, mg, sg, tp, contact, sumtype)`.
-struct FunCtx<'a> {
-    fc: CardId,
-    sub: bool,
-    sub2: bool,
-    mg: Option<&'a CardSet>,
-    sg: Option<&'a CardSet>,
-    tp: u8,
-    contact: bool,
-    sumtype: u64,
+pub struct FunCtx<'a> {
+    pub fc: CardId,
+    pub sub: bool,
+    pub sub2: bool,
+    pub mg: Option<&'a CardSet>,
+    pub sg: Option<&'a CardSet>,
+    pub tp: u8,
+    pub contact: bool,
+    pub sumtype: u64,
 }
-type Fun = Arc<dyn Fn(&mut Duel, CardId, &FunCtx) -> bool + Send + Sync>;
+pub type Fun = Arc<dyn Fn(&mut Duel, CardId, &FunCtx) -> bool + Send + Sync>;
 fn has(d: &mut Duel, c: CardId, code: u32) -> bool {
     !card::is_has_effect(d, c, code, None).is_empty()
 }
@@ -142,7 +142,7 @@ fn parse_material_table(tab: &[Mat], mat: &mut Vec<u32>) -> Fun {
         (any && !has(d, c, 6205579)) || (!named.is_empty() && name_check(d, c, x, &named))
     })
 }
-fn make_fun(m: &Mat, mat: &mut Vec<u32>) -> Fun {
+pub fn make_fun(m: &Mat, mat: &mut Vec<u32>) -> Fun {
     match m {
         Mat::F(f) => {
             let f = f.clone();

@@ -160,6 +160,16 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - `Duel.GetTargetCards(e)` is `duel::get_target_cards(d, e)` (an `Option`): `.nil()` where the Lua indexes it.
 - Calling a library `LuaFn` from Rust (`aux.bdocon(e,tp,...)`, `Gemini.EffectStatusCondition(e)`):
   `f.call(d, &[Value::Effect(e), ...]).truthy()`.
+- `c.rum_limit` (of an Extra Deck monster, read by Rank-Up-Magic cards) is
+  `crate::card_info(d, c).rum_limit` (`Option<fn(d, mc, e) -> bool>`; `None` = the Lua `nil`). A
+  card that defines `s.rum_limit=function(c,e) ... end` declares it in `INFO` as
+  `rum_limit: Some(rum_limit)`. `s.rum_xyzsummon` is only read by unofficial scripts: leave it out.
+- A script that sets `s.material_count`, `s.min_material_count`, `s.max_material_count` (or
+  `s.material`) by hand inside `if c.material_count==nil then ... end` writes them with
+  `crate::class::set(d, c, crate::class::MATERIAL_COUNT, Value::Int(n))` (and `MIN_MATERIAL_COUNT`,
+  `MAX_MATERIAL_COUNT`) under `if crate::class::get(d, c, crate::class::MATERIAL_COUNT).is_nil()`,
+  the same way the Fusion procedures do (see `fusion.rs`); a static `s.material={...}` outside that
+  `if` goes in `INFO`.
 - `c.material` (of any card) is `crate::class::material(d, c)`: procedures such as `Fusion.AddProcMix` set it at
   run time, so `card_info(d, c).material` (the static declaration only) is wrong.
 - `c:Race(v)` / `c:Attribute(v)` / `c:Level()` ... (the printed data, `CARD_INFO_FUNC` in libcard.cpp) are
@@ -375,6 +385,13 @@ target, then `tc:IsRelateToEffect(e)`), raise the same error: `option.nil()` ret
 raises a Lua error, which the engine handles like ygopro-core does. Use `.nil()` for every value
 that the Lua indexes without checking it. `effect::get_handler(d, a.e).nil()` is the usual
 `e:GetHandler()`. Never use `.unwrap()` on something Lua could see as `nil`.
+
+A script that calls a function that exists neither in the C++ (`build/ocgcore-src/lib*.cpp`) nor in
+the Lua libraries (e.g. `c:IsInMainZone()`) or a field that no script defines raises "attempt to
+call a nil value" when that line runs: write `crate::lua_error("attempt to call a nil value")` at
+that point (keep everything before it). The same holds for a Lua global that is never assigned
+(`chkc` in a function without a `chkc` parameter): it is `nil`, not an error, until something
+indexes or calls it. `not x==y` is `(not x)==y` in Lua.
 
 ## State
 

@@ -17,6 +17,30 @@ pub mod field {
     pub const CARD: u8 = 32;
 }
 
+/// `Duel.GetChainInfo(ch, info)` as one value (`Value::Nil` when the chain link does not exist)
+fn chain_info(d: &Duel, ch: u8, info: u32) -> Value {
+    duel::get_chain_info(d, ch, &[info]).first().cloned().unwrap_or(Value::Nil)
+}
+/// `Chain.GetTargetCards(ch)` (a group, or nil)
+pub fn get_target_cards(d: &Duel, ch: u8) -> Value {
+    chain_info(d, ch, CHAININFO_TARGET_CARDS)
+}
+/// `Chain.GetTargetPlayer(ch)`
+pub fn get_target_player(d: &Duel, ch: u8) -> Value {
+    chain_info(d, ch, CHAININFO_TARGET_PLAYER)
+}
+/// `Chain.GetTargetParam(ch)`
+pub fn get_target_param(d: &Duel, ch: u8) -> Value {
+    chain_info(d, ch, CHAININFO_TARGET_PARAM)
+}
+/// `Chain.GetDisableReason(ch)`
+pub fn get_disable_reason(d: &Duel, ch: u8) -> Value {
+    chain_info(d, ch, CHAININFO_DISABLE_REASON)
+}
+/// `Chain.GetDisablePlayer(ch)`
+pub fn get_disable_player(d: &Duel, ch: u8) -> Value {
+    chain_info(d, ch, CHAININFO_DISABLE_PLAYER)
+}
 /// `Chain.GetID(ch)`
 pub fn get_id(d: &Duel, ch: u8) -> i64 {
     duel::get_chain_info(d, ch, &[CHAININFO_CHAIN_ID]).first().map_or(0, |v| v.int())

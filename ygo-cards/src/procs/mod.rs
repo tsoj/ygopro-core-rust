@@ -5,6 +5,7 @@ use crate::prelude::*;
 use std::sync::Arc;
 
 pub mod link;
+pub mod synchro;
 pub mod xyz;
 
 /// A material filter `function(c, scard, sumtype, tp)` (e.g. `aux.FilterBoolFunctionEx(Card.IsRace,

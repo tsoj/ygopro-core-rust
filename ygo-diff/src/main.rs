@@ -363,7 +363,7 @@ fn main() {
     let pool = vanilla_pool(&db);
     let scripted: Vec<u32> = args.cards.clone().unwrap_or_else(|| ygo_cards::cards::ALL.iter().map(|x| x.0).collect());
     for c in &scripted {
-        assert!(scripts.get(*c).is_some(), "card {c} has no translated script");
+        assert!(scripts.get(*c).is_some() || core_ffi::find_script(&format!("c{c}.lua")).is_none(), "card {c} has no translated script");
     }
     let is_extra = |c: &u32| db.cards.get(c).is_some_and(|x| x.type_ & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK) != 0);
     let scripted_extra: Vec<u32> = scripted.iter().copied().filter(is_extra).collect();

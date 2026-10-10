@@ -110,33 +110,26 @@ fn spcon(d: &mut Duel, a: Args) -> bool {
     };
     // local tp=c:GetControler()
     let tp = card::get_controler(d, c);
-    // return Duel.CheckReleaseGroup(tp,aux.TRUE,1,false,1,true,c,tp,nil,false,nil)
-    //     and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,15259703),tp,LOCATION_ONFIELD,0,1,nil)
-    duel::check_release_group(
-        d,
-        tp,
-        None,
-        1,
-        duel::ReleaseArgs { use_hand: Some(false), max: Some(1), check_field: true, to_check: Some(c), toplayer: Some(tp), ..Default::default() },
-        NO_EX,
-        false,
-    ) && duel::is_existing_matching_card(d, Some(&aux::faceup_filter(|d, x| card::is_code(d, x, &[15259703]))), tp, LOCATION_ONFIELD, 0, 1, NO_EX)
+    let r1 = duel::check_release_group(d, tp, Some(&|_, _| true), 1, duel::ReleaseArgs { use_hand: Some(false), max: Some(1), check_field: true, to_check: Some(c), toplayer: Some(tp), ..Default::default() }, NO_EX, false);
+    let r2 = duel::is_existing_matching_card(d, Some(&aux::faceup_filter(|d, x| card::is_code(d, x, &[15259703]))), tp, LOCATION_ONFIELD, 0, 1, NO_EX);
+    r1 && r2
 }
 /// `function(e,tp,eg,ep,ev,re,r,rp,c)` of `e1:SetTarget` (the Special Summon procedure)
 fn sptg(d: &mut Duel, a: Args) -> bool {
     let e = a.e(0);
     let tp = a.p(1);
-    let c = a.c(8);
+    // the 9th argument of a Special Summon procedure's target is chk (=1), not the card: `c` is a number in the Lua
+    let c = a.card(8);
     // local ft=Duel.GetLocationCount(tp,LOCATION_MZONE)
     let _ft = duel::get_location_count(d, tp, LOCATION_MZONE as u8, None, None, None);
     // local g=Duel.SelectReleaseGroup(tp,aux.TRUE,1,1,false,true,true,c,nil,nil,false,nil)
     let g = duel::select_release_group(
         d,
         tp,
-        None,
+        Some(&|_, _| true), // aux.TRUE is a real filter here: it excludes face-down opponent monsters
         1,
         1,
-        duel::ReleaseArgs { use_hand: Some(false), cancelable: true, check_field: true, to_check: Some(c), ..Default::default() },
+        duel::ReleaseArgs { use_hand: Some(false), cancelable: true, check_field: true, to_check: c, ..Default::default() },
         NO_EX,
         false,
     );

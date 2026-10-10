@@ -126,7 +126,7 @@ fn spcon(d: &mut Duel, a: Args) -> bool {
 fn sptg(d: &mut Duel, a: Args) -> bool {
     let e = a.e(0);
     let tp = a.p(1);
-    let c = a.c(8);
+    // the 9th argument is the core's chk (1), so the Lua `c` is the number 1: no card for to_check
     // local ft=Duel.GetLocationCount(tp,LOCATION_MZONE)
     let _ft = duel::get_location_count(d, tp, LOCATION_MZONE as u8, None, None, None);
     // local g=Duel.SelectReleaseGroup(tp,aux.TRUE,2,2,false,true,true,c,nil,nil,false,nil)
@@ -136,7 +136,7 @@ fn sptg(d: &mut Duel, a: Args) -> bool {
         None,
         2,
         2,
-        duel::ReleaseArgs { use_hand: Some(false), cancelable: true, check_field: true, to_check: Some(c), ..Default::default() },
+        duel::ReleaseArgs { use_hand: Some(false), cancelable: true, check_field: true, to_check: None, ..Default::default() },
         NO_EX,
         false,
     );

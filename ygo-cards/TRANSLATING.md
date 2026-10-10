@@ -193,15 +193,23 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
   old form without `maxc` (the 4th argument is a boolean: `(tp, f, minc, use_hand, check, ex, x, y)`) means
   `maxc = minc`; the 5th argument is `check`, the 6th `ex`, and only the 7th and later go to the filter
   (capture them in the closure). See `Duel.CheckReleaseGroupCost` in proc_workaround.lua.
+- `aux.TRUE` as the filter of `Duel.CheckReleaseGroup`/`SelectReleaseGroup` (and the `...Cost`/`...Ex`
+  forms) is `Some(&|_, _| true)`, NOT `None`: with a filter function the core leaves out face-down
+  opponent monsters, with `nil` it does not. Everywhere else `aux.TRUE` and `nil` are the same.
 - `aux.TRUE` where a function takes a plain `Filter` (`group::filter_select`, `group::is_exists`) is `&|_, _| true`.
 - `g:KeepAlive()` and `g:DeleteGroup()` do nothing in Rust (groups are values): leave them out.
 - A Lua helper function the script never calls can be left out.
 - `Duel.SetOperationInfo(0, cat, 0, ...)` (the number 0 as the cards) is the same as `nil`: `None`.
 - `Cost.Discard()` is `cost::discard(None, false, None, None, None)`; a filter is
   `Some(std::sync::Arc::new(|d, c, e, tp| ...))`.
-- Functions that receive `c` (`EFFECT_SPSUMMON_PROC` condition `function(e,c)`, its target/operation
-  `function(e,tp,eg,ep,ev,re,r,rp,c)`) are `lua_fn(f)` with `f(d, a: Args)`: `a.e(0)`, `a.card(1)` (nil
-  when the core only checks the effect) or `a.card(8)`.
+- Functions that receive `c` (`EFFECT_SPSUMMON_PROC` condition `function(e,c)`, its target/operation)
+  are `lua_fn(f)` with `f(d, a: Args)`, reading the arguments **by position, exactly as the core passes
+  them**: condition `(e, c, ...)`: `a.e(0)`, `a.card(1)` (nil when the core only checks the effect);
+  **target `(e,tp,eg,ep,ev,re,r,rp,chk,c)`: index 8 is `chk` (the number 1), the card is index 9**;
+  operation `(e,tp,eg,ep,ev,re,r,rp,c)`: the card is index 8. A Lua target written as
+  `function(e,tp,eg,ep,ev,re,r,rp,c)` (no `chk` parameter) gets the NUMBER 1 as its `c`: passing it on
+  to a C function that wants a card gives nil there (`a.card(8)` → `None`), and indexing it
+  (`c:GetControler()`) is a Lua error (`a.c(8)` raises it).
 - **Lua `/` is float division.** `c:GetAttack()/2` is `3.5` for an odd 7. Where it reaches the core
   (`SetValue`, a value function's result, `Duel.Damage`, ...), the core rounds half away from zero:
   `lua_int(atk as f64 / 2.0)`. Keep comparisons in `f64` (`atk as f64 / 2.0 > x as f64`).

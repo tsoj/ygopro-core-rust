@@ -63,7 +63,7 @@ fn spcon(d: &mut Duel, a: Args) -> bool {
     };
     let tp = card::get_controler(d, c);
     let ra = duel::ReleaseArgs { use_hand: Some(false), max: Some(2), check_field: true, to_check: Some(c), toplayer: Some(tp), zone: None, use_oppo: false, cancelable: false };
-    duel::check_release_group(d, tp, None, 2, ra, NO_EX, false)
+    duel::check_release_group(d, tp, Some(&|_, _| true), 2, ra, NO_EX, false)
         && duel::is_existing_matching_card(d, Some(&|d, c| card::is_faceup(d, c) && card::is_code(d, c, &[15259703])), tp, LOCATION_ONFIELD, 0, 1, NO_EX)
 }
 fn sptg(d: &mut Duel, a: Args) -> bool {
@@ -72,7 +72,7 @@ fn sptg(d: &mut Duel, a: Args) -> bool {
     let e = a.e(0);
     let _ft = duel::get_location_count(d, tp, LOCATION_MZONE as u8, None, None, None);
     let ra = duel::ReleaseArgs { use_hand: Some(false), max: None, check_field: true, to_check: c, toplayer: None, zone: None, use_oppo: false, cancelable: true };
-    let g = duel::select_release_group(d, tp, None, 2, 2, ra, NO_EX, false);
+    let g = duel::select_release_group(d, tp, Some(&|_, _| true), 2, 2, ra, NO_EX, false);
     if let Some(g) = g {
         effect::set_label_object(d, e, Value::Group(g));
         return true;

@@ -127,6 +127,21 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - The `param` of `duel::set_operation_info` is an `i32`: `LOCATION_DECK as i32`. A numeric
   effect value is an `i64`: `effect::set_value(d, e, RESET_TURN_SET as i64)`.
 - `e:SetReset(v)` without a count is `effect::set_reset(d, e, v, 1)`.
+- `e:SetCountLimit(n)` is `effect::set_count_limit(d, e, n, 0, 0, 0)`; `SetCountLimit(1, id)` is
+  `(d, e, 1, ID, 0, 0)`; `SetCountLimit(1, {id, 1})` is `(d, e, 1, ID, 1, 0)`;
+  `SetCountLimit(1, id, EFFECT_COUNT_CODE_OATH)` is `(d, e, 1, ID, 0, EFFECT_COUNT_CODE_OATH as u8)`.
+- `e:SetHintTiming(a)` is `effect::set_hint_timing(d, e, a, None)`, `SetHintTiming(a, b)` is
+  `(d, e, a, Some(b))`.
+- `c:IsHasEffect(code)` returns a `Vec` (all effects): `not c:IsHasEffect(X)` is `.is_empty()`.
+- Event codes: copy them exactly (`EVENT_PHASE_START|PHASE_STANDBY` is not `EVENT_PHASE|PHASE_STANDBY`).
+- `g:KeepAlive()` and `g:DeleteGroup()` do nothing in Rust (groups are values): leave them out.
+- A Lua helper function the script never calls can be left out.
+- `Duel.SetOperationInfo(0, cat, 0, ...)` (the number 0 as the cards) is the same as `nil`: `None`.
+- `Cost.Discard()` is `cost::discard(None, false, None, None, None)`; a filter is
+  `Some(std::sync::Arc::new(|d, c, e, tp| ...))`.
+- Functions that receive `c` (`EFFECT_SPSUMMON_PROC` condition `function(e,c)`, its target/operation
+  `function(e,tp,eg,ep,ev,re,r,rp,c)`) are `lua_fn(f)` with `f(d, a: Args)`: `a.e(0)`, `a.card(1)` (nil
+  when the core only checks the effect) or `a.card(8)`.
 - **Lua `/` is float division.** `c:GetAttack()/2` is `3.5` for an odd 7. Where it reaches the core
   (`SetValue`, a value function's result, `Duel.Damage`, ...), the core rounds half away from zero:
   `lua_int(atk as f64 / 2.0)`. Keep comparisons in `f64` (`atk as f64 / 2.0 > x as f64`).

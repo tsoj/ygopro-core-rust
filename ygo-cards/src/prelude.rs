@@ -109,6 +109,22 @@ pub fn lua_int(x: f64) -> i64 {
     x.round() as i64
 }
 
+fn global_key(name: &str) -> (u32, u64) {
+    let mut h: u64 = 0xcbf29ce484222325;
+    for b in name.bytes() {
+        h = (h ^ b as u64).wrapping_mul(0x100000001b3);
+    }
+    (crate::ns::LUA_GLOBALS, h)
+}
+/// A Lua global variable shared between scripts (`_replace_count`); `Value::Nil` if never set.
+pub fn lua_global(d: &Duel, name: &str) -> Value {
+    d.script_var(global_key(name))
+}
+/// `name = v` for a Lua global variable shared between scripts.
+pub fn set_lua_global(d: &mut Duel, name: &str, v: Value) {
+    d.set_script_var(global_key(name), v);
+}
+
 /// A card script's own state (`s.<i>`, kept in the duel): the variable `i` of the script `code`.
 pub fn s_var(d: &Duel, code: u32, i: u64) -> Value {
     d.script_var((code, i))

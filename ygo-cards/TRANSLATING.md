@@ -346,6 +346,8 @@ that the Lua indexes without checking it. `effect::get_handler(d, a.e).nil()` is
 captured by closures and changed later. The engine copies duels (that is the point of this port),
 and state kept elsewhere would not be copied.
 
+- Lua global variables (`_replace_count=0`, shared by several scripts) are `lua_global(d, "_replace_count")` and
+  `set_lua_global(d, "_replace_count", Value::Int(0))`.
 - Lua `s.x` / `s[0]` (variables on the card table) become `s_var(d, ID, key)` and
   `set_s_var(d, ID, key, Value::Int(v))`, where `key` is a number you choose per variable.
 - `aux.GlobalCheck(s, function() ... end)` becomes `aux::global_check(d, ID, |d| { ... })`.

@@ -31,6 +31,8 @@ pub mod ns {
     pub const CELLS: u32 = 4;
     /// Values the library keeps per card (`card_var`)
     pub const CARD_VARS: u32 = 5;
+    /// Lua global variables that scripts share (`_replace_count`), keyed by a hash of the name
+    pub const LUA_GLOBALS: u32 = 6;
     /// Keys from here on in a card's namespace are fields the library sets on the card's script
     /// table (`class`); a card's own `s_var` keys stay below.
     pub const CLASS_FIELDS: u64 = 1 << 40;

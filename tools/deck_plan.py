@@ -66,9 +66,27 @@ def main():
     n = int(sys.argv[sys.argv.index("--pairs") + 1]) if "--pairs" in sys.argv else 10
     import translatable
     have = translatable.rust_names()
+    os.makedirs(OUT, exist_ok=True)
+
+    def ydk(d):
+        return "#main\n" + "\n".join(map(str, d["main"])) + "\n#extra\n" + "\n".join(map(str, d["extra"])) + "\n!side\n"
+
+    # Pairs already written keep their number and file (agents may be working on them): a pair is
+    # identified by the text of its two .ydk files. `--pairs N` adds N new pairs after them.
+    existing = {}
+    i = 0
+    while os.path.exists(os.path.join(OUT, f"pair{i:03d}_a.ydk")):
+        key = tuple(open(os.path.join(OUT, f"pair{i:03d}_{x}.ydk")).read() for x in "ab")
+        existing[key] = i
+        i += 1
     covered = set()
+    remaining = []
+    for o, need in pairs:
+        if tuple(ydk(d) for d in o["decks"]) in existing:
+            covered |= need
+        else:
+            remaining.append((o, need))
     chosen = []
-    remaining = list(pairs)
     for _ in range(n):
         if not remaining:
             break
@@ -77,20 +95,18 @@ def main():
         new = sorted(need - covered)
         covered |= need
         chosen.append((o, new))
-    os.makedirs(OUT, exist_ok=True)
-    for i, (o, new) in enumerate(chosen):
+    for k, (o, new) in enumerate(chosen):
+        idx = len(existing) + k
         names = []
         for j, d in enumerate(o["decks"]):
-            path = os.path.join(OUT, f"pair{i:03d}_{'ab'[j]}.ydk")
-            with open(path, "w") as f:
-                f.write("#main\n" + "\n".join(map(str, d["main"])) + "\n#extra\n" + "\n".join(map(str, d["extra"])) + "\n!side\n")
+            with open(os.path.join(OUT, f"pair{idx:03d}_{'ab'[j]}.ydk"), "w") as f:
+                f.write(ydk(d))
             names.append(d["name"])
-        print(f"pair{i:03d}: {len(new)} new cards  [{names[0]}] vs [{names[1]}]")
+        print(f"pair{idx:03d}: {len(new)} new cards  [{names[0]}] vs [{names[1]}]")
         for c in new:
             miss = translatable.missing_of(c, have)
             lua = os.path.join(SCRIPTS, f"c{c}.lua")
             name = open(lua, errors="ignore").read().split("\n")[1].lstrip("-").strip()
             print(f"  {c} {name}" + (f"   MISSING {' '.join(sorted(miss))}" if miss else ""))
-
 
 main()

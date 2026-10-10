@@ -51,7 +51,9 @@ fn activate(d: &mut Duel, _a: &EffArgs) {
 
 - `local s,id=GetID()` becomes `pub const ID: u32 = <code>;`. Use `ID` wherever the Lua uses `id`.
 - `s.initial_effect(c)` becomes `pub fn initial_effect(d: &mut Duel, c: CardId)`.
-- The other `s.<name>` functions become private `fn <name>` (snake_case, the same names).
+- The other `s.<name>` functions become private `fn <name>` (snake_case, the same names). The
+  exceptions are names that clash with the prelude's wrappers: `s.condition` becomes `fn cond`
+  and `s.operation` becomes `fn op`.
 - `use super::prelude::*;` imports everything you need: the constants, the API modules `card`,
   `duel`, `effect`, `group`, `debug`, the library modules `aux`, `cost`, `chain`, and the
   helpers below.
@@ -84,8 +86,8 @@ always `d: &mut Duel` (or `&Duel`):
 | `Cost.SelfDiscard`                      | `cost::self_discard()`                             |
 | `Duel.GetChainInfo(0, A, B)`            | `duel::get_chain_info(d, 0, &[A, B])` (a `Vec<Value>`) |
 
-Find the exact signature with `grep -n "pub fn <name>" rust/ygo-core/src/api/*.rs
-rust/ygo-cards/src/**/*.rs`. The module of a function (`card::`, `duel::`, ...) is the
+Find the exact signature with `grep -rn "pub fn <name>(" rust/ygo-cards/src rust/ygo-core/src/api`
+(from the repository root). The module of a function (`card::`, `duel::`, ...) is the
 `ygo-cards` facade in `src/lua/`. It re-exports the core API (`rust/ygo-core/src/api/`) and replaces
 the functions that `utility.lua`, `proc_workaround.lua`, ... redefine. Always call through these
 modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
@@ -104,6 +106,13 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
   `CATEGORY_*`/`RACE_*`/hint descriptions). Cast with `as` where a signature needs another width
   (`HINT_SELECTMSG as u8`, `HINTMSG_DESTROY as u64`, `POS_FACEUP as u8`). The compiler tells you.
 - **Lua's `1-tp`** is `1 - a.tp` (players are `u8`).
+- The `param` of `duel::set_operation_info` is an `i32`: `LOCATION_DECK as i32`. A numeric
+  effect value is an `i64`: `effect::set_value(d, e, RESET_TURN_SET as i64)`.
+- `e:SetReset(v)` without a count is `effect::set_reset(d, e, v, 1)`.
+- **Borrowing:** `d` cannot be borrowed twice in one call. Read values into locals first:
+  `let label = effect::get_label(d, a.e); duel::raise_event(d, ..., label as u32);`.
+- **Keep every call**, even when the Lua stores the result in a variable it never uses
+  (`local ph=Duel.GetCurrentPhase()` becomes `let _ph = duel::get_current_phase(d);`).
 
 ## Effect functions
 
@@ -118,9 +127,13 @@ Conditions, costs, targets and operations are Rust functions wrapped into a `Lua
 | `function(e,c)` returning a number    | `fn(d, e, c) -> i64`                          | `effect_card_value(f)` |
 | anything else (`function(e,re,tp)`, ...) | `fn(d: &mut Duel, a: Args) -> R` (`R`: `bool`, an integer, `()`, ...) | `lua_fn(f)` |
 
+`cost_target` also wraps costs and targets that take only `chk` (no `chkc`).
+
 `EffArgs` has the fields `e, tp, eg, ep, ev, re, r, rp, chk`:
-- `a.eg` is an `Option<CardSet>`: `None` if the Lua `eg` is `nil`. `a.eg()` gives the group, or an
-  empty one.
+- `a.eg` is an `Option<CardSet>`: `None` if the Lua `eg` is `nil`. Where the Lua indexes `eg`
+  without checking it (`eg:IsExists(...)`, `eg:GetFirst()`), use `a.eg.clone().nil()`, which
+  errors like Lua on `nil`. Where the Lua only passes `eg` on (`Duel.RaiseEvent(eg, ...)`), use
+  `a.eg()`, which gives the group or an empty one.
 - `a.chk` is `Some(0)` in the check call of a cost/target, `Some(1)` otherwise.
 - `a.chkc()` is the Lua `chkc` (an `Option<CardId>`).
 
@@ -180,7 +193,8 @@ Groups are `CardSet` values. Lua groups are references, Rust groups are values:
 - **After you change a group that is also stored somewhere else** (a label object, a script
   variable), store it again. The stored copy does not change with yours.
 - `g:Select(...)`, `Duel.SelectMatchingCard(...)`, ... return `Option<CardSet>`: `None` if the
-  player canceled (only possible when `cancelable` is true). Lua's `nil`.
+  player canceled (only possible when `cancelable` is true). Lua's `nil`. When the selection is
+  not cancelable, write `.nil()` (`#g` on `nil` would be an error in Lua too).
 
 ## Errors
 

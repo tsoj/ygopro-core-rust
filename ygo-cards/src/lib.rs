@@ -69,6 +69,8 @@ pub struct ScriptInfo {
     pub counter_list: &'static [u32],
     /// `s.counter_place_list`
     pub counter_place_list: &'static [u32],
+    /// `s.dark_calling` (also set by `c:AddMustBeSpecialSummonedByDarkFusion()`)
+    pub dark_calling: bool,
 }
 
 impl ScriptInfo {
@@ -84,6 +86,7 @@ impl ScriptInfo {
         tribute_req: None,
         counter_list: &[],
         counter_place_list: &[],
+        dark_calling: false,
     };
 }
 

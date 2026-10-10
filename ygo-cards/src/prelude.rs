@@ -162,3 +162,6 @@ impl<T> Nil<T> for Option<T> {
         }
     }
 }
+
+/// A filter kept inside an effect function (an `aux.*` helper's argument stored in a closure).
+pub type CardFilter = std::sync::Arc<dyn Fn(&mut Duel, CardId) -> bool + Send + Sync>;

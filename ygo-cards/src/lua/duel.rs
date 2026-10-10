@@ -296,3 +296,38 @@ pub fn get_fusion_material(d: &mut Duel, tp: u8) -> CardSet {
 pub fn get_fusion_material_raw(d: &mut Duel, tp: u8) -> CardSet {
     raw::get_fusion_material(d, tp)
 }
+
+macro_rules! from_code {
+    ($(#[$m:meta] $name:ident, $field:ident, $t:ty;)*) => {$(
+        #[$m]
+        pub fn $name(d: &Duel, code: u32) -> Option<$t> {
+            raw::get_card_data_from_code(d, code).map(|x| x.$field as $t)
+        }
+    )*};
+}
+from_code! {
+    /// `Duel.GetCardAliasFromCode(code)` (`None`: unknown code, Lua returns nothing)
+    get_card_alias_from_code, alias, u32;
+    /// `Duel.GetCardTypeFromCode(code)`
+    get_card_type_from_code, type_, u32;
+    /// `Duel.GetCardLevelFromCode(code)`
+    get_card_level_from_code, level, u32;
+    /// `Duel.GetCardAttributeFromCode(code)`
+    get_card_attribute_from_code, attribute, u32;
+    /// `Duel.GetCardRaceFromCode(code)`
+    get_card_race_from_code, race, u64;
+    /// `Duel.GetCardAttackFromCode(code)`
+    get_card_attack_from_code, attack, i32;
+    /// `Duel.GetCardDefenseFromCode(code)`
+    get_card_defense_from_code, defense, i32;
+    /// `Duel.GetCardRscaleFromCode(code)`
+    get_card_rscale_from_code, rscale, u32;
+    /// `Duel.GetCardLscaleFromCode(code)`
+    get_card_lscale_from_code, lscale, u32;
+    /// `Duel.GetCardLinkMarkerFromCode(code)`
+    get_card_link_marker_from_code, link_marker, u32;
+}
+/// `Duel.GetCardSetcodeFromCode(code)`: all set codes (empty: unknown code)
+pub fn get_card_setcode_from_code(d: &Duel, code: u32) -> Vec<u16> {
+    raw::get_card_data_from_code(d, code).map_or(vec![], |x| x.setcodes.iter().map(|s| s as u16).collect())
+}

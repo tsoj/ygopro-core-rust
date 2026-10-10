@@ -102,10 +102,10 @@ fn op(d: &mut Duel, a: &EffArgs) {
     // local tc=Duel.GetFirstTarget()
     let tc = duel::first_target(d);
     // if c:IsRelateToEffect(e) and tc:IsRelateToEffect(e)
-    //     and Duel.SpecialSummonStep(tc,0,tp,tp,false,false,POS_FACEUP_ATTACK) then
+    //     and Duel.SpecialSummonStep(tc,0,tp,tp,false,false,POS_FACEUP) then
     if card::is_relate_to_effect(d, c, a.e)
         && card::is_relate_to_effect(d, tc.nil(), a.e)
-        && duel::special_summon_step(d, tc.nil(), 0, tp, tp, false, false, POS_FACEUP_ATTACK as u8, None)
+        && duel::special_summon_step(d, tc.nil(), 0, tp, tp, false, false, POS_FACEUP as u8, None)
     {
         // c:SetCardTarget(tc)
         card::set_card_target(d, c, tc.nil());

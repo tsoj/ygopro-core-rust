@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = ["ygo-core", "ygo-diff"]
+
+[workspace.package]
+edition = "2024"
+license = "AGPL-3.0-or-later"
+
+[profile.release]
+debug = 1

@@ -13,6 +13,7 @@ import os
 import re
 import sqlite3
 import sys
+import translatable
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 BOOK = os.path.join(ROOT, "runs", "books", "match1.jsonl")
@@ -56,7 +57,7 @@ def main():
         for d in (a, b):
             for c in d["main"] + d["extra"]:
                 s = script_code(c, alias)
-                if os.path.exists(os.path.join(SCRIPTS, f"c{s}.lua")) and s not in translated:
+                if translatable.script_path(s) and s not in translated:
                     need.add(s)
         pairs.append((o, need))
     if "--status" in sys.argv:
@@ -64,7 +65,6 @@ def main():
         print(f"{len(pairs)} book pairs, {done} fully translated; {len(translated)} cards translated")
         return
     n = int(sys.argv[sys.argv.index("--pairs") + 1]) if "--pairs" in sys.argv else 10
-    import translatable
     have = translatable.rust_names()
     os.makedirs(OUT, exist_ok=True)
 
@@ -105,7 +105,7 @@ def main():
         print(f"pair{idx:03d}: {len(new)} new cards  [{names[0]}] vs [{names[1]}]")
         for c in new:
             miss = translatable.missing_of(c, have)
-            lua = os.path.join(SCRIPTS, f"c{c}.lua")
+            lua = translatable.script_path(c)
             name = open(lua, errors="ignore").read().split("\n")[1].lstrip("-").strip()
             print(f"  {c} {name}" + (f"   MISSING {' '.join(sorted(miss))}" if miss else ""))
 

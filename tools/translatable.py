@@ -15,6 +15,17 @@ import sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 SCRIPTS = os.path.join(ROOT, "external", "CardScripts", "official")
+# the directories the core searches, in its order (ygo-diff core_ffi::find_script)
+SCRIPT_DIRS = [os.path.join(ROOT, "external", "CardScripts", d) for d in ("official", "pre-release", "pre-errata", "goat")]
+
+
+def script_path(code):
+    """The Lua script the core loads for `code` (None: no script)."""
+    for d in SCRIPT_DIRS:
+        p = os.path.join(d, f"c{code}.lua")
+        if os.path.exists(p):
+            return p
+    return None
 RUST = [os.path.join(ROOT, "rust", "ygo-cards", "src"), os.path.join(ROOT, "rust", "ygo-core", "src", "api")]
 FREQ = os.path.join(ROOT, "download_human_decks", "card_deck_frequency.tsv")
 
@@ -67,7 +78,7 @@ def rust_names():
 
 
 def missing_of(code, have):
-    path = os.path.join(SCRIPTS, f"c{code}.lua")
+    path = script_path(code)
     s = open(path, errors="ignore").read()
     s = re.sub(r"--\[\[.*?\]\]", "", s, flags=re.S)
     s = re.sub(r"--[^\n]*", "", s)

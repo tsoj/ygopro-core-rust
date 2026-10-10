@@ -1,8 +1,9 @@
 [package]
 name = "ygo-diff"
 version = "0.1.0"
-edition = "2024"
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
+ygo-core = { path = "../ygo-core" }
 libloading = "0.9.0"
-rusqlite = { version = "0.40.2", features = ["bundled"] }

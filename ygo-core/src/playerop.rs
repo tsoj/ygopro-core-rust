@@ -54,7 +54,7 @@ fn parse_response_cards<T: Copy + Ord>(returns: &ProgressiveBuffer, return_cards
 }
 
 /// `is_declarable`: whether a card can be announced (the announce filter is a stack program).
-fn is_declarable(cd: &CardData, opcodes: &[u64]) -> bool {
+pub fn is_declarable(cd: &CardData, opcodes: &[u64]) -> bool {
     let mut stack: Vec<i64> = Vec::new();
     let mut alias = false;
     let mut token = false;

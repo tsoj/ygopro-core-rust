@@ -6,8 +6,13 @@ A port of edo9300's ygopro-core (with our patch, `build/ocgcore-src`) and of the
 1. **Same behavior as ygopro-core.** The C++ core is the oracle: the same seed, decks and responses
    must give the same message stream (byte for byte) and the same query results. Differential tests
    (`ygo-diff`) run both engines side by side and report the first message that differs.
-2. **Cheap copies.** A duel is plain data (`#[derive(Clone)]`): cards, effects and groups are indices
-   into vectors, never pointers; card functions are `Arc` closures (immutable, shared by copies).
+2. **Cheap copies** (the main reason for the port). A duel is plain data (`#[derive(Clone)]`):
+   cards, effects and groups are indices into vectors, never pointers; card functions are `Arc`
+   closures (immutable, shared by copies). Cards and effects are copy-on-write (`Vec<Arc<Card>>`,
+   `Vec<Option<Arc<Effect>>>`; `card_mut`/`effect_mut` copy one only while another duel still
+   shares it), so a copy costs a reference count per card and effect. Mutable state of card scripts
+   (Lua upvalues and globals) lives in the duel, never in a closure, so it is copied too.
+   Measured with `ygo-diff --bench-clone`: a vanilla duel (81 cards) copies in 1.8 us.
 3. **Speed.** No interpreter, no process forks to copy a state.
 
 ## Faithful port

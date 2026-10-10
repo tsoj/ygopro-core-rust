@@ -186,6 +186,8 @@ pub struct Card {
     pub attack_all_target: u8,
     pub attack_controler: u8,
     pub cardid: u32,
+    /// The code whose script the card uses (`interpreter::register_card`: alternative artworks use the original's).
+    pub script_code: u32,
     pub fieldid: u32,
     pub fieldid_r: u32,
     pub turnid: u16,
@@ -258,6 +260,7 @@ impl Card {
             attack_all_target: 0,
             attack_controler: 0,
             cardid: 0,
+            script_code: 0,
             fieldid: 0,
             fieldid_r: 0,
             turnid: 0,

@@ -585,8 +585,10 @@ pub struct DuelOptions {
 #[derive(Clone)]
 pub struct Duel {
     // duel
-    pub cards: Vec<Card>,
-    pub effects: Vec<Option<Effect>>,
+    /// Cards and effects are shared between copies of the duel (copy-on-write: `card_mut` and
+    /// `effect_mut` copy one only when another copy still uses it), so copying a duel is cheap.
+    pub cards: Vec<Arc<Card>>,
+    pub effects: Vec<Option<Arc<Effect>>>,
     pub assumes: Vec<CardId>,
     /// Effects added while copying effects that are not copyable (`duel::uncopy`).
     pub uncopy: Vec<EffectId>,
@@ -631,7 +633,7 @@ impl Duel {
     }
     #[inline]
     pub fn card_mut(&mut self, c: CardId) -> &mut Card {
-        &mut self.cards[c.0 as usize]
+        Arc::make_mut(&mut self.cards[c.0 as usize])
     }
     #[inline]
     pub fn effect(&self, e: EffectId) -> &Effect {
@@ -639,13 +641,14 @@ impl Duel {
     }
     #[inline]
     pub fn effect_mut(&mut self, e: EffectId) -> &mut Effect {
-        self.effects[e.0 as usize].as_mut().expect("deleted effect")
+        Arc::make_mut(self.effects[e.0 as usize].as_mut().expect("deleted effect"))
     }
     pub fn effect_exists(&self, e: EffectId) -> bool {
         self.effects.get(e.0 as usize).is_some_and(|x| x.is_some())
     }
 
-    /// `duel::new_card`
+    /// `duel::new_card` (with `interpreter::register_card`: the card's `initial_effect` runs,
+    /// then the card gets its id).
     pub fn new_card(&mut self, code: u32) -> CardId {
         let id = CardId(self.cards.len() as u32);
         let mut c = Card::new();
@@ -653,17 +656,26 @@ impl Duel {
             c.data = self.read_card(code);
         }
         c.data.code = code;
-        // (interpreter::register_card)
-        c.cardid = self.infos.card_id;
+        let (alias, script) = (c.data.alias, c.data.code);
+        self.cards.push(Arc::new(c));
+        // (the script of an alternative artwork is the original's)
+        let script = if alias != 0 && alias < script + 10 && script < alias + 10 { alias } else { script };
+        self.card_mut(id).script_code = script;
+        if code != 0 {
+            self.card_mut(id).set_status(crate::constants::STATUS_INITIALIZING, true);
+            self.call_initial_effect(script, id);
+            self.card_mut(id).set_status(crate::constants::STATUS_INITIALIZING, false);
+        }
+        let cardid = self.infos.card_id;
         self.infos.card_id += 1;
-        debug_assert_eq!(c.cardid, id.0 + 1);
-        self.cards.push(c);
+        self.card_mut(id).cardid = cardid;
+        debug_assert_eq!(cardid, id.0 + 1);
         id
     }
     /// `duel::new_effect`
     pub fn new_effect(&mut self) -> EffectId {
         let id = EffectId(self.effects.len() as u32);
-        self.effects.push(Some(Effect::new()));
+        self.effects.push(Some(Arc::new(Effect::new())));
         id
     }
     /// `duel::delete_effect`

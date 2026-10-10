@@ -1,6 +1,7 @@
 //! A Rust port of ygopro-core (edo9300) with the project's patches: see DESIGN.md.
 #![allow(clippy::needless_range_loop, clippy::collapsible_if, clippy::collapsible_else_if)]
 
+pub mod api;
 pub mod card2;
 pub mod card3;
 pub mod card;

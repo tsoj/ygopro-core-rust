@@ -2,7 +2,7 @@
 //! (`aux.AND`, `aux.FilterBoolFunction`, ...) are closures in Rust and not ported as functions.
 
 use crate::constants::*;
-use crate::lua::{card, duel, effect};
+use crate::lua::{card, duel, effect, group, CardOrGroup, Filter, NO_EX};
 use crate::prelude::*;
 
 /// `aux.Stringid(code, id)`: a description from the card's strings.
@@ -445,4 +445,392 @@ pub fn dpcheck(fun: fn(&mut Duel, CardId) -> i64) -> impl Fn(&mut Duel, &CardSet
 /// `aux.dncheck`: rescon "all cards have different names" (by their first code)
 pub fn dncheck() -> impl Fn(&mut Duel, &CardSet, Option<EffectId>, u8, &CardSet, Option<CardId>) -> (bool, bool) {
     dpcheck(|d, c| card::get_code(d, c)[0] as i64)
+}
+// `aux.MainAndExtraSpSummonLoop` is not ported: no card uses it, and it calls the undefined
+// `Duel.GetMasterRule`.
+
+/// `aux.seqmovcon`: the handler can move to an adjacent zone
+pub fn seqmovcon() -> LuaFn {
+    condition(|d, a| {
+        let c = effect::get_handler(d, a.e).unwrap();
+        card::check_adjacent(d, c)
+    })
+}
+/// `aux.seqmovop`: move to an adjacent zone chosen at resolution
+pub fn seqmovop() -> LuaFn {
+    operation(|d, a| {
+        let c = effect::get_handler(d, a.e).unwrap();
+        if !card::is_relate_to_effect(d, c, a.e) || card::is_controler(d, c, 1 - a.tp) {
+            return;
+        }
+        card::move_adjacent(d, c, None);
+    })
+}
+/// `aux.seqmovtg`: choose the adjacent zone at target time (in the label)
+pub fn seqmovtg() -> LuaFn {
+    cost_target(|d, a| {
+        if a.chk == Some(0) {
+            return true;
+        }
+        let c = effect::get_handler(d, a.e).unwrap();
+        // (Lua: `SelectAdjacent` returning nothing leaves `SetLabel` without its argument)
+        let seq = card::select_adjacent(d, c, None).unwrap_or_else(|| crate::lua_error("bad argument #2 to 'SetLabel'"));
+        effect::set_label(d, a.e, &[seq as i64]);
+        true
+    })
+}
+/// `aux.seqmovtgop`: move to the zone chosen by `aux.seqmovtg`
+pub fn seqmovtgop() -> LuaFn {
+    operation(|d, a| {
+        let c = effect::get_handler(d, a.e).unwrap();
+        let seq = effect::get_label(d, a.e);
+        if !card::is_relate_to_effect(d, c, a.e) || card::is_controler(d, c, 1 - a.tp) || !duel::check_location(d, a.tp, LOCATION_MZONE, seq as u32) {
+            return;
+        }
+        duel::move_sequence(d, c, seq as u8, None);
+    })
+}
+
+/// `aux.GetAttributeStrings(v)`: the hint strings of the attributes in `v`
+pub fn get_attribute_strings(v: u64) -> Vec<u64> {
+    let t = [ATTRIBUTE_EARTH, ATTRIBUTE_WATER, ATTRIBUTE_FIRE, ATTRIBUTE_WIND, ATTRIBUTE_LIGHT, ATTRIBUTE_DARK, ATTRIBUTE_DIVINE];
+    bit_split(v).into_iter().filter_map(|a| t.iter().position(|x| *x as u64 == a).map(|i| 1010 + i as u64)).collect()
+}
+/// `aux.GetRaceStrings(v)`
+pub fn get_race_strings(v: u64) -> Vec<u64> {
+    let t = [
+        RACE_WARRIOR, RACE_SPELLCASTER, RACE_FAIRY, RACE_FIEND, RACE_ZOMBIE, RACE_MACHINE, RACE_AQUA, RACE_PYRO, RACE_ROCK, RACE_WINGEDBEAST, RACE_PLANT, RACE_INSECT, RACE_THUNDER,
+        RACE_DRAGON, RACE_BEAST, RACE_BEASTWARRIOR, RACE_DINOSAUR, RACE_FISH, RACE_SEASERPENT, RACE_REPTILE, RACE_PSYCHIC, RACE_DIVINE, RACE_CREATORGOD, RACE_WYRM, RACE_CYBERSE, RACE_ILLUSION,
+    ];
+    bit_split(v).into_iter().filter_map(|r| t.iter().position(|x| *x as u64 == r).map(|i| 1020 + i as u64)).collect()
+}
+/// `aux.FaceupFilter(f, ...)`: `f` on face-up cards only (the arguments go into the closure)
+pub fn faceup_filter(f: impl Fn(&mut Duel, CardId) -> bool) -> impl Fn(&mut Duel, CardId) -> bool {
+    move |d, c| card::is_faceup(d, c) && f(d, c)
+}
+/// `aux.zptfilter(c, ec)`: `c` left a zone `ec` points to
+pub fn zptfilter(d: &mut Duel, c: CardId, ec: CardId) -> bool {
+    let pc = card::get_previous_controler(d, c);
+    !card::is_location(d, c, LOCATION_MZONE) && card::get_linked_zone(d, ec, Some(pc)) & (1 << card::get_previous_sequence(d, c)) != 0
+}
+fn zpt_filtered(d: &mut Duel, eg: &CardSet, filter: Option<&dyn Fn(&mut Duel, CardId, u8) -> bool>, tp: u8) -> CardSet {
+    group::filter(d, eg, &|d, cc| filter.map_or(true, |f| f(d, cc, tp)), NO_EX)
+}
+/// `aux.zptgroup(eg, filter, c, tp)`: the summoned `filter` monsters in zones `c` points to
+pub fn zptgroup(d: &mut Duel, eg: &CardSet, filter: Option<&dyn Fn(&mut Duel, CardId, u8) -> bool>, c: CardId, tp: u8) -> CardSet {
+    let fil = zpt_filtered(d, eg, filter, tp);
+    let lg = card::get_linked_group(d, c);
+    let gone = group::filter(d, eg, &|d, cc| zptfilter(d, cc, c), NO_EX);
+    group::union(&group::intersection(&fil, &lg), &gone)
+}
+pub fn zptgroupcon(d: &mut Duel, eg: &CardSet, filter: Option<&dyn Fn(&mut Duel, CardId, u8) -> bool>, c: CardId, tp: u8) -> bool {
+    let fil = zpt_filtered(d, eg, filter, tp);
+    let lg = card::get_linked_group(d, c);
+    !group::intersection(&fil, &lg).is_empty() || group::is_exists(d, eg, &|d, cc| zptfilter(d, cc, c), 1, NO_EX)
+}
+/// `aux.zptcon(filter)`
+pub fn zptcon(filter: Option<fn(&mut Duel, CardId, u8) -> bool>) -> LuaFn {
+    condition(move |d, a| {
+        let c = effect::get_handler(d, a.e).unwrap();
+        let f = filter.map(|f| move |d: &mut Duel, c: CardId, tp: u8| f(d, c, tp));
+        zptgroupcon(d, &a.eg(), f.as_ref().map(|f| f as &dyn Fn(&mut Duel, CardId, u8) -> bool), c, a.tp)
+    })
+}
+
+/// `aux.*` state (`Duel::script_var` keys).
+pub mod vars {
+    use crate::ns::AUX;
+    /// `Auxiliary.ToResetFuncTable` (the functions of `aux.AddValuesReset`)
+    pub const TO_RESET_FUNC_TABLE: (u32, u64) = (AUX, 1);
+    /// `delayed_operation_id` (the last id of `aux.DelayedOperation`)
+    pub const DELAYED_OPERATION_ID: (u32, u64) = (AUX, 2);
+}
+
+/// `aux.ToHandOrElse(card, player, check, oper, str, ...)`: add `targets` to the hand or (the
+/// player's choice) do `oper` (default: send to the GY, if `check` (default: `IsAbleToGrave`)
+/// holds for all of them). The arguments `...` go into the closures.
+pub fn to_hand_or_else(
+    d: &mut Duel,
+    targets: impl Into<CardOrGroup>,
+    player: u8,
+    check: Option<&dyn Fn(&mut Duel, CardId) -> bool>,
+    oper: Option<&dyn Fn(&mut Duel, &CardSet) -> i32>,
+    str: Option<u64>,
+) -> i32 {
+    let targets = targets.into().cards();
+    let str = str.unwrap_or(574);
+    let (mut b1, mut b2) = (true, true);
+    for ctg in group::iter(d, &targets) {
+        if !card::is_able_to_hand(d, ctg, None) {
+            b1 = false;
+        }
+        let ok = match check {
+            Some(f) => f(d, ctg),
+            None => card::is_able_to_grave(d, ctg, None),
+        };
+        if !ok {
+            b2 = false;
+        }
+    }
+    let opt = if b1 && b2 {
+        duel::select_option(d, player, true, &[573, str])
+    } else if b1 {
+        duel::select_option(d, player, true, &[573])
+    } else {
+        duel::select_option(d, player, true, &[str]) + 1
+    };
+    if opt == 0 {
+        let res = duel::send_to_hand(d, &targets, None, REASON_EFFECT, None);
+        if res > 0 {
+            let og = duel::get_operated_group(d);
+            let og = group::filter(d, &og, &|d, c| card::is_previous_location(d, c, LOCATION_DECK), NO_EX);
+            if !og.is_empty() {
+                duel::confirm_cards(d, 1 - player, &og);
+            }
+        }
+        res
+    } else {
+        match oper {
+            Some(f) => f(d, &targets),
+            None => thoe_send(d, &targets),
+        }
+    }
+}
+/// `aux.thoeSend(card)`
+pub fn thoe_send(d: &mut Duel, targets: &CardSet) -> i32 {
+    duel::send_to_grave(d, targets, REASON_EFFECT, None, None)
+}
+/// `aux.RegisterClientHint(card, property, tp, player1, player2, str, reset, ct)`: a player
+/// effect that only shows a hint until the End Phase.
+#[allow(clippy::too_many_arguments)]
+pub fn register_client_hint(d: &mut Duel, c: CardId, property: u32, tp: u8, player1: u32, player2: u32, str: Option<u64>, reset: u32, ct: Option<u16>) -> EffectId {
+    let eff = effect::create_effect(d, c);
+    effect::set_property(d, eff, (EFFECT_FLAG_PLAYER_TARGET + EFFECT_FLAG_CLIENT_HINT) | property, 0);
+    effect::set_target_range(d, eff, player1, player2);
+    let desc = str.unwrap_or_else(|| stringid(card::get_original_code(d, c), 1));
+    effect::set_description(d, eff, desc);
+    effect::set_reset(d, eff, (RESET_PHASE + PHASE_END) | reset, ct.unwrap_or(1));
+    duel::register_effect(d, eff, tp);
+    eff
+}
+/// `aux.FieldSummonProcTg(fun1, fun2)`: target of a summon procedure field effect: `fun1(e, tp)`
+/// without a card, `fun2(e, tp, eg, ..., chk, c, ...)` with one.
+pub fn field_summon_proc_tg(fun1: Option<LuaFn>, fun2: Option<LuaFn>) -> LuaFn {
+    LuaFn::new(move |d, a| {
+        if a.get(9).and_then(|v| v.as_card()).is_none() {
+            return fun1.as_ref().map_or(Value::Bool(true), |f| f.call(d, &a[..2.min(a.len())]));
+        }
+        fun2.as_ref().map_or(Value::Bool(true), |f| f.call(d, a))
+    })
+}
+/// `aux.AddValuesReset(resetfunc)`: `resetfunc` runs at the end of each turn.
+pub fn add_values_reset(d: &mut Duel, resetfunc: fn(&mut Duel)) {
+    let f = Value::Fn(LuaFn::new(move |d, _| {
+        resetfunc(d);
+        Value::Nil
+    }));
+    match d.script_var(vars::TO_RESET_FUNC_TABLE) {
+        Value::Multi(mut t) => {
+            t.push(f);
+            d.set_script_var(vars::TO_RESET_FUNC_TABLE, Value::Multi(t));
+        }
+        _ => {
+            d.set_script_var(vars::TO_RESET_FUNC_TABLE, Value::Multi(vec![f]));
+            let ge = effect::global_effect(d);
+            effect::set_type(d, ge, EFFECT_TYPE_FIELD + EFFECT_TYPE_CONTINUOUS);
+            effect::set_code(d, ge, EVENT_TURN_END);
+            effect::set_count_limit(d, ge, 1, 0, 0, 0);
+            effect::set_condition(d, ge, Some(values_reset()));
+            duel::register_effect(d, ge, 0);
+        }
+    }
+}
+/// `aux.ValuesReset`
+fn values_reset() -> LuaFn {
+    LuaFn::new(|d, _| {
+        if let Value::Multi(t) = d.script_var(vars::TO_RESET_FUNC_TABLE) {
+            for f in t {
+                if let Value::Fn(f) = f {
+                    f.call(d, &[]);
+                }
+            }
+        }
+        Value::Bool(false)
+    })
+}
+/// `aux.GlobalCheck(s, func)`: `func` once per duel for the script `code`
+pub fn global_check(d: &mut Duel, code: u32, func: impl FnOnce(&mut Duel)) {
+    let k = (crate::ns::GLOBAL_CHECK, code as u64);
+    if !d.script_var(k).truthy() {
+        d.set_script_var(k, Value::Bool(true));
+        func(d);
+    }
+}
+/// `aux.HarmonizingMagFilter(c, e, f)`
+pub fn harmonizing_mag_filter(d: &mut Duel, c: CardId, e: EffectId, f: Option<&LuaFn>) -> bool {
+    f.is_some_and(|f| !f.call(d, &[Value::Effect(e), Value::Card(c)]).truthy())
+}
+/// `aux.ChangeBattleDamage(player, value)`: `value` as the battle damage to the effect's owner
+/// (`player == 0`) or their opponent (`player == 1`)
+pub fn change_battle_damage(player: u8, value: i64) -> LuaFn {
+    LuaFn::new(move |d, a| {
+        let e = a[0].as_effect().unwrap();
+        let damp = a.get(1).map_or(0, |v| v.int()) as u8;
+        let op = effect::get_owner_player(d, e);
+        match player {
+            0 => Value::Int(if op == damp { value } else { -1 }),
+            1 => Value::Int(if op == 1 - damp { value } else { -1 }),
+            _ => Value::Nil,
+        }
+    })
+}
+/// `aux.GetMMZonesPointedTo(player, by_filter, player_location, oppo_location, target_player, ...)`:
+/// the Main Monster Zones of `target_player` that face-up Link cards (matching `by_filter`) point to
+pub fn get_mmzones_pointed_to(d: &mut Duel, player: u8, by_filter: Option<Filter>, player_location: Option<u32>, oppo_location: Option<u32>, target_player: Option<u8>) -> u32 {
+    let loc1 = player_location.unwrap_or(LOCATION_MZONE);
+    let loc2 = oppo_location.unwrap_or(loc1);
+    let target_player = target_player.unwrap_or(player);
+    let f = |d: &mut Duel, c: CardId| card::is_faceup(d, c) && card::is_type(d, c, TYPE_LINK) && by_filter.map_or(true, |f| f(d, c));
+    let g = duel::get_matching_group(d, Some(&f), player, loc1, loc2, NO_EX);
+    group::get_linked_zone(d, &g, target_player) & ZONES_MMZ
+}
+
+/// `oper`/`cond` of `aux.DelayedOperation`: `(ag, e, tp, eg, ep, ev, re, r, rp)`
+pub type DelayedFn = std::sync::Arc<dyn Fn(&mut Duel, &CardSet, &EffArgs) -> bool + Send + Sync>;
+
+/// `aux.DelayedOperation(card_or_group, phase, flag, e, tp, oper, cond, reset, reset_count, hint,
+/// effect_desc)`: `oper` on the cards (still flagged with `flag`) when `phase` is entered.
+/// `None` for no cards.
+#[allow(clippy::too_many_arguments)]
+pub fn delayed_operation(
+    d: &mut Duel,
+    targets: impl Into<CardOrGroup>,
+    phase: u32,
+    flag: u32,
+    e: EffectId,
+    tp: u8,
+    oper: Option<DelayedFn>,
+    cond: Option<DelayedFn>,
+    reset: Option<u32>,
+    reset_count: Option<u16>,
+    hint: Option<u64>,
+    effect_desc: Option<u64>,
+) -> Option<EffectId> {
+    let g = targets.into().cards();
+    if g.is_empty() {
+        return None;
+    }
+    let reset = reset.unwrap_or(RESET_PHASE | phase);
+    let reset_count = reset_count.unwrap_or(1);
+    let fid = d.script_var(vars::DELAYED_OPERATION_ID).int() + 1;
+    d.set_script_var(vars::DELAYED_OPERATION_ID, Value::Int(fid));
+
+    fn get_affected_group(d: &mut Duel, e: EffectId, flag: u32) -> CardSet {
+        let lbl = effect::get_label(d, e);
+        let Value::Group(g) = effect::get_label_object(d, e) else { return CardSet::new() };
+        group::filter(d, &g, &|d, c| card::get_flag_effect_label(d, c, flag).first() == Some(&lbl), NO_EX)
+    }
+    let c = effect::get_handler(d, e).unwrap();
+    let e1 = effect::create_effect(d, c);
+    if let Some(desc) = effect_desc {
+        effect::set_description(d, e1, desc);
+    }
+    effect::set_type(d, e1, EFFECT_TYPE_FIELD + EFFECT_TYPE_CONTINUOUS);
+    effect::set_property(d, e1, EFFECT_FLAG_IGNORE_IMMUNE, 0);
+    effect::set_code(d, e1, EVENT_PHASE | phase);
+    effect::set_reset(d, e1, reset, reset_count);
+    effect::set_count_limit(d, e1, 1, 0, 0, 0);
+    effect::set_label(d, e1, &[fid]);
+    effect::set_label_object(d, e1, Value::Group(g.clone()));
+    effect::set_condition(
+        d,
+        e1,
+        Some(condition(move |d, a| {
+            let ag = get_affected_group(d, a.e, flag);
+            !ag.is_empty() && cond.as_ref().map_or(true, |f| f(d, &ag, a))
+        })),
+    );
+    effect::set_operation(
+        d,
+        e1,
+        Some(operation(move |d, a| {
+            if let Some(f) = &oper {
+                let ag = get_affected_group(d, a.e, flag);
+                f(d, &ag, a);
+            }
+        })),
+    );
+    duel::register_effect(d, e1, tp);
+
+    let flagprop = if hint.is_some() { EFFECT_FLAG_CLIENT_HINT } else { 0 };
+    for tc in group::iter(d, &g) {
+        let fe = card::register_flag_effect(d, tc, flag, RESET_EVENT + RESETS_STANDARD, flagprop, 1, fid, hint.unwrap_or(0));
+        effect::set_condition(d, fe, Some(LuaFn::new(move |d, _| Value::Bool(!effect::is_deleted(d, e1)))));
+    }
+    Some(e1)
+}
+/// `aux.RemoveUntil(card_or_group, pos, reason, phase, flag, e, tp, oper, cond, reset,
+/// reset_count, hint, effect_desc)`: banish the cards, then `oper` on them when `phase` is
+/// entered. (Lua filters a passed group in place to the banished cards.)
+#[allow(clippy::too_many_arguments)]
+pub fn remove_until(
+    d: &mut Duel,
+    targets: impl Into<CardOrGroup>,
+    pos: Option<u8>,
+    reason: u32,
+    phase: u32,
+    flag: u32,
+    e: EffectId,
+    tp: u8,
+    oper: Option<DelayedFn>,
+    cond: Option<DelayedFn>,
+    reset: Option<u32>,
+    reset_count: Option<u16>,
+    hint: Option<u64>,
+    effect_desc: Option<u64>,
+) -> Option<EffectId> {
+    let g = targets.into().cards();
+    if g.is_empty() || duel::remove(d, &g, pos.unwrap_or(0), reason | REASON_TEMPORARY, None, None) == 0 {
+        return None;
+    }
+    let g = group::filter(d, &g, &|d, c| card::is_location(d, c, LOCATION_REMOVED), NO_EX);
+    if g.is_empty() {
+        return None;
+    }
+    delayed_operation(d, g, phase, flag, e, tp, oper, cond, reset, reset_count, hint, effect_desc)
+}
+fn select_field_return_cards(d: &mut Duel, p: u8, mut g: CardSet) {
+    if g.is_empty() {
+        return;
+    }
+    let ft = duel::get_location_count(d, p, LOCATION_MZONE as u8, None, None, None).0;
+    if ft > 0 && g.len() as i32 > ft {
+        duel::hint(d, HINT_SELECTMSG as u8, p, HINTMSG_TOFIELD as u64);
+        let tg = group::select(d, &g, p, ft as u16, ft as u16, false, NO_EX).unwrap_or_default();
+        for tc in group::iter(d, &tg) {
+            duel::return_to_field(d, tc, None, None);
+        }
+        g = group::difference(&g, &tg);
+    }
+    for tc in group::iter(d, &g) {
+        duel::return_to_field(d, tc, None, None);
+    }
+}
+/// `aux.DefaultFieldReturnOp(rg)`: return the banished cards to the field, turn player first
+/// (each player chooses if they have fewer zones than cards)
+pub fn default_field_return_op(d: &mut Duel, rg: &CardSet) {
+    if rg.is_empty() {
+        return;
+    }
+    let turn_p = duel::get_turn_player(d);
+    let (g0, g1) = group::split(d, rg, &|d, c| card::is_previous_controler(d, c, turn_p), NO_EX);
+    select_field_return_cards(d, turn_p, g0);
+    select_field_return_cards(d, 1 - turn_p, g1);
+}
+/// `aux.DefaultFieldReturnOp` as the `oper` of `aux.RemoveUntil`
+pub fn default_field_return() -> DelayedFn {
+    std::sync::Arc::new(|d, rg, _| {
+        default_field_return_op(d, rg);
+        true
+    })
 }

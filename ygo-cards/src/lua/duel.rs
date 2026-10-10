@@ -144,3 +144,78 @@ pub fn announce_another_race(d: &mut Duel, g: &CardSet, tp: u8) -> u64 {
     raw::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_RACE as u64);
     raw::announce_race(d, tp, 1, if race & race.wrapping_sub(1) == 0 { !race & RACE_ALL } else { RACE_ALL })
 }
+/// `Duel.SummonOrSet(tp, c, ign, e, minc, zone)`: Normal Summon or Set, as the player chooses.
+pub fn summon_or_set(d: &mut Duel, tp: u8, c: CardId, ign: bool, e: Option<EffectId>, minc: u8, zone: Option<u32>) {
+    let s1 = ygo_core::api::card::is_summonable(d, c, ign, e, minc as u16, zone.map(|z| z as u16));
+    let s2 = ygo_core::api::card::is_m_setable(d, c, ign, e, minc as u16, zone);
+    if (s1 && s2 && raw::select_position(d, tp, c, (POS_FACEUP_ATTACK + POS_FACEDOWN_DEFENSE) as u8) == POS_FACEUP_ATTACK) || !s2 {
+        raw::summon(d, tp, c, ign, e, minc, zone);
+    } else {
+        raw::m_set(d, tp, c, ign, e, minc, zone);
+    }
+}
+/// `Duel.ActivateFieldSpell(c, e, tp, eg, ep, ev, re, r, rp, target_p)`: places `c` as the
+/// active Field Spell (the old one is sent to the GY/destroyed).
+pub fn activate_field_spell(d: &mut Duel, c: Option<CardId>, a: &crate::prelude::EffArgs, target_p: Option<u8>) -> bool {
+    let tp = a.tp;
+    let target_p = target_p.unwrap_or(tp);
+    let Some(c) = c else { return false };
+    let fc = raw::get_field_card(d, target_p, LOCATION_FZONE, 0);
+    if raw::is_duel_type(d, DUEL_1_FIELD as u64) {
+        if let Some(fc) = fc {
+            raw::destroy(d, fc, REASON_RULE, None, None);
+        }
+        let of = raw::get_field_card(d, 1 - target_p, LOCATION_FZONE, 0);
+        if let Some(of) = of.filter(|&of| raw::destroy(d, of, REASON_RULE, None, None) == 0) {
+            let _ = of;
+            raw::send_to_grave(d, c, REASON_RULE, None, None);
+            return false;
+        }
+        raw::break_effect(d);
+    } else {
+        if fc.is_some_and(|fc| raw::send_to_grave(d, fc, REASON_RULE, None, None) == 0) {
+            raw::send_to_grave(d, c, REASON_RULE, None, None);
+            return false;
+        }
+        raw::break_effect(d);
+    }
+    move_to_field(d, c, tp, target_p, LOCATION_FZONE as u16, POS_FACEUP as u8, true, None);
+    let te = *ygo_core::api::card::get_activate_effect(d, c).first().unwrap_or_else(|| crate::lua_error("attempt to index a nil value (local 'te')"));
+    ygo_core::api::effect::use_count_limit(d, te, tp, 1, true);
+    let tep = ygo_core::api::card::get_controler(d, c);
+    if let Some(cost) = ygo_core::api::effect::get_cost(d, te) {
+        cost.call(d, &[Value::Effect(te), Value::Int(tep as i64), a.eg.clone().map_or(Value::Nil, Value::Group), Value::Int(a.ep as i64), Value::Int(a.ev as i64), Value::effect(a.re), Value::Int(a.r as i64), Value::Int(a.rp as i64), Value::Int(1)]);
+    }
+    let ch = raw::get_current_chain(d, false);
+    raw::raise_event(d, c, 4179255, Some(te), 0, tp, target_p, ch as u32);
+    true
+}
+/// `Duel.GoatConfirm(tp, loc)`: reveals the hand and confirms the deck (GOAT format rules)
+pub fn goat_confirm(d: &mut Duel, tp: u8, loc: u32) {
+    let g = raw::get_field_group(d, tp, loc & (LOCATION_HAND | LOCATION_DECK), 0);
+    let (dg, hg) = ygo_core::api::group::split(d, &g, &|d, c| ygo_core::api::card::is_location(d, c, LOCATION_DECK), super::NO_EX);
+    raw::confirm_cards(d, tp, &dg);
+    raw::confirm_cards(d, 1 - tp, &hg);
+    if !hg.is_empty() {
+        raw::shuffle_hand(d, tp);
+    }
+    if !dg.is_empty() {
+        raw::shuffle_deck(d, tp);
+    }
+}
+/// `Duel.CallCoin(tp)`: the player calls a coin toss; whether the call was right
+pub fn call_coin(d: &mut Duel, tp: u8) -> bool {
+    let call = raw::announce_coin(d, tp, None);
+    let r = raw::toss_coin(d, tp, 1);
+    r.first().is_some_and(|&x| x == call)
+}
+/// `Duel.CountHeads(...)`
+pub fn count_heads(results: &[i32]) -> usize {
+    results.iter().filter(|&&r| r == COIN_HEADS as i32).count()
+}
+pub fn count_tails(results: &[i32]) -> usize {
+    results.iter().filter(|&&r| r == COIN_TAILS as i32).count()
+}
+pub fn check_pendulum_zones(d: &Duel, player: u8) -> bool {
+    raw::check_location(d, player, LOCATION_PZONE, 0) || raw::check_location(d, player, LOCATION_PZONE, 1)
+}

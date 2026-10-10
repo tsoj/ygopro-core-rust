@@ -12,6 +12,20 @@ pub mod global;
 pub mod lua;
 pub mod prelude;
 
+/// Namespaces of `Duel::script_var` keys `(namespace, key)`: all script state lives in the duel,
+/// so that it is copied with it. A card script's own state (`s.x`, `s[0]`, ...) uses its card
+/// code as the namespace (see `prelude::s_var`); codes are larger than these.
+pub mod ns {
+    /// The global scripts' state (`global::vars`)
+    pub const GLOBAL: u32 = 0;
+    /// `aux.*` state (`aux::vars`)
+    pub const AUX: u32 = 1;
+    /// `aux.GlobalCheck`: `s.global_check` by card code
+    pub const GLOBAL_CHECK: u32 = 2;
+    /// `e:GetChainData()` (`chain.rs`)
+    pub const CHAIN_DATA: u32 = 3;
+}
+
 use ygo_core::script::Scripts;
 
 /// All card scripts (code -> initial_effect).

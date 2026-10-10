@@ -821,3 +821,38 @@ pub fn lists_counter(d: &Duel, c: CardId, counter_type: u32) -> bool {
 pub fn places_counter(d: &Duel, c: CardId, counter_type: u32) -> bool {
     crate::card_info(d, c).counter_place_list.contains(&counter_type)
 }
+/// `Card.EquipByEffectLimit(e, c)`: equip limit "only to its owner, by the effect in the label"
+pub fn equip_by_effect_limit() -> LuaFn {
+    LuaFn::new(|d, a| {
+        let e = a[0].as_effect().unwrap();
+        let c = a.get(1).and_then(|v| v.as_card());
+        if ygo_core::api::effect::get_owner(d, e) != c {
+            return Value::Bool(false);
+        }
+        let Some(c) = c else { return Value::Bool(false) };
+        let lo = ygo_core::api::effect::get_label_object(d, e);
+        let eff = raw::get_card_effect(d, c, 89785779 + EFFECT_EQUIP_LIMIT);
+        Value::Bool(eff.into_iter().any(|te| matches!(lo, Value::Effect(x) if x == te)))
+    })
+}
+/// `c:EquipByEffectAndLimitRegister(e, tp, tc, code, mustbefaceup)`: equip `tc` to `c` with the
+/// equip limit of `Card.EquipByEffectLimit` (and the flag `code`, if given).
+pub fn equip_by_effect_and_limit_register(d: &mut Duel, c: CardId, e: EffectId, tp: u8, tc: CardId, code: Option<u32>, mustbefaceup: Option<bool>) -> bool {
+    // (`false or mustbefaceup` is nil without it, and `Duel.Equip` takes nil as face-up)
+    if !ygo_core::api::duel::equip(d, tp, tc, c, mustbefaceup.unwrap_or(true), false) {
+        return false;
+    }
+    if let Some(code) = code {
+        raw::register_flag_effect(d, tc, code, RESET_EVENT + RESETS_STANDARD, 0, 0, 0, 0);
+    }
+    let te = ygo_core::api::effect::get_label_object(d, e);
+    let e1 = ygo_core::api::effect::create_effect(d, c);
+    ygo_core::api::effect::set_type(d, e1, EFFECT_TYPE_SINGLE);
+    ygo_core::api::effect::set_property(d, e1, EFFECT_FLAG_OWNER_RELATE, 0);
+    ygo_core::api::effect::set_code(d, e1, EFFECT_EQUIP_LIMIT);
+    ygo_core::api::effect::set_reset(d, e1, RESET_EVENT + RESETS_STANDARD, 1);
+    ygo_core::api::effect::set_value_fn(d, e1, equip_by_effect_limit());
+    ygo_core::api::effect::set_label_object(d, e1, te);
+    register_effect(d, tc, e1, false);
+    true
+}

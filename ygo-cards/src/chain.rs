@@ -4,8 +4,7 @@ use crate::constants::*;
 use crate::lua::duel;
 use crate::prelude::*;
 
-/// `Duel::script_var` namespaces of the chain data.
-const NS_EFFECT_DATA: u32 = 3;
+const NS_EFFECT_DATA: u32 = crate::ns::CHAIN_DATA;
 
 /// The fields scripts store in `e:GetChainData()`.
 pub mod field {

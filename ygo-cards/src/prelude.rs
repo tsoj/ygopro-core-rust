@@ -102,3 +102,11 @@ pub fn aux_true() -> LuaFn {
 pub fn aux_false() -> LuaFn {
     LuaFn::new(|_, _| Value::Bool(false))
 }
+
+/// A card script's own state (`s.<i>`, kept in the duel): the variable `i` of the script `code`.
+pub fn s_var(d: &Duel, code: u32, i: u64) -> Value {
+    d.script_var((code, i))
+}
+pub fn set_s_var(d: &mut Duel, code: u32, i: u64, v: Value) {
+    d.set_script_var((code, i), v);
+}

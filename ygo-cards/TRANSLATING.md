@@ -406,6 +406,12 @@ and state kept elsewhere would not be copied.
 - `aux.GlobalCheck(s, function() ... end)` becomes `aux::global_check(d, ID, |d| { ... })`.
 - Effect labels (`e:SetLabel`, `e:SetLabelObject`) are already state in the duel. Use them as the
   Lua does.
+- A group that several effects share and change (Lua: one `Group.CreateGroup()` with `KeepAlive`,
+  set as the label object of two effects, then `AddCard`/`Clear` on it): keep it in ONE place, e.g.
+  the label object of the first effect as `Value::Group(g)`; the other effects reach it through
+  their own label object `Value::Effect(e_first)`, and every change is stored back with
+  `effect::set_label_object(d, e_first, Value::Group(g))`. Never use `d.new_group` /
+  `Value::SharedGroup` in a card: those groups belong to the core and are freed between units.
 - Closures may capture **constant** values: codes, the effect or card ids from `initial_effect`,
   numbers. That is how Lua upvalues that are never reassigned translate.
 

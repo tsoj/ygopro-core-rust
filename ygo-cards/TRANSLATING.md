@@ -97,8 +97,8 @@ always `d: &mut Duel` (or `&Duel`):
 | `Duel.SelectEffect(tp, {b1,s1}, {b2,s2})` | `duel::select_effect(d, tp, &[(b1, s1), (b2, s2)])` (`Option<usize>`, 1-based like Lua) |
 | `Duel.AddCustomActivityCounter(id, ACTIVITY_CHAIN, function(re,tp,cid) ... end)` | `duel::add_custom_activity_counter(d, ID, ACTIVITY_CHAIN, lua_fn(f))`, `f(d, a: Args)` reads `re` as `a.e(0)` |
 | `g:AddCard(c)` / `g:RemoveCard(c)`     | `group::add_card(&mut g, &CardSet::from_card(c))` / `group::remove_card(...)` |
-| `g:FilterCount(f, nil)`                 | `group::filter_count(d, &g, Some(&f), NO_EX)` (the `nil` is `ex`, not a filter argument) |
-| `local g1,g2=g:Split(f, nil)`           | `let (g1, g2) = group::split(d, &g, Some(&f), NO_EX)` (matching, the rest) |
+| `g:FilterCount(f, nil)`                 | `group::filter_count(d, &g, &f, NO_EX)` (the `nil` is `ex`, not a filter argument; `filter_count`, `is_exists`, `filter` take the filter without `Option`) |
+| `local g1,g2=g:Split(f, nil)`           | `let (g1, g2) = group::split(d, &g, &f, NO_EX)` (matching, the rest) |
 | `Duel.SpecialSummonStep(c, ...)` / `Duel.SpecialSummonComplete()` | `duel::special_summon_step(d, c, sumtype, sp, tp, nocheck, nolimit, pos, None)` / `duel::special_summon_complete(d)` |
 | `Duel.RegisterEffect(e, tp)`            | `duel::register_effect(d, e, tp)`                  |
 | `e:SetLabelObject(g)` / `e:GetLabelObject()` (a group) | `effect::set_label_object(d, e, Value::Group(g))` / `effect::get_label_object(d, e).as_group().cloned()` (`.nil()` where the Lua indexes it) |

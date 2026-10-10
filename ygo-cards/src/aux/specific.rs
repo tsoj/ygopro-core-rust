@@ -427,7 +427,7 @@ pub fn lava_check(d: &mut Duel, sg: &CardSet, _e: Option<EffectId>, tp: u8, _mg:
 fn lava_group(d: &mut Duel, tp: u8, filter: &CardFilter) -> CardSet {
     duel::get_matching_group(d, Some(&|d, c| card::is_releasable(d, c, None, None) && filter(d, c)), tp, 0, LOCATION_MZONE, NO_EX)
 }
-fn lava_condition(required: usize, filter: CardFilter) -> LuaFn {
+pub fn lava_condition(required: usize, filter: CardFilter) -> LuaFn {
     lua_fn(move |d, a| {
         let e = a.e(0);
         let Some(c) = a.card(1) else { return true };

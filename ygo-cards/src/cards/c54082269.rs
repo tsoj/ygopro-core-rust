@@ -120,8 +120,8 @@ fn efilter(d: &mut Duel, a: Args) -> bool {
 fn acop(d: &mut Duel, a: &EffArgs) {
     // local p,loc=Duel.GetChainInfo(ev,CHAININFO_TRIGGERING_PLAYER,CHAININFO_TRIGGERING_LOCATION)
     let info = duel::get_chain_info(d, a.ev as u8, &[CHAININFO_TRIGGERING_PLAYER, CHAININFO_TRIGGERING_LOCATION]);
-    let p = info.first().map(|v| v.int() as u8);
-    let loc = info.get(1).map(|v| v.int() as u32);
+    let p = info.first().filter(|v| !v.is_nil()).map(|v| v.int() as u8);
+    let loc = info.get(1).filter(|v| !v.is_nil()).map(|v| v.int() as u32);
     // local c=e:GetHandler()
     let c = effect::get_handler(d, a.e).nil();
     let re = a.re.nil();

@@ -135,6 +135,10 @@ fn immval(d: &mut Duel, a: Args) -> bool {
     }
     // local trig_p,trig_typ=Duel.GetChainInfo(0,CHAININFO_TRIGGERING_PLAYER,CHAININFO_TRIGGERING_TYPE)
     let info = duel::get_chain_info(d, 0, &[CHAININFO_TRIGGERING_PLAYER, CHAININFO_TRIGGERING_TYPE]);
+    // no chain link: both nil, the comparison is false
+    if info.len() < 2 {
+        return false;
+    }
     let (trig_p, trig_typ) = (info[0].int(), info[1].int());
     // return trig_p==1-e:GetHandlerPlayer() and trig_typ&TYPE_MONSTER>0
     trig_p == 1 - effect::get_handler_player(d, e) as i64 && (trig_typ & TYPE_MONSTER as i64) > 0

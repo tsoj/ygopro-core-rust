@@ -1381,9 +1381,10 @@ pub const CHAININFO_TRIGGERING_SETCODES: u32 = 30;
 pub const CHAININFO_TRIGGERING_LINK: u32 = 31;
 pub const CHAININFO_TRIGGERING_LSCALE: u32 = 32;
 pub const CHAININFO_TRIGGERING_RSCALE: u32 = 33;
-/// `Duel.GetChainInfo(ch, flags...)`: one value per flag (empty if there is no such chain link).
+/// `Duel.GetChainInfo(ch, flags...)`: one value per flag. Without such a chain link the C++
+/// returns no values, which Lua reads as `nil`s: every value is then `Value::Nil`.
 pub fn get_chain_info(d: &Duel, chaincount: u8, flags: &[u32]) -> Vec<Value> {
-    let Some(r) = d.get_chain(chaincount) else { return Vec::new() };
+    let Some(r) = d.get_chain(chaincount) else { return vec![Value::Nil; flags.len()] };
     let ch = d.chain_at(r);
     let st = &ch.triggering_state;
     let tl = ch.triggering_location as u32;

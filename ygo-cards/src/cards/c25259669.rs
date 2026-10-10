@@ -1,0 +1,49 @@
+//! Goblindbergh
+use super::prelude::*;
+
+pub const ID: u32 = 25259669;
+
+pub fn initial_effect(d: &mut Duel, c: CardId) {
+    // Special Summon 1 Level 4 or lower monster from your hand
+    let e1 = effect::create_effect(d, c);
+    effect::set_description(d, e1, aux::stringid(ID, 0));
+    effect::set_category(d, e1, CATEGORY_SPECIAL_SUMMON + CATEGORY_POSITION);
+    effect::set_type(d, e1, EFFECT_TYPE_SINGLE + EFFECT_TYPE_TRIGGER_O);
+    effect::set_code(d, e1, EVENT_SUMMON_SUCCESS);
+    effect::set_target(d, e1, Some(cost_target(sptg)));
+    effect::set_operation(d, e1, Some(operation(spop)));
+    card::register_effect(d, c, e1, false);
+}
+fn spfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
+    card::is_level_below(d, c, 4) && card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, None, None, None)
+}
+fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
+    if a.chk == Some(0) {
+        return duel::get_location_count(d, a.tp, LOCATION_MZONE as u8, None, None, None).0 > 0
+            && duel::is_existing_matching_card(d, Some(&|d, c| spfilter(d, c, a.e, a.tp)), a.tp, LOCATION_HAND, 0, 1, NO_EX);
+    }
+    duel::set_operation_info(d, 0, CATEGORY_SPECIAL_SUMMON, None, 1, a.tp, LOCATION_HAND as i32);
+    let c = effect::get_handler(d, a.e).nil();
+    if card::is_attack_pos(d, c) {
+        duel::set_operation_info(d, 0, CATEGORY_POSITION, Some(CardSet::from_card(c)), 1, a.tp, 0);
+    }
+    duel::set_possible_operation_info(d, 0, CATEGORY_POSITION, Some(CardSet::from_card(c)), 1, a.tp, 0);
+    true
+}
+fn spop(d: &mut Duel, a: &EffArgs) {
+    let tp = a.tp;
+    if duel::get_location_count(d, tp, LOCATION_MZONE as u8, None, None, None).0 == 0 {
+        return;
+    }
+    let c = effect::get_handler(d, a.e).nil();
+    duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_SPSUMMON as u64);
+    let g = duel::select_matching_card(d, tp, Some(&|d, x| spfilter(d, x, a.e, tp)), tp, LOCATION_HAND, 0, 1, 1, false, NO_EX).nil();
+    if !g.is_empty()
+        && duel::special_summon(d, &g, 0, tp, tp, false, false, POS_FACEUP as u8, None) > 0
+        && card::is_relate_to_effect(d, c, a.e)
+        && card::is_attack_pos(d, c)
+    {
+        duel::break_effect(d);
+        duel::change_position(d, c, POS_FACEUP_DEFENSE as u8, None, None, None, false);
+    }
+}

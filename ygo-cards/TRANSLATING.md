@@ -143,6 +143,13 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - `c:IsHasEffect(code)` returns a `Vec` (all effects): `not c:IsHasEffect(X)` is `.is_empty()`.
 - Event codes: copy them exactly (`EVENT_PHASE_START|PHASE_STANDBY` is not `EVENT_PHASE|PHASE_STANDBY`).
 - `local e2=e1:Clone()` is `let e2 = effect::clone(d, e1);`.
+- `e:GetChainData().x = v` / `e:GetChainData().x` (a field the card invents) is
+  `chain::set_effect_data(d, e, None, chain::field::CARD + n, v)` / `chain::effect_data(d, e, None, chain::field::CARD + n)`,
+  with one `n` (0, 1, ...) per field name; the library fields are `chain::field::COST_*`.
+- `Group.Select` / `Duel.SelectMatchingCard` / `Duel.SelectTarget` are cancelable only when the argument at the
+  cancelable position is a boolean; extra arguments after `ex` go to the filter. They still return `Option`:
+  `.nil()` before using the group.
+- `Duel.Equip(p, c, tc)` is `duel::equip(d, p, c, tc, true, false)`.
 - `aux.TRUE` where a function takes a plain `Filter` (`group::filter_select`, `group::is_exists`) is `&|_, _| true`.
 - `g:KeepAlive()` and `g:DeleteGroup()` do nothing in Rust (groups are values): leave them out.
 - A Lua helper function the script never calls can be left out.

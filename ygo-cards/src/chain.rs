@@ -12,6 +12,9 @@ pub mod field {
     pub const COST_DISCARDED_CARDS: u8 = 2;
     pub const COST_DETACHED_MATERIALS: u8 = 3;
     pub const COST_CHOICE: u8 = 4;
+    /// The first key a card script may use for its own fields (`e:GetChainData().level_of_the_tribute`):
+    /// `CARD + 0`, `CARD + 1`, ... (the data belongs to the effect, so cards cannot collide)
+    pub const CARD: u8 = 32;
 }
 
 /// `Chain.GetID(ch)`

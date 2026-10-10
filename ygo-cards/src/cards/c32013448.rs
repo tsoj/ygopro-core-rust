@@ -88,6 +88,8 @@ fn mtop(d: &mut Duel, a: &EffArgs) {
     card::register_effect(d, rc, e1, true);
     // local e2=Effect.CreateEffect(rc)
     let e2 = effect::create_effect(d, rc);
+    // e2:SetDescription(aux.Stringid(id,1))
+    effect::set_description(d, e2, aux::stringid(ID, 1));
     // e2:SetCategory(CATEGORY_REMOVE)
     effect::set_category(d, e2, CATEGORY_REMOVE);
     // e2:SetType(EFFECT_TYPE_IGNITION)

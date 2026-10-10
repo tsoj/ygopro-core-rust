@@ -161,7 +161,65 @@ A **value** that is a number is `effect::set_value(d, e, 1000)`. A value that is
 
 Reuse the library's ready-made functions where the Lua does: `aux.bdocon` becomes
 `aux::bdocon()`, `aux.chainreg` becomes `aux::chainreg()`, `Cost.SelfBanish` becomes
-`cost::self_banish()`, and so on. Look in `src/aux.rs`, `src/cost.rs`, `src/chain.rs`.
+`cost::self_banish()`, and so on. Look in `src/aux/`, `src/cost.rs`, `src/chain.rs`,
+`src/procs/` (see "Library").
+
+
+## Library
+
+The Lua libraries are ported as modules with the same names in snake_case. A Lua name usually
+tells you where its Rust function is:
+
+| Lua                                         | Rust                                           |
+|---------------------------------------------|------------------------------------------------|
+| `aux.X`, `Auxiliary.X` (utility.lua, cards_specific_functions.lua, proc_equip/normal/union/persistent.lua) | `aux::x` (`src/aux/`) |
+| `Cost.X`                                    | `cost::x` (`src/cost.rs`)                      |
+| `Chain.X`, `e:GetCardX()`, `e:IsCardX(...)`  | `chain::...` (`src/chain.rs`; generic by `Prop`) |
+| `Xyz.X`, `Link.X`, `Synchro.X`, `Fusion.X`, `Pendulum.X`, `Ritual.X`, `Gemini.X`, `Spirit.X` | `xyz::x`, `link::x`, ... (`src/procs/`) |
+| `Witchcrafter.X`, `Cyberdark.X`, `Drytron.X`, `AA.X`, ... | `aux::witchcrafter::x`, `aux::cyberdark::x`, ... |
+| deprecated aliases (deprecated_functions.lua: `aux.SelfToGraveCost`, ...) | the new function (`cost::self_to_grave()`) |
+
+Procedure examples:
+
+```rust
+// Xyz.AddProcedure(c,nil,4,2)
+xyz::add_procedure(d, c, None, Some(4), 2, None, None, None, None, false, None);
+// Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsType,TYPE_EFFECT),2,2)
+link::add_procedure(d, c, Some(mat_filter(|d, c, sc, st, tp| card::is_type_ctx(d, c, TYPE_EFFECT, sc, st, Some(tp)))), 2, Some(2), None, None, None);
+// Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(nil),1,99)
+synchro::add_procedure(d, c, None, 1, 1, Some(synchro::non_tuner(None)), 1, 99, None, None, None, None, None);
+// Fusion.AddProcMix(c,true,true,CARD_A,aux.FilterBoolFunctionEx(Card.IsRace,RACE_DRAGON))
+fusion::add_proc_mix(d, c, true, true, vec![fusion::Mat::Code(CARD_A), fusion::Mat::F(fusion::fus_mat(|d, c, fc, st, tp| card::is_race_ctx(d, c, RACE_DRAGON, Some(fc), st, Some(tp))))]);
+// Fusion.AddProcMixN(c,true,true,X,2)
+fusion::add_proc_mix_n(d, c, true, true, vec![(X_mat, 2)]);
+// Fusion.RegisterSummonEff(c) / Fusion.CreateSummonEff({handler=c,fusfilter=...,extraop=Fusion.BanishMaterial})
+fusion::register_summon_eff(d, c, fusion::SummonEff::default());
+fusion::create_summon_eff(d, c, fusion::SummonEff { fusfilter: Some(fusion::fus_filter(|d, c, tp| ...)), extraop: Some(fusion::banish_material()), ..Default::default() });
+// Pendulum.AddProcedure(c)
+pendulum::add_procedure(d, c, None, None);
+// Ritual.AddProcGreaterCode(c,7,nil,CODE) / Ritual.AddProcGreater({handler=c,filter=...})
+ritual::add_proc_greater_code(d, c, Some(ritual::Lv::N(7)), None, &[CODE]);
+// aux.AddEquipProcedure(c,0,aux.FilterBoolFunction(Card.IsRace,RACE_WARRIOR))
+aux::add_equip_procedure(d, c, Some(0), Some(aux::equip_filter_fn(|d, c, _e, _tp| card::is_race(d, c, RACE_WARRIOR))), None, None, None, None, None, None);
+```
+
+Lua functions with named arguments (`Fusion.CreateSummonEff({handler=c, ...})`, `Ritual.AddProc`,
+`Fusion.AddContactProc`) take a parameter struct in Rust (`fusion::SummonEff`,
+`ritual::RitualProc`, `fusion::Contact`): set the fields the Lua sets, `..Default::default()`
+for the rest. Positional Lua calls of the same functions fill the same fields in order.
+
+Some library callbacks may **change the group they get** (Lua groups are references): an
+`extraop` of a Fusion Summon (`function(e,tc,tp,sg) ... sg:Clear() end`) is written with
+`fusion::extra_op(|d, e, tc, tp, sg| { ...; true })`, where `sg: &mut CardSet`; return `false`
+only where the Lua returns `false`.
+
+The procedures set fields of the card table themselves (`s.material`, `minxyzct`,
+`min_tribute_req`, `fit_monster`, ...): do not declare those in `INFO` unless the Lua script sets
+them itself. Fields that are functions (`s.mat_filter`, `s.ritual_custom_check`) go into `INFO`
+as function pointers: `mat_filter: Some(mat_filter_fn)`.
+
+Other cards' tables: `Duel.GetMetatable(code).x` / `c.x` read the declarations of another
+script: `crate::script_info(code)` / `crate::card_info(d, c)`.
 
 ## Filters
 
@@ -220,8 +278,8 @@ and state kept elsewhere would not be copied.
 
 ## When something is missing
 
-The library (`src/aux.rs`, `src/cost.rs`, `src/lua/`, the procedures) is a port of the Lua
-libraries (`utility.lua`, `proc_*.lua`, ...), and it is not complete yet. If the card needs a
+The library (`src/aux/`, `src/cost.rs`, `src/lua/`, `src/procs/`) is a port of the Lua
+libraries (`utility.lua`, `proc_*.lua`, ...), and it may still miss a few functions. If the card needs a
 library function, a `ScriptInfo` field or an API function that does not exist, **do not add it
 to the library or the core yourself**. Leave the card unfinished, and report exactly what is
 missing (the Lua name and where it is defined). Do not work around a missing function by
@@ -237,12 +295,15 @@ cargo build --release
 ./target/release/ygo-diff --cards 55144522 --scripted 0.3 --games 300 --seed 1
 ```
 
-- `--cards` is a comma-separated list of translated cards for the decks: your card, plus any
-  already translated cards it works with.
+- `--cards` is a comma-separated list of cards for the decks: your card, plus any already
+  translated cards it works with (`ls rust/ygo-cards/src/cards`) and any Normal Monsters without a
+  script. Extra Deck monsters go into an Extra Deck (`--extra N` cards, 15 by default).
 - `--scripted` is the share of those cards in the decks.
 - The output must end with `N/N games identical`.
 - The coverage lines show how often each card was activated and summoned. An effect that never
-  ran is not tested. Then raise `--games`, `--scripted`, or add partner cards.
+  ran is not tested. Then raise `--games`, `--scripted`, or add partner cards. If the card needs a
+  partner that is not translated yet (e.g. a Field Spell for a card that searches one), say so in
+  your report: that is not a failure of your translation.
 - A mismatch prints the game, the decision, the differing message, and the messages before it.
   The first byte of a message is its type (`MSG_*` in `rust/ygo-core/src/constants.rs`). Rerun
   one game with `--seed <seed> --games 1 -v`. Compare your translation with the Lua line by line

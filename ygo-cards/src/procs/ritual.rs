@@ -114,7 +114,7 @@ pub fn create_proc(d: &mut Duel, c: CardId, p: RitualProc) -> EffectId {
     effect::set_code(d, e1, EVENT_FREE_CHAIN);
     let tg = target(d, p.clone());
     effect::set_target(d, e1, Some(tg));
-    let op = operation_fn(d, p);
+    let op = operation(d, p);
     effect::set_operation(d, e1, Some(op));
     e1
 }
@@ -295,8 +295,8 @@ fn force_extra_release(d: &mut Duel, mg: &CardSet, tp: u8, func: Option<Forced>)
     }
     merge_forced(Some(Arc::new(move |_d, _e, _tp, g, _c| (group::includes(g, &extra_mat_g), false))), func)
 }
-/// `Ritual.Target(...)`
-fn target(d: &mut Duel, p: RitualProc) -> LuaFn {
+/// `Ritual.Target(...)`: the target of a Ritual Summon effect (`p.lvtype` etc. as for `Ritual.CreateProc`)
+pub fn target(d: &mut Duel, p: RitualProc) -> LuaFn {
     let location = p.location.unwrap_or_else(|| default_location(d));
     let sumpos = p.sumpos.unwrap_or(POS_FACEUP as u8);
     cost_target(move |d, a| {
@@ -316,11 +316,11 @@ fn target(d: &mut Duel, p: RitualProc) -> LuaFn {
         true
     })
 }
-/// `Ritual.Operation(...)`
-fn operation_fn(d: &mut Duel, p: RitualProc) -> LuaFn {
+/// `Ritual.Operation(...)`: the operation of a Ritual Summon effect
+pub fn operation(d: &mut Duel, p: RitualProc) -> LuaFn {
     let location = p.location.unwrap_or_else(|| default_location(d));
     let sumpos = p.sumpos.unwrap_or(POS_FACEUP as u8);
-    operation(move |d, a| {
+    crate::prelude::operation(move |d, a| {
         let (e, tp) = (a.e, a.tp);
         let c = effect::get_handler(d, e).nil();
         if p.self_ && !card::is_relate_to_effect(d, c, e) {

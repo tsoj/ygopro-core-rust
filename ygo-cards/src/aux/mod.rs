@@ -854,3 +854,13 @@ mod union;
 pub use union::*;
 mod normal;
 pub use normal::*;
+
+/// `aux.FilterSummonCode(codes...)`: a material filter `c:IsSummonCode(scard, sumtype, tp, codes...)`
+pub fn filter_summon_code(codes: &'static [u32]) -> crate::procs::MatFilter {
+    std::sync::Arc::new(move |d, c, sc, st, tp| card::is_summon_code(d, c, sc, st, tp, codes))
+}
+/// `aux.PropertyTableFilter(f, allowed...)`: the values of `f(c)` that are in `allowed` (the Lua
+/// remembers them per card; `f` is pure, so this is the same)
+pub fn property_table_filter(f: impl Fn(&mut Duel, CardId) -> Vec<i64>, allowed: &'static [i64]) -> impl Fn(&mut Duel, CardId) -> Vec<i64> {
+    move |d, c| f(d, c).into_iter().filter(|v| allowed.contains(v)).collect()
+}

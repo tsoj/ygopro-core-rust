@@ -70,6 +70,8 @@ struct Args {
     extra: usize,
     /// Two .ydk decks to play against each other (seats alternate between games)
     decks: Option<Vec<Deck>>,
+    /// Directory of recorded core games (`--cache DIR`): see `cache`
+    cache: Option<PathBuf>,
 }
 
 /// A deck from a .ydk file.
@@ -100,7 +102,7 @@ fn load_ydk(path: &str) -> Deck {
 }
 
 fn parse_args() -> Args {
-    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None };
+    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None };
     let argv: Vec<String> = std::env::args().collect();
     let mut i = 1;
     while i < argv.len() {
@@ -134,6 +136,14 @@ fn parse_args() -> Args {
                 a.extra = argv[i + 1].parse().unwrap();
                 i += 1;
             }
+            "--cache" => {
+                a.cache = Some(PathBuf::from(&argv[i + 1]));
+                i += 1;
+            }
+            "-h" | "--help" => {
+                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [-v] [--bench-clone]");
+                std::process::exit(0);
+            }
             "-v" | "--verbose" => a.verbose = true,
             "--bench-clone" => a.bench_clone = true,
             x => panic!("unknown argument {x}"),
@@ -141,6 +151,92 @@ fn parse_args() -> Args {
         i += 1;
     }
     a
+}
+
+/// Recorded core games. A game is fully determined by the core, the scripts, the decks and the
+/// seed, so the core's side of it can be stored: per decision, a hash of the core's messages, its
+/// status and a hash of the queried state. A cached game then runs only the Rust engine; any
+/// difference reruns the game with the core (for the readable diff, or to replace a stale record).
+mod cache {
+    use std::path::{Path, PathBuf};
+
+    /// Change when the recorded content or the random responses change.
+    const VERSION: u64 = 2;
+
+    #[derive(Default, Clone)]
+    pub struct Record {
+        /// (messages hash, status, state hash) per decision
+        pub steps: Vec<(u64, i32, u64)>,
+        /// The game ended (else it stopped at --max-decisions)
+        pub complete: bool,
+    }
+
+    /// A fast 64-bit hash step (8 bytes at a time; not FNV for the full words, the name stays).
+    pub fn fnv(h: &mut u64, b: &[u8]) {
+        let mut chunks = b.chunks_exact(8);
+        for c in &mut chunks {
+            *h = (*h ^ u64::from_le_bytes(c.try_into().unwrap())).wrapping_mul(0x9e3779b97f4a7c15).rotate_left(29);
+        }
+        for &x in chunks.remainder() {
+            *h = (*h ^ x as u64).wrapping_mul(0x100000001b3);
+        }
+    }
+    pub const FNV0: u64 = 0xcbf29ce484222325;
+
+    pub fn hash_msgs(ms: &[Vec<u8>]) -> u64 {
+        let mut h = FNV0;
+        for m in ms {
+            fnv(&mut h, &(m.len() as u32).to_le_bytes());
+            fnv(&mut h, m);
+        }
+        h
+    }
+
+    pub struct Cache {
+        dir: PathBuf,
+    }
+    impl Cache {
+        /// `key`: everything besides the core that determines the games (decks, seed, ...)
+        pub fn new(base: &Path, core_lib: &Path, key: &[u8]) -> Cache {
+            let mut h = FNV0;
+            fnv(&mut h, &VERSION.to_le_bytes());
+            let m = std::fs::metadata(core_lib).expect("core library");
+            fnv(&mut h, &m.len().to_le_bytes());
+            let t = m.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map_or(0, |d| d.as_secs());
+            fnv(&mut h, &t.to_le_bytes());
+            fnv(&mut h, key);
+            let dir = base.join(format!("{h:016x}"));
+            std::fs::create_dir_all(&dir).expect("cache directory");
+            Cache { dir }
+        }
+        pub fn load(&self, game: u64) -> Option<Record> {
+            let b = std::fs::read(self.dir.join(format!("{game}.bin"))).ok()?;
+            let n = u32::from_le_bytes(b.get(1..5)?.try_into().ok()?) as usize;
+            if b.len() != 5 + n * 20 {
+                return None;
+            }
+            let steps = (0..n)
+                .map(|i| {
+                    let p = 5 + i * 20;
+                    (u64::from_le_bytes(b[p..p + 8].try_into().unwrap()), i32::from_le_bytes(b[p + 8..p + 12].try_into().unwrap()), u64::from_le_bytes(b[p + 12..p + 20].try_into().unwrap()))
+                })
+                .collect();
+            Some(Record { steps, complete: b[0] != 0 })
+        }
+        pub fn store(&self, game: u64, r: &Record) {
+            let mut b = vec![r.complete as u8];
+            b.extend((r.steps.len() as u32).to_le_bytes());
+            for &(m, s, q) in &r.steps {
+                b.extend(m.to_le_bytes());
+                b.extend(s.to_le_bytes());
+                b.extend(q.to_le_bytes());
+            }
+            let tmp = self.dir.join(format!("{game}.tmp"));
+            if std::fs::write(&tmp, &b).is_ok() {
+                let _ = std::fs::rename(&tmp, self.dir.join(format!("{game}.bin")));
+            }
+        }
+    }
 }
 
 /// Normal Monsters without a script (their duels need no card functions).
@@ -163,6 +259,10 @@ fn vanilla_pool(db: &CardDb) -> Vec<u32> {
 }
 
 struct Outcome {
+    /// The core's side of the game (empty when it came from the cache)
+    record: cache::Record,
+    /// By card code: (activations, summons)
+    cov: std::collections::HashMap<u32, (u64, u64)>,
     decisions: usize,
     core_time: Duration,
     rust_time: Duration,
@@ -214,15 +314,35 @@ fn decode_location_query(b: &[u8]) -> Vec<(usize, u32, Vec<u8>)> {
     out
 }
 
-fn compare_state(c: &mut CoreDuel, r: &mut Duel) -> Result<(), String> {
+/// The hash of the state `compare_state` compares (the Rust side).
+fn rust_state_hash(r: &mut Duel) -> u64 {
+    let mut h = cache::FNV0;
+    cache::fnv(&mut h, &r.ocg_query_field());
+    for p in 0..2u8 {
+        for loc in LOCATIONS {
+            let qi = QueryInfo { flags: QUERY_ALL, con: p, loc, seq: 0, overlay_seq: 0 };
+            let b = r.ocg_query_location(&qi);
+            cache::fnv(&mut h, &(b.len() as u32).to_le_bytes());
+            cache::fnv(&mut h, &b);
+        }
+    }
+    h
+}
+
+/// Compares the queried state; returns its hash (as `rust_state_hash`).
+fn compare_state(c: &mut CoreDuel, r: &mut Duel) -> Result<u64, String> {
     let (fc, fr) = (c.query_field(), r.ocg_query_field());
     if fc != fr {
         return Err(format!("query_field differs: {}", diff_hex(&fc, &fr)));
     }
+    let mut h = cache::FNV0;
+    cache::fnv(&mut h, &fc);
     for p in 0..2u8 {
         for loc in LOCATIONS {
             let qi = QueryInfo { flags: QUERY_ALL, con: p, loc, seq: 0, overlay_seq: 0 };
             let (a, b) = (c.query_location(&qi), r.ocg_query_location(&qi));
+            cache::fnv(&mut h, &(a.len() as u32).to_le_bytes());
+            cache::fnv(&mut h, &a);
             if a != b {
                 let (da, db) = (decode_location_query(&a), decode_location_query(&b));
                 if let Some(i) = (0..da.len().max(db.len())).find(|&i| da.get(i) != db.get(i)) {
@@ -232,16 +352,18 @@ fn compare_state(c: &mut CoreDuel, r: &mut Duel) -> Result<(), String> {
             }
         }
     }
-    Ok(())
+    Ok(h)
 }
 
 #[allow(clippy::too_many_arguments)]
-fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: &[u32], scripted: &[u32], scripted_extra: &[u32], codes: &[u32]) -> Result<Outcome, String> {
+/// One game. With `cached`, only the Rust engine runs, checked against the record; `Err(None)`
+/// means it disagreed (or the record ended early): rerun with the core.
+fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: &[u32], scripted: &[u32], scripted_extra: &[u32], codes: &[u32], cached: Option<&cache::Record>) -> Result<Outcome, Option<String>> {
     let mut rng = Rng(args.seed.wrapping_mul(1_000_003).wrapping_add(game));
     let seed = [rng.next(), rng.next(), rng.next(), rng.next()];
     let flags = DUEL_MODE_MR5;
     let player = OcgPlayer { starting_lp: 8000, starting_draw_count: 5, draw_count_per_turn: 1 };
-    let mut c = CoreDuel::new(seed, flags, player);
+    let mut core = if cached.is_none() { Some(CoreDuel::new(seed, flags, player)) } else { None };
     let po = PlayerOptions { starting_lp: 8000, starting_draw_count: 5, draw_count_per_turn: 1 };
     let mut r = Duel::new(&DuelOptions { seed, flags, team1: po, team2: po }, db.clone(), scripts.clone());
     ygo_cards::load_global_scripts(&mut r);
@@ -251,12 +373,16 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
             let deck = &decks[((p as u64 + game) % 2) as usize];
             for &code in &deck.main {
                 let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc: LOCATION_DECK, seq: 0, pos: POS_FACEDOWN_DEFENSE };
-                c.new_card(&info);
+                if let Some(c) = core.as_mut() {
+                    c.new_card(&info);
+                }
                 r.ocg_new_card(&info);
             }
             for &code in &deck.extra {
                 let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc: LOCATION_EXTRA, seq: 0, pos: POS_FACEDOWN_DEFENSE };
-                c.new_card(&info);
+                if let Some(c) = core.as_mut() {
+                    c.new_card(&info);
+                }
                 r.ocg_new_card(&info);
             }
         }
@@ -272,29 +398,48 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
                 pool[rng.below(pool.len())]
             };
             let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc: LOCATION_DECK, seq: 0, pos: POS_FACEDOWN_DEFENSE };
-            c.new_card(&info);
+            if let Some(c) = core.as_mut() {
+                c.new_card(&info);
+            }
             r.ocg_new_card(&info);
         }
         if !scripted_extra.is_empty() {
             for _ in 0..args.extra {
                 let code = scripted_extra[rng.below(scripted_extra.len())];
                 let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc: LOCATION_EXTRA, seq: 0, pos: POS_FACEDOWN_DEFENSE };
-                c.new_card(&info);
+                if let Some(c) = core.as_mut() {
+                    c.new_card(&info);
+                }
                 r.ocg_new_card(&info);
             }
         }
     }
-    c.start();
+    if let Some(c) = core.as_mut() {
+        c.start();
+    }
     r.ocg_start_duel();
-    let mut out = Outcome { decisions: 0, core_time: Duration::ZERO, rust_time: Duration::ZERO, ended: false, turns: 0 };
+    let mut out = Outcome { record: cache::Record::default(), cov: Default::default(), decisions: 0, core_time: Duration::ZERO, rust_time: Duration::ZERO, ended: false, turns: 0 };
     let mut history: Vec<Vec<u8>> = vec![];
     loop {
         let t = Instant::now();
-        let (mc, sc) = run_core(&mut c);
-        out.core_time += t.elapsed();
-        let t = Instant::now();
         let (mr, sr) = run_rust(&mut r);
         out.rust_time += t.elapsed();
+        let Some(c) = core.as_mut() else {
+            // cached: check the messages and the state against the record
+            let step = cached.unwrap().steps.get(out.decisions).ok_or(None)?;
+            if cache::hash_msgs(&mr) != step.0 || sr != step.1 || rust_state_hash(&mut r) != step.2 {
+                return Err(None);
+            }
+            let (more, resp) = after_step(game, args, db, codes, &mut r, &mut rng, &mut out, &mr, sr)?;
+            if !more {
+                return Ok(out);
+            }
+            r.ocg_set_response(&resp.unwrap());
+            continue;
+        };
+        let t = Instant::now();
+        let (mc, sc) = run_core(c);
+        out.core_time += t.elapsed();
         let n = mc.len().max(mr.len());
         for i in 0..n {
             let (a, b) = (mc.get(i), mr.get(i));
@@ -310,11 +455,11 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
                     (Some(a), Some(b)) => format!("  {}", diff_hex(a, b)),
                     _ => format!("  core:   {}\n  rust:   {}", a.map_or("(none)".into(), |m| hex(m)), b.map_or("(none)".into(), |m| hex(m))),
                 };
-                return Err(s);
+                return Err(Some(s));
             }
         }
         if sc != sr {
-            return Err(format!("game {game}, decision {}: status core {sc} rust {sr}", out.decisions));
+            return Err(Some(format!("game {game}, decision {}: status core {sc} rust {sr}", out.decisions)));
         }
         if let Ok(t) = std::env::var("YGO_DIFF_TRACE") {
             let v: Vec<u32> = t.split(',').map(|x| x.parse().unwrap()).collect();
@@ -322,30 +467,46 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
             let msgs: Vec<String> = mc.iter().map(|m| m[0].to_string()).collect();
             eprintln!("  trace {}: core {} rust {} [{}]", out.decisions, hex(&c.query(&qi)), hex(&r.ocg_query(&qi)), msgs.join(" "));
         }
-        compare_state(&mut c, &mut r).map_err(|e| {
+        let state = compare_state(c, &mut r).map_err(|e| {
             let types: Vec<String> = mc.iter().map(|m| m[0].to_string()).collect();
-            format!("game {game} (seed {:?}), decision {}: {e}\n  messages since the last decision: {}", seed, out.decisions, types.join(" "))
+            Some(format!("game {game} (seed {:?}), decision {}: {e}\n  messages since the last decision: {}", seed, out.decisions, types.join(" ")))
         })?;
-        COVERAGE.with(|cov| {
-            let mut cov = cov.borrow_mut();
-            for m in &mc {
-                if m.len() >= 5 {
-                    let code = u32::from_le_bytes(m[1..5].try_into().unwrap());
-                    match m[0] as u32 {
-                        MSG_CHAINING => cov.entry(code).or_default().0 += 1,
-                        MSG_SUMMONING | MSG_SPSUMMONING | MSG_FLIPSUMMONING => cov.entry(code).or_default().1 += 1,
-                        _ => {}
-                    }
-                }
-            }
-        });
+        out.record.steps.push((cache::hash_msgs(&mc), sc, state));
         history.extend(mc.iter().cloned());
         if history.len() > 64 {
             history.drain(..history.len() - 64);
         }
+        let (more, resp) = after_step(game, args, db, codes, &mut r, &mut rng, &mut out, &mr, sr)?;
+        if !more {
+            out.record.complete = out.ended;
+            return Ok(out);
+        }
+        let resp = resp.unwrap();
+        c.set_response(&resp);
+        r.ocg_set_response(&resp);
+    }
+}
+
+/// After a decision's messages matched: coverage, the end check and the random response.
+/// Returns whether the game goes on, and the response to set on both engines.
+#[allow(clippy::too_many_arguments)]
+fn after_step(game: u64, args: &Args, db: &Arc<CardDb>, codes: &[u32], r: &mut Duel, rng: &mut Rng, out: &mut Outcome, mc: &[Vec<u8>], sc: i32) -> Result<(bool, Option<Vec<u8>>), Option<String>> {
+    {
+        {
+            for m in mc {
+                if m.len() >= 5 {
+                    let code = u32::from_le_bytes(m[1..5].try_into().unwrap());
+                    match m[0] as u32 {
+                        MSG_CHAINING => out.cov.entry(code).or_default().0 += 1,
+                        MSG_SUMMONING | MSG_SPSUMMONING | MSG_FLIPSUMMONING => out.cov.entry(code).or_default().1 += 1,
+                        _ => {}
+                    }
+                }
+            }
+        }
         if sc == 0 || mc.iter().any(|m| m[0] as u32 == MSG_WIN) {
             out.ended = true;
-            return Ok(out);
+            return Ok((false, None));
         }
         if args.bench_clone {
             let t = Instant::now();
@@ -385,14 +546,12 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
                 cs.4 += r.effects.len() as u64;
             });
         }
-        let q = mc.last().ok_or_else(|| format!("game {game}: awaiting without a question"))?;
-        let resp = random_response(q, &mut rng, db, codes).ok_or_else(|| format!("game {game}: not a question: {}", hex(q)))?;
+        let q = mc.last().ok_or_else(|| Some(format!("game {game}: awaiting without a question")))?;
+        let resp = random_response(q, rng, db, codes).ok_or_else(|| Some(format!("game {game}: not a question: {}", hex(q))))?;
         if args.verbose {
             eprintln!("  decision {}: msg {} -> {}", out.decisions, q[0], hex(&resp));
         }
         out.turns += mc.iter().filter(|m| m[0] as u32 == MSG_NEW_TURN).count();
-        c.set_response(&resp);
-        r.ocg_set_response(&resp);
         out.decisions += 1;
         if out.decisions >= args.max_decisions {
             if args.verbose {
@@ -401,8 +560,9 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
                     eprintln!("  player {p}: lp {} deck/hand/mzone/szone/grave/removed/extra {:?}", r.player[p as usize].lp, n);
                 }
             }
-            return Ok(out);
+            return Ok((false, None));
         }
+        Ok((true, Some(resp)))
     }
 }
 
@@ -436,9 +596,45 @@ fn main() {
     eprintln!("{} vanilla monsters, {} scripted cards, {} scripted Extra Deck monsters", pool.len(), scripted.len(), scripted_extra.len());
     let (mut ok, mut decisions, mut ended) = (0, 0, 0);
     let (mut tc, mut tr) = (Duration::ZERO, Duration::ZERO);
+    let cache = args.cache.as_ref().map(|dir| {
+        let mut key = format!("seed {} ", args.seed);
+        match &args.decks {
+            Some(decks) => {
+                for d in decks {
+                    key += &format!("{:?} {:?} ", d.main, d.extra);
+                }
+            }
+            None => key += &format!("{:?} {:?} {} {} {}", scripted, scripted_extra, args.scripted_permille, args.extra, pool.len()),
+        }
+        cache::Cache::new(dir, &root.join("build").join("libocgcore.so"), key.as_bytes())
+    });
+    let (mut cached_games, mut stale) = (0, 0);
     for g in 0..args.games {
-        match play(g, &args, &db, &scripts, &pool, &scripted, &scripted_extra, &codes) {
+        let rec = cache.as_ref().and_then(|c| c.load(g)).filter(|r| r.complete || r.steps.len() >= args.max_decisions);
+        let res = match rec.as_ref().map(|rec| play(g, &args, &db, &scripts, &pool, &scripted, &scripted_extra, &codes, Some(rec))) {
+            Some(Ok(o)) => {
+                cached_games += 1;
+                Ok(o)
+            }
+            other => {
+                let r = play(g, &args, &db, &scripts, &pool, &scripted, &scripted_extra, &codes, None);
+                if let (Some(c), Ok(o)) = (&cache, &r) {
+                    c.store(g, &o.record);
+                    stale += other.is_some() as u64;
+                }
+                r
+            }
+        };
+        match res.map_err(|e| e.unwrap()) {
             Ok(o) => {
+                COVERAGE.with(|cov| {
+                    let mut cov = cov.borrow_mut();
+                    for (k, v) in &o.cov {
+                        let e = cov.entry(*k).or_default();
+                        e.0 += v.0;
+                        e.1 += v.1;
+                    }
+                });
                 ok += 1;
                 decisions += o.decisions;
                 ended += o.ended as u64;
@@ -483,5 +679,8 @@ fn main() {
             println!("coverage of the scripted cards:\n  {}", v.join("\n  "));
         }
     });
+    if cache.is_some() {
+        println!("cache: {cached_games} games replayed from the cache, {stale} stale records replaced");
+    }
     println!("{ok}/{} games identical ({ended} ended, the others reached --max-decisions), {decisions} decisions; core {:.3}s, rust {:.3}s", args.games, tc.as_secs_f64(), tr.as_secs_f64());
 }

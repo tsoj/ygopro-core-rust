@@ -1,33 +1,38 @@
 # code	name	status	translated_by	notes
 # status: verified (ygo-diff identical, effects ran) | untested (identical, but some effects never ran) | missing (library gap) | failed
+3544583	Allvain the Essence of Vanity	verified	main	
+3627449	Skull Guardian	verified	main	
+4206964	Trap Hole	verified	main	
+4849037	Performance of Sword	verified	main	
+5318639	Mystical Space Typhoon	verified	main	
+5402805	Berserker of the Tenyi	verified	main	
+9053187	Gagagigo the Risen	verified	main	
 12580477	Raigeki	verified	main	
+14558127	Ash Blossom & Joyous Spring	verified	haiku	
 16527176	Naturia Leodrake	verified	main	
 17390179	Flash Knight	verified	main	
 19204398	Ally of Justice Light Gazer	verified	main	
 19474136	Mandragon	verified	main	
 19613556	Heavy Storm	verified	main	
 24094653	Polymerization	verified	main	
+24224830	Called by the Grave	verified	haiku	negation branch lightly exercised (21x)
+25311006	Triple Tactics Talent	verified	haiku	all 3 options ran
 26202165	Sangan	verified	main	
 26932788	Javelin Beetle	verified	main	
+27204311	Nibiru, the Primal Being	verified	haiku	token path not confirmed separately
 28363749	Fire Opal Head	verified	main	
 31066283	Revival of Dokurorider	verified	main	
 32807846	Reinforcement of the Army	verified	haiku	
 32872239	Gallugallud the Endless Enigma	verified	main	
-3544583	Allvain the Essence of Vanity	verified	main	
-3627449	Skull Guardian	verified	main	
 39399168	Resurrection of Chakra	verified	main	
 41182875	Javelin Beetle Pact	verified	main	
 41248270	Traffic Ghost	verified	main	
-4206964	Trap Hole	verified	main	
 43417563	Commencement Dance	verified	main	
 43694075	Novox's Prayer	verified	main	
 44095762	Mirror Force	verified	main	
 45231177	Flame Swordsman	verified	main	
 45815891	Scrap Archfiend	verified	main	
-4849037	Performance of Sword	verified	main	
 53129443	Dark Hole	verified	main	
-5318639	Mystical Space Typhoon	verified	main	
-5402805	Berserker of the Tenyi	verified	main	
 55144522	Pot of Greed	verified	main	
 59197169	Yami	verified	main	
 65393205	Chakra	verified	main	
@@ -43,7 +48,6 @@
 83764718	Monster Reborn	verified	main	
 83980492	Dragong	verified	main	
 87430998	Forest	verified	main	
-9053187	Gagagigo the Risen	verified	main	
 91949988	Gaia Dragon, the Thunder Charger	verified	main	
 94145021	Droll & Lock Bird	verified	haiku	
 96334243	Sea Monster of Theseus	verified	main	

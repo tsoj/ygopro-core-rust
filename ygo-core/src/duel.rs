@@ -722,6 +722,16 @@ impl Duel {
             }
         }
     }
+    /// A value kept by card scripts (a Lua global or upvalue): `key` is (namespace, name).
+    pub fn script_var(&self, key: (u32, u32)) -> Value {
+        self.script_vars.iter().find(|x| x.0 == key).map_or(Value::Nil, |x| x.1.clone())
+    }
+    pub fn set_script_var(&mut self, key: (u32, u32), v: Value) {
+        match self.script_vars.iter_mut().find(|x| x.0 == key) {
+            Some(x) => x.1 = v,
+            None => self.script_vars.push((key, v)),
+        }
+    }
     /// `duel::read_card`
     pub fn read_card(&self, code: u32) -> CardData {
         self.db.get(code)

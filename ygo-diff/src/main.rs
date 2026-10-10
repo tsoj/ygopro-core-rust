@@ -113,6 +113,7 @@ struct Outcome {
     core_time: Duration,
     rust_time: Duration,
     ended: bool,
+    turns: usize,
 }
 
 fn run_core(d: &mut CoreDuel) -> (Vec<Vec<u8>>, i32) {
@@ -188,6 +189,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
     let mut c = CoreDuel::new(seed, flags, player);
     let po = PlayerOptions { starting_lp: 8000, starting_draw_count: 5, draw_count_per_turn: 1 };
     let mut r = Duel::new(&DuelOptions { seed, flags, team1: po, team2: po }, db.clone(), scripts.clone());
+    ygo_cards::load_global_scripts(&mut r);
     for p in 0..2u8 {
         for _ in 0..40 {
             let code = pool[rng.below(pool.len())];
@@ -198,7 +200,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
     }
     c.start();
     r.ocg_start_duel();
-    let mut out = Outcome { decisions: 0, core_time: Duration::ZERO, rust_time: Duration::ZERO, ended: false };
+    let mut out = Outcome { decisions: 0, core_time: Duration::ZERO, rust_time: Duration::ZERO, ended: false, turns: 0 };
     let mut history: Vec<Vec<u8>> = vec![];
     loop {
         let t = Instant::now();
@@ -242,7 +244,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
         if history.len() > 64 {
             history.drain(..history.len() - 64);
         }
-        if sc == 0 {
+        if sc == 0 || mc.iter().any(|m| m[0] as u32 == MSG_WIN) {
             out.ended = true;
             return Ok(out);
         }
@@ -289,10 +291,17 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
         if args.verbose {
             eprintln!("  decision {}: msg {} -> {}", out.decisions, q[0], hex(&resp));
         }
+        out.turns += mc.iter().filter(|m| m[0] as u32 == MSG_NEW_TURN).count();
         c.set_response(&resp);
         r.ocg_set_response(&resp);
         out.decisions += 1;
         if out.decisions >= args.max_decisions {
+            if args.verbose {
+                for p in 0..2u8 {
+                    let n: Vec<u32> = [LOCATION_DECK, LOCATION_HAND, LOCATION_MZONE, LOCATION_SZONE, LOCATION_GRAVE, LOCATION_REMOVED, LOCATION_EXTRA].iter().map(|&l| r.ocg_query_count(p, l)).collect();
+                    eprintln!("  player {p}: lp {} deck/hand/mzone/szone/grave/removed/extra {:?}", r.player[p as usize].lp, n);
+                }
+            }
             return Ok(out);
         }
     }
@@ -304,22 +313,26 @@ fn main() {
     let root = root.canonicalize().unwrap();
     let db = Arc::new(CardDb::load(&root.join("external").join("BabelCDB")).expect("card database"));
     core_ffi::init(&root.join("build").join("libocgcore.so"), &root, db.clone());
-    let scripts = Arc::new(Scripts::default());
+    let scripts = Arc::new(ygo_cards::scripts());
     let pool = vanilla_pool(&db);
     let mut codes: Vec<u32> = db.cards.keys().copied().collect();
     codes.sort();
     eprintln!("{} vanilla monsters", pool.len());
-    let (mut ok, mut decisions) = (0, 0);
+    let (mut ok, mut decisions, mut ended) = (0, 0, 0);
     let (mut tc, mut tr) = (Duration::ZERO, Duration::ZERO);
     for g in 0..args.games {
         match play(g, &args, &db, &scripts, &pool, &codes) {
             Ok(o) => {
                 ok += 1;
                 decisions += o.decisions;
+                ended += o.ended as u64;
+                if (g + 1) % 10 == 0 {
+                    eprintln!("{} games identical", g + 1);
+                }
                 tc += o.core_time;
                 tr += o.rust_time;
                 if args.verbose {
-                    eprintln!("game {g}: {} decisions, ended {}", o.decisions, o.ended);
+                    eprintln!("game {g}: {} decisions, {} turns, ended {}", o.decisions, o.turns, o.ended);
                 }
             }
             Err(e) => {
@@ -334,5 +347,5 @@ fn main() {
             println!("clone: {} states, mean {:.1} us, max {:.1} us (mean {} cards, {} effects)", cs.0, cs.1.as_secs_f64() * 1e6 / cs.0 as f64, cs.2.as_secs_f64() * 1e6, cs.3 / cs.0, cs.4 / cs.0);
         }
     });
-    println!("{ok}/{} games identical, {decisions} decisions; core {:.3}s, rust {:.3}s", args.games, tc.as_secs_f64(), tr.as_secs_f64());
+    println!("{ok}/{} games identical ({ended} ended, the others reached --max-decisions), {decisions} decisions; core {:.3}s, rust {:.3}s", args.games, tc.as_secs_f64(), tr.as_secs_f64());
 }

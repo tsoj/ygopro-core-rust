@@ -2112,7 +2112,7 @@ pub fn select_disable_field(d: &mut Duel, p: u8, count: u8, location1: u32, loca
     let filt = dfilter | filter.unwrap_or(dfilter);
     let (mut ct1, mut ct2, mut ct3, mut ct4) = (0u32, 0u32, 0u32, 0u32);
     let mut flag: u32 = 0xffffffff;
-    let mut zone_count = |d: &mut Duel, pl: u8, loc: u32, extra: &[(u32, u32)], ct: &mut u32| -> u32 {
+    let zone_count = |d: &mut Duel, pl: u8, loc: u32, extra: &[(u32, u32)], ct: &mut u32| -> u32 {
         let mut plist = 0u32;
         *ct = d.get_useable_count(None, pl, loc as u8, PLAYER_NONE as u8, units::LocationReason::None, 0xff, Some(&mut plist)) as u32;
         if all_field {

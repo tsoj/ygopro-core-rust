@@ -6,4 +6,5 @@ license.workspace = true
 
 [dependencies]
 ygo-core = { path = "../ygo-core" }
+ygo-cards = { path = "../ygo-cards" }
 libloading = "0.9.0"

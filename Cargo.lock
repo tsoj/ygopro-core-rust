@@ -292,6 +292,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
 
 [[package]]
+name = "ygo-cards"
+version = "0.1.0"
+dependencies = [
+ "ygo-core",
+]
+
+[[package]]
 name = "ygo-core"
 version = "0.1.0"
 dependencies = [
@@ -303,5 +310,6 @@ name = "ygo-diff"
 version = "0.1.0"
 dependencies = [
  "libloading",
+ "ygo-cards",
  "ygo-core",
 ]

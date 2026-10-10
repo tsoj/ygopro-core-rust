@@ -13,9 +13,9 @@ pub const FLAG_MAXIMUM_SIDE: u32 = 170000001;
 /// Script state of the global scripts (`Duel::script_var` keys, namespace 0).
 pub mod vars {
     /// `Fusion.ExtraGroup` (proc_fusion_spell.lua)
-    pub const FUSION_EXTRA_GROUP: (u32, u32) = (0, 1);
+    pub const FUSION_EXTRA_GROUP: (u32, u64) = (0, 1);
     /// `player_table` of the hand shuffle (proc_workaround.lua): [p0, p1] as bits 0/1.
-    pub const SHUFFLED_PLAYERS: (u32, u32) = (0, 2);
+    pub const SHUFFLED_PLAYERS: (u32, u64) = (0, 2);
 }
 
 pub fn load(d: &mut Duel) {

@@ -621,7 +621,7 @@ pub struct Duel {
     /// The card scripts (code -> initial_effect), shared by all copies.
     pub scripts: Arc<crate::script::Scripts>,
     /// Values kept by card scripts (the globals of the Lua scripts), by (code, key).
-    pub script_vars: Vec<((u32, u32), Value)>,
+    pub script_vars: Vec<((u32, u64), Value)>,
     /// The replay scope of the card function being run (see DESIGN.md).
     pub scope: Option<Box<crate::scope::Scope>>,
 }
@@ -723,10 +723,10 @@ impl Duel {
         }
     }
     /// A value kept by card scripts (a Lua global or upvalue): `key` is (namespace, name).
-    pub fn script_var(&self, key: (u32, u32)) -> Value {
+    pub fn script_var(&self, key: (u32, u64)) -> Value {
         self.script_vars.iter().find(|x| x.0 == key).map_or(Value::Nil, |x| x.1.clone())
     }
-    pub fn set_script_var(&mut self, key: (u32, u32), v: Value) {
+    pub fn set_script_var(&mut self, key: (u32, u64), v: Value) {
         match self.script_vars.iter_mut().find(|x| x.0 == key) {
             Some(x) => x.1 = v,
             None => self.script_vars.push((key, v)),

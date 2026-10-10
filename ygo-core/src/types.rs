@@ -105,26 +105,35 @@ pub type Group = CardSet;
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct GroupRef(pub u32);
 
-/// A function of a card script (a Lua function reference of ygopro-core).
+/// A function of a card script (a Lua function reference of ygopro-core). `tag` marks what
+/// the global scripts record about a function in tables keyed by it (e.g. "a cost that sends the
+/// card itself to the GY"); it is 0 for other functions.
 #[derive(Clone)]
-pub struct LuaFn(pub Arc<dyn Fn(&mut Duel, &[Value]) -> Value + Send + Sync>);
+pub struct LuaFn {
+    f: Arc<dyn Fn(&mut Duel, &[Value]) -> Value + Send + Sync>,
+    pub tag: u32,
+}
 
 impl LuaFn {
     pub fn new<F: Fn(&mut Duel, &[Value]) -> Value + Send + Sync + 'static>(f: F) -> Self {
-        LuaFn(Arc::new(f))
+        LuaFn { f: Arc::new(f), tag: 0 }
+    }
+    pub fn with_tag(mut self, tag: u32) -> Self {
+        self.tag = tag;
+        self
     }
     #[inline]
     pub fn call(&self, d: &mut Duel, args: &[Value]) -> Value {
-        (self.0)(d, args)
+        (self.f)(d, args)
     }
     pub fn ptr_eq(&self, other: &LuaFn) -> bool {
-        Arc::ptr_eq(&self.0, &other.0)
+        Arc::ptr_eq(&self.f, &other.f)
     }
 }
 
 impl fmt::Debug for LuaFn {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "LuaFn({:p})", Arc::as_ptr(&self.0) as *const ())
+        write!(f, "LuaFn({:p})", Arc::as_ptr(&self.f) as *const ())
     }
 }
 

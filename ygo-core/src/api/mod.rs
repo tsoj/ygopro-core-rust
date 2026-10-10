@@ -8,6 +8,8 @@ pub mod effect;
 pub mod ocg;
 
 pub use ocg::{NewCardInfo, QueryInfo};
+pub mod debug;
+pub mod duel;
 pub mod group;
 
 use std::panic::{catch_unwind, resume_unwind, AssertUnwindSafe};
@@ -104,5 +106,35 @@ pub fn return_cards(d: &Duel, cancelable: bool) -> Option<CardSet> {
         if cancelable { None } else { Some(CardSet::new()) }
     } else {
         Some(CardSet::from_iter(d.return_cards.list.iter().copied()))
+    }
+}
+
+/// A card or a group, where the Lua function treats them differently.
+#[derive(Clone)]
+pub enum CardOrGroup {
+    Card(CardId),
+    Group(CardSet),
+}
+impl From<CardId> for CardOrGroup {
+    fn from(c: CardId) -> Self {
+        CardOrGroup::Card(c)
+    }
+}
+impl From<CardSet> for CardOrGroup {
+    fn from(g: CardSet) -> Self {
+        CardOrGroup::Group(g)
+    }
+}
+impl From<&CardSet> for CardOrGroup {
+    fn from(g: &CardSet) -> Self {
+        CardOrGroup::Group(g.clone())
+    }
+}
+impl CardOrGroup {
+    pub fn cards(&self) -> CardSet {
+        match self {
+            CardOrGroup::Card(c) => CardSet::from_card(*c),
+            CardOrGroup::Group(g) => g.clone(),
+        }
     }
 }

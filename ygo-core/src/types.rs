@@ -270,3 +270,15 @@ pub struct LocInfo {
 
 /// A response of a player (the bytes given to OCG_DuelSetResponse).
 pub type Response = Vec<u8>;
+
+/// A card or a group, where the Lua API takes either.
+impl From<CardId> for CardSet {
+    fn from(c: CardId) -> Self {
+        CardSet::from_card(c)
+    }
+}
+impl From<&CardSet> for CardSet {
+    fn from(g: &CardSet) -> Self {
+        g.clone()
+    }
+}

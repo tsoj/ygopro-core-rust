@@ -86,6 +86,9 @@ always `d: &mut Duel` (or `&Duel`):
 | `g:GetFirst()`                          | `group::get_first(d, &g)`                          |
 | `aux.Stringid(id, 0)`                   | `aux::stringid(ID, 0)`                             |
 | `Cost.SelfDiscard`                      | `cost::self_discard()`                             |
+| `Chain.IsTriggeringSetcode(ch, s)` / `Chain.IsTriggeringType(ch, t)` / `Chain.IsTriggering<Prop>(...)` | `chain::is_triggering(d, ch, chain::Prop::SetCard, &[s as i64])` (`Prop::Type`, ...; a `Value`: `Nil` without the chain link, else `Bool`) |
+| `Chain.GetCurrentLink()`                | `duel::get_current_chain(d, false)` |
+| a library-table function the script defines itself (`function Cost.SelfTribute2(...)`) | a private fn in the card file; a script-set field such as `aux.RitualSummoningLevel=lv` is `set_lua_global(d, "RitualSummoningLevel", Value::Int(lv))` |
 | `Duel.GetChainInfo(0, A, B)`            | `duel::get_chain_info(d, 0, &[A, B])` (a `Vec<Value>`) |
 | `Duel.GetMZoneCount(tp, g, tp)`         | `duel::get_m_zone_count(d, tp, (&g).into(), Some(tp), None, None).0` |
 | `Group.CreateGroup()`                   | `CardSet::new()`                                   |

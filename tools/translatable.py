@@ -35,7 +35,7 @@ BUILTIN = {"aux.Next", "aux.TRUE", "aux.FALSE", "aux.NOT", "aux.AND", "aux.OR", 
            "aux.TargetEqualFunction", "aux.NULL", "aux.Stringid", "Group.CreateGroup", "Group.FromCards", "Effect.CreateEffect",
            "Effect.GlobalEffect"}
 # Lua names whose Rust function has another name; None: no function needed (see TRANSLATING.md)
-ALIAS = {"IsPlayerCanSendtoHand": "is_player_can_send_to_hand", "IsPlayerCanSendtoGrave": "is_player_can_send_to_grave", "GetMetatable": "script_info", "Level": "info_level", "Type": "info_type", "Attack": "info_attack", "Defense": "info_defense", "Race": "info_race", "Attribute": "info_attribute", "Rscale": "info_rscale", "Lscale": "info_lscale", "LinkMarker": "info_link_marker", "LoadCardScript": None,
+ALIAS = {"GetCurrentLink": "get_current_chain", "IsTriggeringSetcode": "is_triggering", "IsTriggeringType": "is_triggering", "IsPlayerCanSendtoHand": "is_player_can_send_to_hand", "IsPlayerCanSendtoGrave": "is_player_can_send_to_grave", "GetMetatable": "script_info", "Level": "info_level", "Type": "info_type", "Attack": "info_attack", "Defense": "info_defense", "Race": "info_race", "Attribute": "info_attribute", "Rscale": "info_rscale", "Lscale": "info_lscale", "LinkMarker": "info_link_marker", "LoadCardScript": None,
          "SendtoHand": "send_to_hand", "SendtoGrave": "send_to_grave", "SendtoDeck": "send_to_deck",
          "SendtoExtraP": "send_to_extra_p", "Sendto": "send_to", "SetSPSummonOnce": "set_spsummon_once",
          "Merge": "add_card", "Sub": "remove_card", "Match": "match_", "GetChainData": "effect_data",
@@ -86,10 +86,14 @@ def missing_of(code, have):
     s = re.sub(r"--\[\[.*?\]\]", "", s, flags=re.S)
     s = re.sub(r"--[^\n]*", "", s)
     own = set(re.findall(r"function s\.(\w+)", s)) | set(re.findall(r"\bs\.(\w+)\s*=", s))
+    # library-table names the script itself defines or assigns (`function Cost.SelfTribute2`, `aux.X=v`)
+    own_lib = set(re.findall(r"function (?:Cost|aux|Auxiliary|Duel|Card|Group|Effect|Chain)\.(\w+)", s)) | set(re.findall(r"\b(?:aux|Auxiliary|Cost)\.(\w+)\s*=[^=]", s))
     out = set()
     for ns, name in re.findall(LIB, s):
         ns = "aux" if ns == "Auxiliary" else ns
         full = f"{ns}.{name}"
+        if name in own_lib:
+            continue
         if full in BUILTIN or name.isupper():
             continue
         if ns in PROC_NS:

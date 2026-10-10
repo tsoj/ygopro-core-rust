@@ -158,8 +158,9 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - `Duel.Equip(p, c, tc)` is `duel::equip(d, p, c, tc, true, false)`.
 - `Duel.CheckReleaseGroupCost(tp, f, minc, maxc, use_hand, check, ex, ...)` /
   `SelectReleaseGroupCost` are `duel::check_release_group_cost(d, tp, f, minc, maxc, use_hand, check, ex)`. The
-  old form without `maxc` (`(tp, f, 1, false, nil, nil, x, y)`: the 4th argument is a boolean) means
-  `minc = maxc = 1`, `use_hand = false`; the trailing arguments go to the filter (capture them in the closure).
+  old form without `maxc` (the 4th argument is a boolean: `(tp, f, minc, use_hand, check, ex, x, y)`) means
+  `maxc = minc`; the 5th argument is `check`, the 6th `ex`, and only the 7th and later go to the filter
+  (capture them in the closure). See `Duel.CheckReleaseGroupCost` in proc_workaround.lua.
 - `aux.TRUE` where a function takes a plain `Filter` (`group::filter_select`, `group::is_exists`) is `&|_, _| true`.
 - `g:KeepAlive()` and `g:DeleteGroup()` do nothing in Rust (groups are values): leave them out.
 - A Lua helper function the script never calls can be left out.

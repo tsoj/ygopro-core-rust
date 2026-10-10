@@ -331,3 +331,11 @@ from_code! {
 pub fn get_card_setcode_from_code(d: &Duel, code: u32) -> Vec<u16> {
     raw::get_card_data_from_code(d, code).map_or(vec![], |x| x.setcodes.iter().map(|s| s as u16).collect())
 }
+/// `Duel.CheckReleaseGroupEx(...)`: `Duel.CheckReleaseGroup` with `use_hand` defaulting to true
+pub fn check_release_group_ex(d: &mut Duel, p: u8, f: Option<super::Filter>, min: u16, ra: raw::ReleaseArgs, ex: super::Exclude) -> bool {
+    raw::check_release_group(d, p, f, min, ra, ex, true)
+}
+/// `Duel.SelectReleaseGroupEx(...)`: `Duel.SelectReleaseGroup` with `use_hand` defaulting to true
+pub fn select_release_group_ex(d: &mut Duel, p: u8, f: Option<super::Filter>, min: u16, max: u16, ra: raw::ReleaseArgs, ex: super::Exclude) -> Option<CardSet> {
+    raw::select_release_group(d, p, f, min, max, ra, ex, true)
+}

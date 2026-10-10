@@ -924,7 +924,7 @@ impl Duel {
         let mut location = location1;
         let mut count = 0usize;
         let mut s = self_p as usize;
-        let mut add = |g: &mut Option<&mut CardSet>, c: CardId| {
+        let add = |g: &mut Option<&mut CardSet>, c: CardId| {
             if let Some(g) = g.as_mut() {
                 g.insert(c);
             }

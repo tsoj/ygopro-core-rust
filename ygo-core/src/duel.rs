@@ -590,6 +590,8 @@ pub struct Duel {
     pub assumes: Vec<CardId>,
     /// Effects added while copying effects that are not copyable (`duel::uncopy`).
     pub uncopy: Vec<EffectId>,
+    /// The groups shared by processor units (`GroupRef`); a slot is `None` when free.
+    pub groups: Vec<Option<CardSet>>,
     pub db: Arc<CardDb>,
     pub messages: Vec<Message>,
     pub buff: Vec<u8>,
@@ -610,6 +612,10 @@ pub struct Duel {
     pub nil_event: Event,
     // interpreter
     pub params: Vec<Value>,
+    /// Nesting depth of card functions run by `Execute*` units (`interpreter::call_depth`).
+    pub call_depth: i32,
+    /// `interpreter::no_action`
+    pub no_action: i32,
     /// The card scripts (code -> initial_effect), shared by all copies.
     pub scripts: Arc<crate::script::Scripts>,
     /// Values kept by card scripts (the globals of the Lua scripts), by (code, key).
@@ -664,6 +670,46 @@ impl Duel {
     pub fn delete_effect(&mut self, e: EffectId) {
         self.effects[e.0 as usize] = None;
     }
+    /// A new shared group (`duel::new_group` for the core's own groups).
+    pub fn new_group(&mut self, set: CardSet) -> GroupRef {
+        // (freed only between units, by `collect_groups`: a unit being processed holds its groups)
+        if let Some(i) = self.groups.iter().position(|g| g.is_none()) {
+            self.groups[i] = Some(set);
+            return GroupRef(i as u32);
+        }
+        self.groups.push(Some(set));
+        GroupRef(self.groups.len() as u32 - 1)
+    }
+    #[inline]
+    pub fn group(&self, g: GroupRef) -> &CardSet {
+        self.groups[g.0 as usize].as_ref().expect("freed group")
+    }
+    #[inline]
+    pub fn group_mut(&mut self, g: GroupRef) -> &mut CardSet {
+        self.groups[g.0 as usize].as_mut().expect("freed group")
+    }
+    pub fn group_opt(&self, g: Option<GroupRef>) -> Option<&CardSet> {
+        g.map(|g| self.group(g))
+    }
+    /// Frees the shared groups no unit holds any more (called between units).
+    pub fn collect_groups(&mut self) {
+        if self.groups.iter().filter(|g| g.is_some()).count() < 32 {
+            return;
+        }
+        let mut live = Vec::new();
+        for u in self.core.units.iter().chain(self.core.subunits.iter()).chain(self.core.recover_damage_reserve.iter()).chain(self.core.reserved.iter()) {
+            u.group_refs(&mut live);
+        }
+        let mut keep = vec![false; self.groups.len()];
+        for g in live {
+            keep[g.0 as usize] = true;
+        }
+        for (i, k) in keep.into_iter().enumerate() {
+            if !k {
+                self.groups[i] = None;
+            }
+        }
+    }
     /// `duel::read_card`
     pub fn read_card(&self, code: u32) -> CardData {
         self.db.get(code)
@@ -699,6 +745,12 @@ impl Duel {
     }
     /// `duel::set_response`
     pub fn set_response(&mut self, resp: &[u8]) {
+        if let Some(s) = self.scope.as_mut() {
+            if !s.running {
+                s.log.push(resp.to_vec());
+                return;
+            }
+        }
         self.returns.data.clear();
         self.returns.data.extend_from_slice(resp);
     }
@@ -756,6 +808,7 @@ impl Duel {
             effects: Vec::with_capacity(256),
             assumes: Vec::new(),
             uncopy: Vec::new(),
+            groups: Vec::new(),
             db,
             messages: Vec::new(),
             buff: Vec::new(),
@@ -774,6 +827,8 @@ impl Duel {
             return_card_codes: ReturnCards::default(),
             nil_event,
             params: Vec::new(),
+            call_depth: 0,
+            no_action: 0,
             scripts,
             script_vars: Vec::new(),
             scope: None,

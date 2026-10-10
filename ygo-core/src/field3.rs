@@ -8,21 +8,6 @@ use crate::field2::CardFilter;
 use crate::types::*;
 use crate::units::LocationReason;
 
-pub const ACTIVITY_SUMMON: u8 = 1;
-pub const ACTIVITY_NORMALSUMMON: u8 = 2;
-pub const ACTIVITY_SPSUMMON: u8 = 3;
-pub const ACTIVITY_FLIPSUMMON: u8 = 4;
-pub const ACTIVITY_ATTACK: u8 = 5;
-pub const ACTIVITY_BATTLE_PHASE: u8 = 6;
-pub const ACTIVITY_CHAIN: u8 = 7;
-
-pub const CHAIN_DISABLE_ACTIVATE: u32 = 0x01;
-pub const CHAIN_DISABLE_EFFECT: u32 = 0x02;
-pub const CHAIN_HAND_EFFECT: u32 = 0x04;
-pub const CHAIN_CONTINUOUS_CARD: u32 = 0x08;
-pub const CHAIN_ACTIVATING: u32 = 0x10;
-pub const CHAIN_HAND_TRIGGER: u32 = 0x20;
-
 /// Where `field::get_chain` found the chain.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ChainRef {
@@ -31,7 +16,7 @@ pub enum ChainRef {
 }
 
 impl Duel {
-    pub fn get_counter_map(&mut self, counter_type: u8) -> &mut ActionCounter {
+    pub fn get_counter_map(&mut self, counter_type: u32) -> &mut ActionCounter {
         match counter_type {
             ACTIVITY_SUMMON => &mut self.core.summon_counter,
             ACTIVITY_NORMALSUMMON => &mut self.core.normalsummon_counter,
@@ -59,7 +44,7 @@ impl Duel {
     ) -> i32 {
         let p = playerid as usize;
         let mut rcount = 0i32;
-        let base_ok = |d: &mut Duel, c: CardId| Some(c) != exc && !exg.is_some_and(|g| g.contains(c));
+        let base_ok = |_d: &mut Duel, c: CardId| Some(c) != exc && !exg.is_some_and(|g| g.contains(c));
         for c in self.player[p].list_mzone.clone().into_iter().flatten() {
             if base_ok(self, c) && c.is_releasable_by_nonsummon(self, playerid, reason) && fun.is_none_or(|f| f(self, c)) {
                 if let Some(l) = release_list.as_mut() {
@@ -427,7 +412,7 @@ impl Duel {
         count as i32
     }
     /// increase the binary custom counter 1~5
-    pub fn check_card_counter(&mut self, pcard: CardId, counter_type: u8, playerid: i32) {
+    pub fn check_card_counter(&mut self, pcard: CardId, counter_type: u32, playerid: i32) {
         let n = self.get_counter_map(counter_type).len();
         for i in 0..n {
             let (amount, f) = {
@@ -443,7 +428,7 @@ impl Duel {
             }
         }
     }
-    pub fn check_card_counter_group(&mut self, pgroup: &CardSet, counter_type: u8, playerid: i32) {
+    pub fn check_card_counter_group(&mut self, pgroup: &CardSet, counter_type: u32, playerid: i32) {
         let n = self.get_counter_map(counter_type).len();
         let cards = public_order(self, pgroup);
         for i in 0..n {

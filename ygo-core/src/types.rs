@@ -100,6 +100,11 @@ impl<'a> IntoIterator for &'a CardSet {
 /// A Lua group. Groups are values here (see DESIGN.md).
 pub type Group = CardSet;
 
+/// A group shared by processor units (the `owned_lua<group>` of ygopro-core's units, which several
+/// units can hold and modify): an index into `Duel::groups`.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub struct GroupRef(pub u32);
+
 /// A function of a card script (a Lua function reference of ygopro-core).
 #[derive(Clone)]
 pub struct LuaFn(pub Arc<dyn Fn(&mut Duel, &[Value]) -> Value + Send + Sync>);
@@ -136,6 +141,9 @@ pub enum Value {
     Fn(LuaFn),
     /// Several results (a Lua function returning more than one value), or a table of values.
     Multi(Vec<Value>),
+    /// A group of the core that the function may change (e.g. the group a Pendulum Summon
+    /// procedure fills with the cards to summon).
+    SharedGroup(GroupRef),
 }
 
 impl Value {

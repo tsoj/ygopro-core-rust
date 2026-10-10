@@ -1,19 +1,35 @@
 //! A Rust port of ygopro-core (edo9300) with the project's patches: see DESIGN.md.
 #![allow(clippy::needless_range_loop, clippy::collapsible_if, clippy::collapsible_else_if)]
 
-pub mod card;
 pub mod card2;
 pub mod card3;
+pub mod card;
 pub mod carddb;
 pub mod constants;
+pub mod dispatch;
 pub mod duel;
 pub mod effect;
 pub mod field1;
 pub mod field2;
 pub mod field3;
 pub mod lua;
+pub mod ops1;
+pub mod ops2;
+pub mod ops3;
+pub mod ops4;
+pub mod ops5;
+pub mod ops6;
+pub mod ops7;
+pub mod ops8;
+pub mod ops9;
+pub mod playerop;
+pub mod processor1;
+pub mod processor2;
+pub mod processor3;
+pub mod processor4;
+pub mod processor5;
+pub mod processor6;
 pub mod scope;
 pub mod script;
-pub mod stubs;
 pub mod types;
 pub mod units;

@@ -181,6 +181,6 @@ fn rmvop(d: &mut Duel, a: &EffArgs) {
         // Duel.HintSelection(g)
         duel::hint_selection(d, g.clone(), true);
         // Duel.Remove(g,nil,REASON_EFFECT)
-        duel::remove(d, g, POS_FACEUP as u8, REASON_EFFECT, None, None);
+        duel::remove(d, g, 0, REASON_EFFECT, None, None);
     }
 }

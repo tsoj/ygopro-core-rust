@@ -145,9 +145,10 @@ fn ctop(d: &mut Duel, a: &EffArgs) {
     let tc = duel::first_target(d);
     // if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() and Duel.GetControl(tc,tp) then
     if let Some(tc) = tc {
+        // (GetControl returns a number, which is always true in Lua, even 0)
         if card::is_relate_to_effect(d, tc, a.e)
             && card::is_faceup(d, tc)
-            && duel::get_control(d, tc, tp, 0, 0, None, None) != 0
+            && { duel::get_control(d, tc, tp, 0, 0, None, None); true }
         {
             // local c=e:GetHandler()
             let c = effect::get_handler(d, a.e).nil();

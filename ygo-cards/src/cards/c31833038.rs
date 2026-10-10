@@ -172,7 +172,7 @@ fn ctop(d: &mut Duel, a: &EffArgs) {
     // local zone=c:GetLinkedZone()&ZONES_MMZ
     let zone = card::get_linked_zone(d, c, None) & ZONES_MMZ;
     // if Duel.GetControl(tc,tp,0,0,zone) then
-    if duel::get_control(d, tc, a.tp, 0, 0, Some(zone), None) != 0 {
+    if { duel::get_control(d, tc, a.tp, 0, 0, Some(zone), None); true } { // (a Lua number is always true)
         // local turn_ct=Duel.GetTurnCount()
         let turn_ct = duel::get_turn_count(d, None);
         // --Send it to the GY during the End Phase of the next turn

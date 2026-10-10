@@ -90,7 +90,7 @@ fn ctrlop(d: &mut Duel, a: &EffArgs) {
     // local tc=Duel.GetFirstTarget()
     let tc = duel::first_target(d).nil();
     // if tc:IsRelateToEffect(e) and Duel.GetControl(tc,tp,PHASE_END,1) then
-    if card::is_relate_to_effect(d, tc, e) && duel::get_control(d, tc, tp, PHASE_END as u16, 1, None, None) != 0 {
+    if card::is_relate_to_effect(d, tc, e) && { duel::get_control(d, tc, tp, PHASE_END as u16, 1, None, None); true } { // (a Lua number is always true)
         // local c=e:GetHandler()
         let c = effect::get_handler(d, e).nil();
         // Its effects are negated while you control it

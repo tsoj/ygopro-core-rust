@@ -93,9 +93,9 @@ fn spop(d: &mut Duel, a: &EffArgs) {
     // local b1=tc:IsCanBeSpecialSummoned(e,0,tp,false,false)
     let b1 = card::is_can_be_special_summoned(d, tc, a.e, 0, a.tp, false, false, None, None, None);
     // local b2=#g:Match(Card.IsCanBeSpecialSummoned,nil,e,0,tp,false,false)>0
-    let mut mg = g.clone();
-    group::match_(d, &mut mg, &|d, c| card::is_can_be_special_summoned(d, c, a.e, 0, a.tp, false, false, None, None, None), NO_EX);
-    let b2 = !mg.is_empty();
+    // (Group.Match filters `g` in place)
+    group::match_(d, &mut g, &|d, c| card::is_can_be_special_summoned(d, c, a.e, 0, a.tp, false, false, None, None, None), NO_EX);
+    let b2 = !g.is_empty();
     // local op=Duel.SelectEffect(1-tp,
     //     {b1,aux.Stringid(id,1)},
     //     {b2,aux.Stringid(id,2)})

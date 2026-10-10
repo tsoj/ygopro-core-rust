@@ -182,8 +182,7 @@ fn sumsuc(d: &mut Duel, a: &EffArgs) {
 /// `s.accon(e)`
 fn accon(d: &mut Duel, a: &EffArgs) -> bool {
     // return Duel.GetCustomActivityCount(id,e:GetHandlerPlayer(),ACTIVITY_CHAIN)>0
-    let c = effect::get_handler(d, a.e).nil();
-    let p = card::get_controler(d, c);
+    let p = effect::get_handler_player(d, a.e);
     duel::get_custom_activity_count(d, ID, p, ACTIVITY_CHAIN as u32) > 0
 }
 /// `s.aclimit(e,re,tp)`

@@ -230,7 +230,7 @@ pub fn random_response(msg: &[u8], rng: &mut Rng, db: &CardDb, codes: &[u32]) ->
             let mut order: Vec<usize> = (0..n).collect();
             rng.shuffle(&mut order);
             let mut steps = 0;
-            fn dfs(order: &[usize], start: usize, chosen: &mut Vec<usize>, steps: &mut usize, check: &dyn Fn(&[usize]) -> bool) -> Option<Vec<usize>> {
+            fn dfs(order: &[usize], start: usize, chosen: &mut Vec<usize>, steps: &mut usize, check: &dyn Fn(&[usize]) -> bool, dead: &dyn Fn(&[usize]) -> bool) -> Option<Vec<usize>> {
                 *steps += 1;
                 if *steps > 20000 {
                     return None;
@@ -238,16 +238,34 @@ pub fn random_response(msg: &[u8], rng: &mut Rng, db: &CardDb, codes: &[u32]) ->
                 if !chosen.is_empty() && check(chosen) {
                     return Some(chosen.clone());
                 }
+                // no superset of an overshooting selection can be valid
+                if dead(chosen) {
+                    return None;
+                }
                 for k in start..order.len() {
                     chosen.push(order[k]);
-                    if let Some(r) = dfs(order, k + 1, chosen, steps, check) {
+                    if let Some(r) = dfs(order, k + 1, chosen, steps, check, dead) {
                         return Some(r);
                     }
                     chosen.pop();
                 }
                 None
             }
-            let mut sel = dfs(&order, 0, &mut vec![], &mut steps, &check).unwrap_or_default();
+            // "at least" mode: once the sum minus its smallest part reaches acc, adding cards only grows it
+            let dead = |sel: &[usize]| {
+                if mode == 0 {
+                    return false;
+                }
+                let (mut total, mut mn) = (0i32, i32::MAX);
+                for &op in must.iter().chain(sel.iter().map(|&i| &params[i])) {
+                    let (o1, o2) = ((op & 0xffff) as i32, (op >> 16) as i32);
+                    let ms = if o2 != 0 && o2 < o1 { o2 } else { o1 };
+                    total += ms;
+                    mn = mn.min(ms);
+                }
+                total - mn >= acc
+            };
+            let mut sel = dfs(&order, 0, &mut vec![], &mut steps, &check, &dead).unwrap_or_default();
             sel.sort();
             select_indices(&sel)
         }

@@ -16,8 +16,8 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_operation(d, e1, Some(operation(activate)));
     card::register_effect(d, c, e1, false);
 }
-fn cond(d: &mut Duel, _a: &EffArgs) -> bool {
-    duel::is_existing_matching_card(d, Some(&aux::faceup_filter(|d, c| card::is_code(d, c, &[CARD_DARK_MAGICIAN_GIRL]))), 0, LOCATION_ONFIELD, 0, 1, NO_EX)
+fn cond(d: &mut Duel, a: &EffArgs) -> bool {
+    duel::is_existing_matching_card(d, Some(&aux::faceup_filter(|d, c| card::is_code(d, c, &[CARD_DARK_MAGICIAN_GIRL]))), a.tp, LOCATION_ONFIELD, 0, 1, NO_EX)
 }
 fn filter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
     card::is_code(d, c, &[CARD_DARK_MAGICIAN]) && card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, None, None, None)

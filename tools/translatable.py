@@ -35,7 +35,7 @@ BUILTIN = {"aux.Next", "aux.TRUE", "aux.FALSE", "aux.NOT", "aux.AND", "aux.OR", 
            "aux.TargetEqualFunction", "aux.NULL", "aux.Stringid", "Group.CreateGroup", "Group.FromCards", "Effect.CreateEffect",
            "Effect.GlobalEffect"}
 # Lua names whose Rust function has another name; None: no function needed (see TRANSLATING.md)
-ALIAS = {"IsPlayerCanSendtoHand": "is_player_can_send_to_hand", "GetMetatable": "script_info", "Level": "info_level", "Type": "info_type", "Attack": "info_attack", "Defense": "info_defense", "Race": "info_race", "Attribute": "info_attribute", "Rscale": "info_rscale", "Lscale": "info_lscale", "LinkMarker": "info_link_marker", "LoadCardScript": None,
+ALIAS = {"IsPlayerCanSendtoHand": "is_player_can_send_to_hand", "IsPlayerCanSendtoGrave": "is_player_can_send_to_grave", "GetMetatable": "script_info", "Level": "info_level", "Type": "info_type", "Attack": "info_attack", "Defense": "info_defense", "Race": "info_race", "Attribute": "info_attribute", "Rscale": "info_rscale", "Lscale": "info_lscale", "LinkMarker": "info_link_marker", "LoadCardScript": None,
          "SendtoHand": "send_to_hand", "SendtoGrave": "send_to_grave", "SendtoDeck": "send_to_deck",
          "SendtoExtraP": "send_to_extra_p", "Sendto": "send_to", "SetSPSummonOnce": "set_spsummon_once",
          "Merge": "add_card", "Sub": "remove_card", "Match": "match_", "GetChainData": "effect_data",

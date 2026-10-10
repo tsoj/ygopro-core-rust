@@ -112,6 +112,9 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
   one-argument `Duel.HintSelection(g)` is `duel::hint_selection(d, g, true)`.
   `Duel.IsPlayerCanDraw(p)` without a count is `duel::is_player_can_draw(d, p, 0)` (not 1: the
   count only checks the Deck size). Always look the default up; never guess it.
+  **An explicit `nil` is not a missing argument for booleans:** the C++ `lua_get<bool, def>` uses the
+  default only when the argument is absent; `nil` (e.g. a variable that is nil) reads as `false`.
+  For numbers, `nil` gives the default.
   `Duel.SelectOption(p, d1, d2)` is `duel::select_option(d, p, true, &[d1, d2])` (`sel_hint` defaults to
   true: the opponent sees the choice); `Duel.SelectOption(p, false, d1, d2)` passes `false`.
   `c:CancelToGrave()` is `card::cancel_to_grave(d, c, true)`.

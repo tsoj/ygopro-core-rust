@@ -838,8 +838,9 @@ pub fn equip_by_effect_limit() -> LuaFn {
 /// `c:EquipByEffectAndLimitRegister(e, tp, tc, code, mustbefaceup)`: equip `tc` to `c` with the
 /// equip limit of `Card.EquipByEffectLimit` (and the flag `code`, if given).
 pub fn equip_by_effect_and_limit_register(d: &mut Duel, c: CardId, e: EffectId, tp: u8, tc: CardId, code: Option<u32>, mustbefaceup: Option<bool>) -> bool {
-    // (`false or mustbefaceup` is nil without it, and `Duel.Equip` takes nil as face-up)
-    if !ygo_core::api::duel::equip(d, tp, tc, c, mustbefaceup.unwrap_or(true), false) {
+    // (`false or mustbefaceup` is an explicit nil without it, and a boolean argument that is
+    // present but nil is false in the C++ (`lua_get<bool, true>` only defaults when it is absent))
+    if !ygo_core::api::duel::equip(d, tp, tc, c, mustbefaceup.unwrap_or(false), false) {
         return false;
     }
     if let Some(code) = code {

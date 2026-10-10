@@ -167,7 +167,7 @@ impl EffectId {
         }
         if typ & (EFFECT_TYPE_SINGLE | EFFECT_TYPE_XMATERIAL) != 0 && typ & EFFECT_TYPE_FIELD == 0 {
             let phandler = self.get_handler(d);
-            let powner = self.get_owner(d);
+            let powner = self.get_owner_opt(d); // nullptr for core-created effects (EFFECT_ATTACK_DISABLED)
             if d.card(phandler).current.controler == PLAYER_NONE as u8
                 && e.code != EFFECT_ADD_SETCODE
                 && e.code != EFFECT_ADD_CODE
@@ -193,16 +193,16 @@ impl EffectId {
             {
                 return false;
             }
-            if e.is_flag(EFFECT_FLAG_OWNER_RELATE) && self.is_can_be_forbidden(d) && d.card(powner).is_status(STATUS_FORBIDDEN) {
+            if e.is_flag(EFFECT_FLAG_OWNER_RELATE) && self.is_can_be_forbidden(d) && d.card(powner.unwrap()).is_status(STATUS_FORBIDDEN) {
                 return false;
             }
-            if powner == phandler && self.is_can_be_forbidden(d) && d.card(phandler).get_status(STATUS_FORBIDDEN) != 0 {
+            if powner == Some(phandler) && self.is_can_be_forbidden(d) && d.card(phandler).get_status(STATUS_FORBIDDEN) != 0 {
                 return false;
             }
-            if e.is_flag(EFFECT_FLAG_OWNER_RELATE) && !e.is_flag(EFFECT_FLAG_CANNOT_DISABLE) && d.card(powner).is_status(STATUS_DISABLED) {
+            if e.is_flag(EFFECT_FLAG_OWNER_RELATE) && !e.is_flag(EFFECT_FLAG_CANNOT_DISABLE) && d.card(powner.unwrap()).is_status(STATUS_DISABLED) {
                 return false;
             }
-            if powner == phandler
+            if powner == Some(phandler)
                 && !e.is_flag(EFFECT_FLAG_CANNOT_DISABLE)
                 && e.code != EFFECT_DISABLE
                 && d.card(phandler).get_status(STATUS_DISABLED) != 0

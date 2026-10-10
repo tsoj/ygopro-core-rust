@@ -148,6 +148,14 @@ impl Duel {
     /// Processes the units pushed by a card function until they are done (the Lua API functions
     /// that yield to the core); questions inside take their responses from the scope.
     pub fn run_pushed_units(&mut self) {
+        // The C++ yields here, and on resume `Execute*` sets reason_effect/reason_player back to the
+        // triggering effect (processor.cpp), even if a nested Execute cleared them when it ended.
+        let (reason_effect, reason_player) = (self.core.reason_effect, self.core.reason_player);
+        self.run_pushed_units_inner();
+        self.core.reason_effect = reason_effect;
+        self.core.reason_player = reason_player;
+    }
+    fn run_pushed_units_inner(&mut self) {
         let base = self.core.units.len();
         loop {
             self.splice_subunits();

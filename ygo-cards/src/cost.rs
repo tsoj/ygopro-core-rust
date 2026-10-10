@@ -21,7 +21,7 @@ fn self_cost(check: fn(&mut Duel, CardId) -> bool, pay: fn(&mut Duel, CardId, u8
             return check(d, c);
         }
         pay(d, c, a.tp);
-        false
+        true // Lua: nil (not false, which would stop Cost.AND)
     })
 }
 
@@ -110,7 +110,7 @@ shared!(
         }
         let desc = effect::get_description(d, a.e);
         duel::hint(d, HINT_OPSELECTED as u8, 1 - a.tp, desc);
-        false
+        true
     })
 );
 shared!(
@@ -135,7 +135,7 @@ shared!(
         effect::set_label(d, e2, &[cid]);
         effect::set_reset(d, e2, RESET_CHAIN, 0);
         duel::register_effect(d, e2, a.tp);
-        false
+        true
     })
     .with_tag(TAG_REMAIN_FIELD)
 );
@@ -162,7 +162,7 @@ pub fn remove_counter_from_self(counter_type: u16, count: u16) -> LuaFn {
             return card::is_can_remove_counter(d, c, a.tp, counter_type, count, REASON_COST);
         }
         card::remove_counter(d, c, a.tp, counter_type, count, REASON_COST);
-        false
+        true
     })
 }
 /// `Cost.RemoveCounterFromField(counter_type, count)`
@@ -172,7 +172,7 @@ pub fn remove_counter_from_field(counter_type: u16, count: u32) -> LuaFn {
             return duel::is_can_remove_counter(d, a.tp, 1, 0, counter_type, count, REASON_COST);
         }
         duel::remove_counter(d, a.tp, 1, 0, counter_type, count, REASON_COST);
-        false
+        true
     })
 }
 /// `Cost.SelfChangePosition(position)`
@@ -187,7 +187,7 @@ pub fn self_change_position(position: u32) -> LuaFn {
         if fd_chk {
             card::set_status(d, c, STATUS_EFFECT_ENABLED, true);
         }
-        false
+        true
     })
     .with_tag(TAG_SELF_CHANGEPOS)
 }
@@ -230,7 +230,7 @@ pub fn discard(filter: Option<CostFilter>, other: bool, min: Option<Count>, max:
         if let Some(op) = &op {
             op(d, e, tp, &g);
         }
-        false
+        true
     })
 }
 /// `Cost.Reveal(filter, other, min = 1, max = min, op, location = LOCATION_HAND)`
@@ -263,7 +263,7 @@ pub fn reveal(filter: Option<CostFilter>, other: bool, min: Option<Count>, max: 
         if let Some(op) = &op {
             op(d, e, tp, &g);
         }
-        false
+        true
     })
 }
 /// What a detach cost does with the detached materials: `function(e, g)`.
@@ -289,7 +289,7 @@ pub fn detach_from_self(min: Count, max: Option<Count>, op: Option<DetachOp>) ->
         if card::remove_overlay_card(d, c, a.tp, min_count as u16, max_count as u16, REASON_COST) > 0 {
             after_detach(d, a.e, &op);
         }
-        false
+        true
     })
     .with_tag(TAG_DETACH)
 }
@@ -310,7 +310,7 @@ pub fn detach_choice_from_self(choices: Arc<dyn Fn(&mut Duel, EffectId, u8) -> V
         if card::remove_overlay_card(d, c, a.tp, amt as u16, amt as u16, REASON_COST) > 0 {
             after_detach(d, a.e, &op);
         }
-        false
+        true
     })
     .with_tag(TAG_DETACH)
 }
@@ -351,7 +351,7 @@ pub fn pay_lp(v: PayLp) -> LuaFn {
         };
         duel::pay_lp_cost(d, a.tp, paid as u32);
         chain::set_effect_data(d, a.e, None, chain::field::COST_LP_PAID, Value::Int(paid));
-        false
+        true
     })
 }
 fn use_limit_cost(reset: u32, soft: bool, flag: u32, ct: Option<usize>) -> LuaFn {
@@ -366,7 +366,7 @@ fn use_limit_cost(reset: u32, soft: bool, flag: u32, ct: Option<usize>) -> LuaFn
         } else {
             duel::register_flag_effect(d, a.tp, flag, reset, 0, 1, 0);
         }
-        false
+        true
     })
 }
 /// `Cost.SoftUseLimitPerChain(flag, ct)` (`Cost.SoftOncePerChain`)

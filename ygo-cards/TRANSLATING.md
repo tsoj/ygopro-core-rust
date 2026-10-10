@@ -127,6 +127,15 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - The `param` of `duel::set_operation_info` is an `i32`: `LOCATION_DECK as i32`. A numeric
   effect value is an `i64`: `effect::set_value(d, e, RESET_TURN_SET as i64)`.
 - `e:SetReset(v)` without a count is `effect::set_reset(d, e, v, 1)`.
+- **Lua `/` is float division.** `c:GetAttack()/2` is `3.5` for an odd 7. Where it reaches the core
+  (`SetValue`, a value function's result, `Duel.Damage`, ...), the core rounds half away from zero:
+  `lua_int(atk as f64 / 2.0)`. Keep comparisons in `f64` (`atk as f64 / 2.0 > x as f64`).
+  `math.floor(a/b)` and `a//b` are integer floor division (`a.div_euclid(b)` for `b > 0`).
+- A value function that falls off the end returns `nil` in Lua, which the core reads as `0`.
+- Core functions that take `&Duel` (`card::is_faceup`, ...) cannot be passed as a filter directly:
+  write `Some(&|d, c| card::is_faceup(d, c))`.
+- A one-argument `Duel.HintSelection(g)` is `duel::hint_selection(d, g, true)` (the default is
+  `true`).
 - **Borrowing:** `d` cannot be borrowed twice in one call. Read values into locals first:
   `let label = effect::get_label(d, a.e); duel::raise_event(d, ..., label as u32);`.
 - A Lua call that returns several values, used where Lua takes only the first (`c:GetCode()` in

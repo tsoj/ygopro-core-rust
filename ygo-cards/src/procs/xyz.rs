@@ -630,7 +630,7 @@ fn condition2_fn(alterf: AlterFilter, op: Option<LuaFn>) -> LuaFn {
             None => duel::get_field_group(d, tp, LOCATION_MZONE, LOCATION_MZONE),
         };
         // (`GetMustBeMaterialGroup(tp, og, ...)`: `og` may be nil there)
-        let mut mustg = aux::get_must_be_material_group(d, tp, &og.clone().unwrap_or_default(), tp, Some(c), &mg, REASON_XYZ);
+        let mut mustg = aux::get_must_be_material_group_opt(d, tp, og.as_ref(), tp, Some(c), Some(&mg), REASON_XYZ);
         if let Some(m) = &must {
             group::add_card(&mut mustg, m);
         }
@@ -657,7 +657,7 @@ fn target2_fn(alterf: AlterFilter, op: Option<LuaFn>) -> LuaFn {
             Some(og) => og.clone(),
             None => duel::get_field_group(d, tp, LOCATION_MZONE, LOCATION_MZONE),
         };
-        let mut mustg = aux::get_must_be_material_group(d, tp, &og.clone().unwrap_or_default(), tp, Some(c), &mg, REASON_XYZ);
+        let mut mustg = aux::get_must_be_material_group_opt(d, tp, og.as_ref(), tp, Some(c), Some(&mg), REASON_XYZ);
         if let Some(m) = &must {
             group::add_card(&mut mustg, m);
         }

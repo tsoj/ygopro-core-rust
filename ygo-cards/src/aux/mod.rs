@@ -89,10 +89,15 @@ pub fn delete_extra_material_groups(d: &mut Duel, emt: &[ExtraMaterial]) {
 
 /// `aux.GetMustBeMaterialGroup(tp, eg, sump, sc, g, r)`
 pub fn get_must_be_material_group(d: &mut Duel, tp: u8, eg: &CardSet, sump: u8, sc: Option<CardId>, g: &CardSet, r: u32) -> CardSet {
+    get_must_be_material_group_opt(d, tp, Some(eg), sump, sc, Some(g), r)
+}
+/// `aux.GetMustBeMaterialGroup` where the Lua passes `nil` groups
+pub fn get_must_be_material_group_opt(d: &mut Duel, tp: u8, eg: Option<&CardSet>, sump: u8, sc: Option<CardId>, g: Option<&CardSet>, r: u32) -> CardSet {
     let mut sg = CardSet::new();
+    let grp = |g: Option<&CardSet>| g.map_or(Value::Nil, |g| Value::Group(g.clone()));
     for te in duel::get_player_effect(d, tp, EFFECT_MUST_BE_MATERIAL) {
         let val = match effect::get_value(d, te) {
-            Value::Fn(f) => f.call(d, &[Value::Effect(te), Value::Group(eg.clone()), Value::Int(sump as i64), Value::card(sc), Value::Group(g.clone())]).int(),
+            Value::Fn(f) => f.call(d, &[Value::Effect(te), grp(eg), Value::Int(sump as i64), Value::card(sc), grp(g)]).int(),
             v => v.int(),
         };
         if val & r as i64 > 0 {

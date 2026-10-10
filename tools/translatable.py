@@ -27,7 +27,7 @@ BUILTIN = {"aux.Next", "aux.TRUE", "aux.FALSE", "aux.NOT", "aux.AND", "aux.OR", 
 ALIAS = {"SendtoHand": "send_to_hand", "SendtoGrave": "send_to_grave", "SendtoDeck": "send_to_deck",
          "SendtoExtraP": "send_to_extra_p", "Sendto": "send_to", "SetSPSummonOnce": "set_spsummon_once",
          "Merge": "add_card", "Sub": "remove_card", "Match": "match_", "GetChainData": "effect_data",
-         "AnnounceLevel": "announce_number_range", "bfgcost": "self_banish", "KeepAlive": None, "DeleteGroup": None, "GetNext": None,
+         "AnnounceLevel": "announce_number_range", "bfgcost": "self_banish", "InfiniteMats": "infinite_mats", "KeepAlive": None, "DeleteGroup": None, "GetNext": None,
          "Iter": None, "Clear": None, "ForEach": None}
 LIB = r"\b(aux|Auxiliary|Xyz|Synchro|Link|Fusion|Ritual|Pendulum|Gemini|Spirit|Union|Cost|Chain|Equip|Maximum|Duel|Card|Group|Effect)\.([A-Za-z_]\w*)"
 METHOD = r":([A-Z]\w*)\s*\("
@@ -37,6 +37,18 @@ def snake(n):
     n = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", n)
     n = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", n)
     return n.lower()
+
+
+PROC_NS = {"Link", "Xyz", "Synchro", "Fusion", "Pendulum", "Ritual", "Gemini", "Spirit", "Union", "Equip", "Maximum"}
+
+
+def proc_names(ns):
+    """The names of procs/<ns>.rs (functions and constants)."""
+    path = os.path.join(ROOT, "rust", "ygo-cards", "src", "procs", ns.lower() + ".rs")
+    if not os.path.exists(path):
+        return set()
+    s = open(path).read()
+    return set(re.findall(r"\bfn ([a-z_][a-z0-9_]*)", s)) | set(n.lower() for n in re.findall(r"\bconst ([A-Z_][A-Z0-9_]*)", s))
 
 
 def rust_names():
@@ -49,6 +61,8 @@ def rust_names():
                     names.update(re.findall(r"\bfn ([a-z_][a-z0-9_]*)", s))
                     # functions defined by macros: `name, STATIC,`
                     names.update(re.findall(r"^\s*([a-z_][a-z0-9_]*), [A-Z_]+,\s*$", s, re.M))
+                    # re-exports under another name
+                    names.update(re.findall(r"\bas ([a-z_][a-z0-9_]*)", s))
     return names
 
 
@@ -63,6 +77,10 @@ def missing_of(code, have):
         ns = "aux" if ns == "Auxiliary" else ns
         full = f"{ns}.{name}"
         if full in BUILTIN or name.isupper():
+            continue
+        if ns in PROC_NS:
+            if snake(name) not in proc_names(ns):
+                out.add(full)
             continue
         if name in ALIAS:
             if ALIAS[name] is None or ALIAS[name] in have:

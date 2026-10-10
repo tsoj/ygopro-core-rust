@@ -26,9 +26,34 @@ pub mod ns {
     pub const GLOBAL_CHECK: u32 = 2;
     /// `e:GetChainData()` (`chain.rs`)
     pub const CHAIN_DATA: u32 = 3;
+    /// Mutable upvalues of library closures (`cell`)
+    pub const CELLS: u32 = 4;
     /// Keys from here on in a card's namespace are fields the library sets on the card's script
     /// table (`class`); a card's own `s_var` keys stay below.
     pub const CLASS_FIELDS: u64 = 1 << 40;
+}
+
+/// The mutable upvalues of library closures (a Lua closure that reassigns a captured variable,
+/// e.g. `chkf` in `Fusion.SummonEffTG`): cells in the duel, so they are copied with it. A cell is
+/// made when the closure is (in `initial_effect`, so in the same order in every copy).
+pub mod cell {
+    use crate::ns::CELLS;
+    use ygo_core::duel::Duel;
+    use ygo_core::types::Value;
+    pub fn new(d: &mut Duel) -> u64 {
+        let id = d.script_var((CELLS, 0)).int() + 1;
+        d.set_script_var((CELLS, 0), Value::Int(id));
+        id as u64
+    }
+    pub fn get(d: &Duel, id: u64) -> Value {
+        d.script_var((CELLS, id))
+    }
+    /// Sets an integer cell (no change: no write, so copies keep sharing the script state).
+    pub fn set_int(d: &mut Duel, id: u64, v: i64) {
+        if !matches!(get(d, id), Value::Int(x) if x == v) {
+            d.set_script_var((CELLS, id), Value::Int(v));
+        }
+    }
 }
 
 /// Fields the library sets on a card's script table at run time (e.g. `Xyz.AddProcedure` sets
@@ -38,6 +63,19 @@ pub mod class {
     /// `minxyzct`, `maxxyzct` (`Xyz.AddProcedure`)
     pub const MIN_XYZ_CT: u64 = CLASS_FIELDS + 1;
     pub const MAX_XYZ_CT: u64 = CLASS_FIELDS + 2;
+    /// `material` (the codes in a Fusion procedure: overrides `s.material`), `material_count`,
+    /// `min_material_count`, `max_material_count` (`Fusion.AddProcMix`, ...)
+    pub const MATERIAL: u64 = CLASS_FIELDS + 3;
+    pub const MATERIAL_COUNT: u64 = CLASS_FIELDS + 4;
+    pub const MIN_MATERIAL_COUNT: u64 = CLASS_FIELDS + 5;
+    pub const MAX_MATERIAL_COUNT: u64 = CLASS_FIELDS + 6;
+    /// `c.material`: the procedure's list if it set one, else the script's `s.material`
+    pub fn material(d: &ygo_core::duel::Duel, c: ygo_core::types::CardId) -> Vec<u32> {
+        match get(d, c, MATERIAL) {
+            ygo_core::types::Value::Multi(m) => m.iter().map(|v| v.int() as u32).collect(),
+            _ => crate::card_info(d, c).material.to_vec(),
+        }
+    }
     /// The class field `f` of the script `c` uses.
     pub fn get(d: &ygo_core::duel::Duel, c: ygo_core::types::CardId, f: u64) -> ygo_core::types::Value {
         d.script_var((d.card(c).script_code, f))

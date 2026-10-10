@@ -17,6 +17,8 @@ pub mod vars {
     pub const FUSION_EXTRA_GROUP: (u32, u64) = (GLOBAL, 1);
     /// `player_table` of the hand shuffle (proc_workaround.lua): [p0, p1] as bits 0/1.
     pub const SHUFFLED_PLAYERS: (u32, u64) = (GLOBAL, 2);
+    /// `geff` of proc_fusion_spell.lua (the effect that makes `Fusion.ExtraGroup` usable)
+    pub const FUSION_GEFF: (u32, u64) = (GLOBAL, 3);
 }
 
 pub fn load(d: &mut Duel) {
@@ -45,6 +47,7 @@ fn proc_fusion_spell(d: &mut Duel) {
     );
     effect::set_value_fn(d, geff, aux_true());
     duel::register_effect(d, geff, 0);
+    d.set_script_var(vars::FUSION_GEFF, Value::Effect(geff));
 }
 
 fn shuffled(d: &Duel, p: u8) -> bool {

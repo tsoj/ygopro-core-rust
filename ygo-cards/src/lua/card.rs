@@ -717,8 +717,8 @@ pub fn lists_archetype(d: &Duel, c: CardId, setcodes: &[u32]) -> bool {
 }
 /// `c:ListsCodeAsMaterial(codes...)`
 pub fn lists_code_as_material(d: &Duel, c: CardId, codes: &[u32]) -> bool {
-    let info = crate::card_info(d, c);
-    codes.iter().any(|w| info.material.contains(w))
+    let material = crate::class::material(d, c);
+    codes.iter().any(|w| material.contains(w))
 }
 pub fn is_negatable_monster(d: &mut Duel, c: CardId) -> bool {
     raw::is_faceup(d, c) && !raw::is_disabled(d, c) && (!is_non_effect_monster(d, c) || raw::get_original_type(d, c) & TYPE_EFFECT != 0)

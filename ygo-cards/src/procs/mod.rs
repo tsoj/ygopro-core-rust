@@ -4,6 +4,8 @@ use crate::aux::ExtraMaterial;
 use crate::prelude::*;
 use std::sync::Arc;
 
+pub mod fusion;
+mod fusion_spell;
 pub mod link;
 pub mod synchro;
 pub mod xyz;

@@ -287,3 +287,12 @@ pub fn swap_sequence(d: &mut Duel, c1: CardId, c2: CardId) -> bool {
     raw::swap_sequence(d, c1, c2);
     k::is_on_field(d, c1) && k::is_on_field(d, c2) && k::get_sequence(d, c1) == seq2 && k::get_sequence(d, c2) == seq1
 }
+/// `Duel.GetFusionMaterial(tp)` as proc_fusion_spell.lua redefines it (also the Extra Deck cards
+/// with an EFFECT_EXTRA_FUSION_MATERIAL effect)
+pub fn get_fusion_material(d: &mut Duel, tp: u8) -> CardSet {
+    crate::procs::fusion::get_fusion_material(d, tp)
+}
+/// The core's `Duel.GetFusionMaterial`
+pub fn get_fusion_material_raw(d: &mut Duel, tp: u8) -> CardSet {
+    raw::get_fusion_material(d, tp)
+}

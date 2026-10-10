@@ -1,0 +1,52 @@
+# code	name	status	translated_by	notes
+# status: verified (ygo-diff identical, effects ran) | untested (identical, but some effects never ran) | missing (library gap) | failed
+12580477	Raigeki	verified	main	
+16527176	Naturia Leodrake	verified	main	
+17390179	Flash Knight	verified	main	
+19204398	Ally of Justice Light Gazer	verified	main	
+19474136	Mandragon	verified	main	
+19613556	Heavy Storm	verified	main	
+24094653	Polymerization	verified	main	
+26202165	Sangan	verified	main	
+26932788	Javelin Beetle	verified	main	
+28363749	Fire Opal Head	verified	main	
+31066283	Revival of Dokurorider	verified	main	
+32807846	Reinforcement of the Army	verified	haiku	
+32872239	Gallugallud the Endless Enigma	verified	main	
+3544583	Allvain the Essence of Vanity	verified	main	
+3627449	Skull Guardian	verified	main	
+39399168	Resurrection of Chakra	verified	main	
+41182875	Javelin Beetle Pact	verified	main	
+41248270	Traffic Ghost	verified	main	
+4206964	Trap Hole	verified	main	
+43417563	Commencement Dance	verified	main	
+43694075	Novox's Prayer	verified	main	
+44095762	Mirror Force	verified	main	
+45231177	Flame Swordsman	verified	main	
+45815891	Scrap Archfiend	verified	main	
+4849037	Performance of Sword	verified	main	
+53129443	Dark Hole	verified	main	
+5318639	Mystical Space Typhoon	verified	main	
+5402805	Berserker of the Tenyi	verified	main	
+55144522	Pot of Greed	verified	main	
+59197169	Yami	verified	main	
+65393205	Chakra	verified	main	
+66889139	Gaia the Dragon Champion	verified	main	
+67598234	Gaia Saber, the Lightning Shadow	verified	main	
+69069911	Kachi Kochi Dragon	verified	main	
+70368879	Upstart Goblin	verified	main	
+71594310	Gem-Knight Pearl	verified	main	
+72336818	Pentestag	verified	main	
+73628505	Terraforming	verified	haiku	
+77637979	LANphorhynchus	verified	main	
+81439173	Foolish Burial	verified	haiku	
+83764718	Monster Reborn	verified	main	
+83980492	Dragong	verified	main	
+87430998	Forest	verified	main	
+9053187	Gagagigo the Risen	verified	main	
+91949988	Gaia Dragon, the Thunder Charger	verified	main	
+94145021	Droll & Lock Bird	verified	haiku	
+96334243	Sea Monster of Theseus	verified	main	
+97204936	Gaia Knight, the Force of Earth	verified	main	
+97268402	Effect Veiler	verified	haiku	
+99721536	Dokurorider	verified	main	

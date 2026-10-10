@@ -11,6 +11,7 @@ pub mod constants;
 pub mod cost;
 pub mod global;
 pub mod lua;
+pub mod luatable;
 pub mod prelude;
 pub mod procs;
 

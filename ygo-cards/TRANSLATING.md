@@ -111,6 +111,15 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - `e:SetReset(v)` without a count is `effect::set_reset(d, e, v, 1)`.
 - **Borrowing:** `d` cannot be borrowed twice in one call. Read values into locals first:
   `let label = effect::get_label(d, a.e); duel::raise_event(d, ..., label as u32);`.
+- A Lua call that returns several values, used where Lua takes only the first (`c:GetCode()` in
+  `c:IsCode(tc:GetCode())` keeps all of them, `local code=tc:GetCode()` only the first): take
+  `[0]`/`.first()` of the Rust `Vec` where the Lua takes one value.
+- `Duel.AnnounceCard(tp, ...)` takes the filter as an opcode list:
+  `duel::announce_card(d, tp, &[code1, OPCODE_ISCODE, code2, OPCODE_ISCODE, OPCODE_OR])`.
+- **Lua table order:** `pairs`/`next` over a table with number keys (e.g. `ids[tc:GetCode()]=true`
+  then `for code in pairs(ids)`) does not go in insertion or sorted order. Build the table with
+  `luatable::LuaTable` (`t.set(k, Some(v))`, `t.pairs()`), which has Lua 5.4's exact order.
+  `ipairs` over a list (`{a, b, c}`, `table.insert`) is just the list order.
 - **Keep every call**, even when the Lua stores the result in a variable it never uses
   (`local ph=Duel.GetCurrentPhase()` becomes `let _ph = duel::get_current_phase(d);`).
 

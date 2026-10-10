@@ -68,10 +68,39 @@ struct Args {
     cards: Option<Vec<u32>>,
     /// Extra Deck size (from the scripted Extra Deck monsters)
     extra: usize,
+    /// Two .ydk decks to play against each other (seats alternate between games)
+    decks: Option<Vec<Deck>>,
+}
+
+/// A deck from a .ydk file.
+#[derive(Clone, Default)]
+struct Deck {
+    main: Vec<u32>,
+    extra: Vec<u32>,
+}
+fn load_ydk(path: &str) -> Deck {
+    let text = std::fs::read_to_string(path).unwrap_or_else(|e| panic!("{path}: {e}"));
+    let mut d = Deck::default();
+    let mut section = "";
+    for line in text.lines() {
+        let line = line.trim();
+        if line.starts_with('#') || line.starts_with('!') {
+            section = line;
+            continue;
+        }
+        if let Ok(code) = line.parse::<u32>() {
+            match section {
+                "#main" => d.main.push(code),
+                "#extra" => d.extra.push(code),
+                _ => {}
+            }
+        }
+    }
+    d
 }
 
 fn parse_args() -> Args {
-    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15 };
+    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None };
     let argv: Vec<String> = std::env::args().collect();
     let mut i = 1;
     while i < argv.len() {
@@ -94,6 +123,11 @@ fn parse_args() -> Args {
             }
             "--cards" => {
                 a.cards = Some(argv[i + 1].split(',').map(|x| x.parse().unwrap()).collect());
+                i += 1;
+            }
+            "--decks" => {
+                a.decks = Some(argv[i + 1].split(',').map(load_ydk).collect());
+                assert_eq!(a.decks.as_ref().unwrap().len(), 2, "--decks takes two .ydk files");
                 i += 1;
             }
             "--extra" => {
@@ -211,7 +245,26 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
     let po = PlayerOptions { starting_lp: 8000, starting_draw_count: 5, draw_count_per_turn: 1 };
     let mut r = Duel::new(&DuelOptions { seed, flags, team1: po, team2: po }, db.clone(), scripts.clone());
     ygo_cards::load_global_scripts(&mut r);
+    if let Some(decks) = &args.decks {
+        // (the decks change seats every game)
+        for p in 0..2u8 {
+            let deck = &decks[((p as u64 + game) % 2) as usize];
+            for &code in &deck.main {
+                let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc: LOCATION_DECK, seq: 0, pos: POS_FACEDOWN_DEFENSE };
+                c.new_card(&info);
+                r.ocg_new_card(&info);
+            }
+            for &code in &deck.extra {
+                let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc: LOCATION_EXTRA, seq: 0, pos: POS_FACEDOWN_DEFENSE };
+                c.new_card(&info);
+                r.ocg_new_card(&info);
+            }
+        }
+    }
     for p in 0..2u8 {
+        if args.decks.is_some() {
+            break;
+        }
         for _ in 0..40 {
             let code = if !scripted.is_empty() && args.scripted_permille > 0 && rng.below(1000) < args.scripted_permille {
                 scripted[rng.below(scripted.len())]
@@ -365,6 +418,16 @@ fn main() {
     for c in &scripted {
         assert!(scripts.get(*c).is_some() || core_ffi::find_script(&format!("c{c}.lua")).is_none(), "card {c} has no translated script");
     }
+    if let Some(decks) = &args.decks {
+        let mut missing = Vec::new();
+        for c in decks.iter().flat_map(|d| d.main.iter().chain(d.extra.iter())) {
+            let script = db.cards.get(c).map_or(*c, |x| if x.alias != 0 && x.alias < c + 10 && *c < x.alias + 10 { x.alias } else { *c });
+            if scripts.get(script).is_none() && core_ffi::find_script(&format!("c{script}.lua")).is_some() && !missing.contains(&script) {
+                missing.push(script);
+            }
+        }
+        assert!(missing.is_empty(), "cards of the decks without a translated script: {missing:?}");
+    }
     let is_extra = |c: &u32| db.cards.get(c).is_some_and(|x| x.type_ & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK) != 0);
     let scripted_extra: Vec<u32> = scripted.iter().copied().filter(is_extra).collect();
     let scripted: Vec<u32> = scripted.iter().copied().filter(|c| !is_extra(c)).collect();
@@ -402,12 +465,21 @@ fn main() {
     });
     COVERAGE.with(|cov| {
         let cov = cov.borrow();
-        let mut v: Vec<String> = scripted.iter().chain(scripted_extra.iter()).map(|c| {
+        let deck_cards: Vec<u32> = match &args.decks {
+            Some(decks) => {
+                let mut v: Vec<u32> = decks.iter().flat_map(|d| d.main.iter().chain(d.extra.iter()).copied()).collect();
+                v.sort();
+                v.dedup();
+                v
+            }
+            None => scripted.iter().chain(scripted_extra.iter()).copied().collect(),
+        };
+        let mut v: Vec<String> = deck_cards.iter().map(|c| {
             let (a, s) = cov.get(c).copied().unwrap_or_default();
             format!("{c}: {a} activations, {s} summons")
         }).collect();
         v.sort();
-        if !v.is_empty() && v.len() <= 50 {
+        if !v.is_empty() && (v.len() <= 50 || args.decks.is_some()) {
             println!("coverage of the scripted cards:\n  {}", v.join("\n  "));
         }
     });

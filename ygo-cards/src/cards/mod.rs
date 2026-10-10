@@ -12,7 +12,7 @@ pub mod prelude {
     pub use crate::lua::{card, debug, duel, effect, group, CardOrGroup, Exclude, Filter, NO_EX};
     pub use crate::prelude::*;
     pub use crate::procs::{fusion, gemini, group_check, link, mat_filter, pendulum, ritual, spirit, synchro, xyz, GroupCheck, MatFilter};
-    pub use crate::{aux, chain, cost, ScriptInfo};
+    pub use crate::{aux, chain, cost, luatable, ScriptInfo};
 }
 
 include!(concat!(env!("OUT_DIR"), "/cards.rs"));

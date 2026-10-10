@@ -939,3 +939,73 @@ fn operation_fn() -> LuaFn {
         set_check_additional(d, None);
     })
 }
+
+/// `Synchro.CreateHandMaterialEffect(c, id, material_filter, synchro_filter, banish_mats, rc)`: this
+/// card lets a monster in the hand be a Synchro Material (with `id`'s checks)
+pub fn create_hand_material_effect(d: &mut Duel, c: CardId, id: u32, material_filter: Option<CardFilter>, synchro_filter: Option<CardFilter>, banish_mats: bool, rc: Option<CardId>) -> EffectId {
+    let label = id as i64;
+    let matfilter1 = move |d: &mut Duel, c: CardId| {
+        let effs = card::get_card_effect(d, c, EFFECT_HAND_SYNCHRO + EFFECT_SYNCHRO_CHECK);
+        for &te in &effs {
+            if effect::get_label(d, te) != label {
+                return false;
+            }
+        }
+        !effs.is_empty()
+    };
+    let matfilter2 = move |d: &mut Duel, c: CardId| {
+        if !card::is_has_effect(d, c, EFFECT_HAND_SYNCHRO + EFFECT_SYNCHRO_CHECK, None).is_empty() {
+            return false;
+        }
+        card::get_card_effect(d, c, EFFECT_HAND_SYNCHRO).into_iter().any(|te| effect::get_label(d, te) == label)
+    };
+    // synchktg(e, c, sg, tg, ntg, tsg, ntsg)
+    let synchktg = LuaFn::new(move |d, a| {
+        let Some(c) = a.get(1).and_then(|v| v.as_card()) else { return Value::Bool(true) };
+        let g = |i: usize| a.get(i).and_then(|v| v.as_group()).cloned().unwrap_or_default();
+        let (sg, tg, ntg) = (g(2), g(3), g(4));
+        if group::is_exists(d, &sg, &|d, x| matfilter1(d, x), 1, c.into()) {
+            return Value::Bool(false);
+        }
+        if !(group::is_exists(d, &tg, &|d, x| matfilter2(d, x), 1, c.into()) || group::is_exists(d, &ntg, &|d, x| matfilter2(d, x), 1, c.into()) || group::is_exists(d, &sg, &|d, x| matfilter2(d, x), 1, c.into())) {
+            return Value::Bool(false);
+        }
+        let trg = group::filter(d, &tg, &|d, x| matfilter1(d, x), NO_EX);
+        let ntrg = group::filter(d, &ntg, &|d, x| matfilter1(d, x), NO_EX);
+        Value::Multi(vec![Value::Bool(true), Value::Group(trg), Value::Group(ntrg)])
+    });
+    // synval(e, c, sc)
+    let synval = LuaFn::new(move |d, a| {
+        let e = a[0].as_effect().nil();
+        let c = a.get(1).and_then(|v| v.as_card()).nil();
+        let sc = a.get(2).and_then(|v| v.as_card()).nil();
+        if !card::is_location(d, c, LOCATION_HAND) || material_filter.as_ref().is_some_and(|f| !f(d, c)) || synchro_filter.as_ref().is_some_and(|f| !f(d, sc)) {
+            return Value::Bool(false);
+        }
+        let h = effect::get_handler(d, e).nil();
+        let e1 = effect::create_effect(d, h);
+        effect::set_type(d, e1, EFFECT_TYPE_SINGLE);
+        effect::set_code(d, e1, EFFECT_HAND_SYNCHRO + EFFECT_SYNCHRO_CHECK);
+        effect::set_label(d, e1, &[label]);
+        effect::set_target(d, e1, Some(synchktg.clone()));
+        card::register_effect(d, c, e1, false);
+        if banish_mats {
+            card::register_flag_effect(d, c, id, RESET_EVENT | RESETS_STANDARD, 0, 1, 0, 0);
+        }
+        Value::Bool(true)
+    });
+    let e1 = effect::create_effect(d, rc.unwrap_or(c));
+    effect::set_type(d, e1, EFFECT_TYPE_SINGLE);
+    effect::set_property(d, e1, EFFECT_FLAG_SINGLE_RANGE + EFFECT_FLAG_CANNOT_DISABLE + EFFECT_FLAG_UNCOPYABLE, 0);
+    effect::set_code(d, e1, EFFECT_HAND_SYNCHRO);
+    effect::set_range(d, e1, LOCATION_MZONE);
+    effect::set_label(d, e1, &[label]);
+    effect::set_value_fn(d, e1, synval);
+    e1
+}
+/// `Synchro.AddHandMaterialEffect(c, ...)`
+pub fn add_hand_material_effect(d: &mut Duel, c: CardId, id: u32, material_filter: Option<CardFilter>, synchro_filter: Option<CardFilter>, banish_mats: bool, rc: Option<CardId>) -> EffectId {
+    let e1 = create_hand_material_effect(d, c, id, material_filter, synchro_filter, banish_mats, rc);
+    card::register_effect(d, c, e1, false);
+    e1
+}

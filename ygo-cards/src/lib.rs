@@ -130,6 +130,8 @@ pub struct ScriptInfo {
     pub counter_place_list: &'static [u32],
     /// `s.dark_calling` (also set by `c:AddMustBeSpecialSummonedByDarkFusion()`)
     pub dark_calling: bool,
+    /// `s.pendulum_level`: the Level a Pendulum Summon checks (monsters without a Level)
+    pub pendulum_level: Option<u32>,
 }
 
 impl ScriptInfo {
@@ -146,6 +148,7 @@ impl ScriptInfo {
         counter_list: &[],
         counter_place_list: &[],
         dark_calling: false,
+        pendulum_level: None,
     };
 }
 

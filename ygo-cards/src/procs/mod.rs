@@ -7,6 +7,7 @@ use std::sync::Arc;
 pub mod fusion;
 mod fusion_spell;
 pub mod link;
+pub mod pendulum;
 pub mod synchro;
 pub mod xyz;
 

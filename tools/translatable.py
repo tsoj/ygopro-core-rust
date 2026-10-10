@@ -44,10 +44,8 @@ PROC_NS = {"Link", "Xyz", "Synchro", "Fusion", "Pendulum", "Ritual", "Gemini", "
 
 def proc_names(ns):
     """The names of procs/<ns>.rs (functions and constants)."""
-    path = os.path.join(ROOT, "rust", "ygo-cards", "src", "procs", ns.lower() + ".rs")
-    if not os.path.exists(path):
-        return set()
-    s = open(path).read()
+    d = os.path.join(ROOT, "rust", "ygo-cards", "src", "procs")
+    s = "".join(open(os.path.join(d, f)).read() for f in os.listdir(d) if f.startswith(ns.lower()) and f.endswith(".rs"))
     return set(re.findall(r"\bfn ([a-z_][a-z0-9_]*)", s)) | set(n.lower() for n in re.findall(r"\bconst ([A-Z_][A-Z0-9_]*)", s))
 
 

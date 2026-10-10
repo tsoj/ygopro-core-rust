@@ -9,7 +9,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_description(d, e1, aux::stringid(ID, 0));
     effect::set_type(d, e1, EFFECT_TYPE_ACTIVATE);
     effect::set_code(d, e1, EVENT_FREE_CHAIN);
-    effect::set_hint_timing(d, e1, TIMINGS_CHECK_MONSTER, None);
+    effect::set_hint_timing(d, e1, 0, Some(TIMINGS_CHECK_MONSTER));
     effect::set_condition(d, e1, Some(condition(cond)));
     effect::set_target(d, e1, Some(cost_target(target)));
     effect::set_operation(d, e1, Some(operation(activate)));

@@ -386,7 +386,7 @@ fn must_without_g(d: &mut Duel, tp: u8, c: CardId) -> CardSet {
     aux::get_must_be_material_group_opt(d, tp, None, tp, Some(c), None, REASON_FUSION)
 }
 /// `Fusion.ConditionMix(insf, sub, ...)`: `function(e, g, gc, chkfnf, summonEff)`
-fn condition_mix(insf: bool, sub: bool, funs: Arc<[Fun]>) -> LuaFn {
+pub fn condition_mix(insf: bool, sub: bool, funs: Arc<[Fun]>) -> LuaFn {
     lua_fn(move |d, a| {
         let e = a.e(0);
         let c = effect::get_handler(d, e).nil();
@@ -445,7 +445,7 @@ fn material_chooser(d: &mut Duel, tp: u8, mg: &CardSet, contact: bool) -> (u8, b
     (p, sfhchk)
 }
 /// `Fusion.OperationMix(insf, sub, ...)`: `function(e,tp,eg,ep,ev,re,r,rp,gc,chkfnf,summonEff)`
-fn operation_mix(sub: bool, funs: Arc<[Fun]>) -> LuaFn {
+pub fn operation_mix(sub: bool, funs: Arc<[Fun]>) -> LuaFn {
     lua_fn(move |d, a| {
         let e = a.e(0);
         let eg = a.g(2);

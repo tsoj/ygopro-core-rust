@@ -75,7 +75,8 @@ fn spcon(d: &mut Duel, a: Args) -> bool {
 fn sptg(d: &mut Duel, a: Args) -> bool {
     let e = a.e(0);
     let tp = a.p(1);
-    let c = a.c(8);
+    // the 9th argument of an EFFECT_SPSUMMON_PROC target is chk (1), not the card: `c` is a number in the Lua,
+    // so `to_check` of SelectReleaseGroup is nil there
     // local g=Duel.SelectReleaseGroup(tp,Card.IsAttackAbove,2,2,false,true,true,c,nil,nil,false,nil,2000)
     let g = duel::select_release_group(
         d,
@@ -83,7 +84,7 @@ fn sptg(d: &mut Duel, a: Args) -> bool {
         Some(&atk_filter),
         2,
         2,
-        duel::ReleaseArgs { use_hand: Some(false), cancelable: true, check_field: true, to_check: Some(c), ..Default::default() },
+        duel::ReleaseArgs { use_hand: Some(false), cancelable: true, check_field: true, to_check: None, ..Default::default() },
         NO_EX,
         false,
     );

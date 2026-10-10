@@ -53,7 +53,7 @@ fn activate(d: &mut Duel, _a: &EffArgs) {
 - `s.initial_effect(c)` becomes `pub fn initial_effect(d: &mut Duel, c: CardId)`.
 - The other `s.<name>` functions become private `fn <name>` (snake_case, the same names). The
   exceptions are names that clash with the prelude's wrappers: `s.condition` becomes `fn cond`
-  and `s.operation` becomes `fn op`.
+  `s.operation` becomes `fn op`, and `s.drop` becomes `fn drop_op` (`drop` is `std::mem::drop`).
 - `use super::prelude::*;` imports everything you need: the constants, the API modules `card`,
   `duel`, `effect`, `group`, `debug`, the library modules `aux`, `cost`, `chain`, and the
   helpers below.
@@ -96,6 +96,15 @@ always `d: &mut Duel` (or `&Duel`):
 | `Duel.NegateEffect(ev)`                 | `duel::negate_effect(d, a.ev as u8)`               |
 | `Duel.SelectEffect(tp, {b1,s1}, {b2,s2})` | `duel::select_effect(d, tp, &[(b1, s1), (b2, s2)])` (`Option<usize>`, 1-based like Lua) |
 | `Duel.AddCustomActivityCounter(id, ACTIVITY_CHAIN, function(re,tp,cid) ... end)` | `duel::add_custom_activity_counter(d, ID, ACTIVITY_CHAIN, lua_fn(f))`, `f(d, a: Args)` reads `re` as `a.e(0)` |
+| `g:AddCard(c)` / `g:RemoveCard(c)`     | `group::add_card(&mut g, &CardSet::from_card(c))` / `group::remove_card(...)` |
+| `g:FilterCount(f, nil)`                 | `group::filter_count(d, &g, Some(&f), NO_EX)` (the `nil` is `ex`, not a filter argument) |
+| `local g1,g2=g:Split(f, nil)`           | `let (g1, g2) = group::split(d, &g, Some(&f), NO_EX)` (matching, the rest) |
+| `Duel.SpecialSummonStep(c, ...)` / `Duel.SpecialSummonComplete()` | `duel::special_summon_step(d, c, sumtype, sp, tp, nocheck, nolimit, pos, None)` / `duel::special_summon_complete(d)` |
+| `Duel.RegisterEffect(e, tp)`            | `duel::register_effect(d, e, tp)`                  |
+| `e:SetLabelObject(g)` / `e:GetLabelObject()` (a group) | `effect::set_label_object(d, e, Value::Group(g))` / `effect::get_label_object(d, e).as_group().cloned()` (`.nil()` where the Lua indexes it) |
+| `c:SetUniqueOnField(1, 0, function(c) ... end)` | `card::set_unique_on_field(d, c, 1, 0, UniqueCode::Function(lua_fn(f)), None)`; `f` reads the card as `a.c(0)` |
+| `aux.SelectUnselectGroup(g, e, tp, 1, 2, s.rescon, ...)` | `aux::select_unselect_group(...)` with `rescon: fn(d, sg: &CardSet, e: Option<EffectId>, tp: u8, mg: &CardSet, c: Option<CardId>) -> (bool, bool)` (`(res, stop)`, see "Library") |
+| `aux.bfgcost(e,tp,eg,ep,ev,re,r,rp,0)` (a library cost called from a card) | `aux::bfgcost().call(d, &[Value::Effect(a.e), Value::Int(a.tp as i64), ...9 values]).truthy()` |
 
 Find the exact signature with `grep -rn "pub fn <name>(" rust/ygo-cards/src rust/ygo-core/src/api`
 (from the repository root). The module of a function (`card::`, `duel::`, ...) is the
@@ -343,6 +352,9 @@ duel::is_existing_target(d, Some(&|d, c| filter(d, c, e, tp)), tp, LOCATION_GRAV
 
 Groups are `CardSet` values. Lua groups are references, Rust groups are values:
 - `#g` is `g.len()`. `#g>0` is `!g.is_empty()`.
+- Defaults that often get guessed wrong: `Duel.Overlay(xyz, mats)` does not send to the GY
+  (`send_to_grave` false); `Duel.DisableShuffleCheck()` is `true`; `g:Select` is not cancelable.
+  A `CHAININFO_*` value beyond the chain is `Value::Nil`: compare it as `None`, not as 0.
 - Iterate with `for tc in group::iter(d, &g)`, which uses the order of `GetFirst`/`GetNext`/`Iter`.
   `g:GetFirst()` is `group::get_first(d, &g)`.
 - Functions that change a group take `&mut CardSet` (`group::add_card`, `group::remove_card`,

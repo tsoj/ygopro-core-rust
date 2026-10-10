@@ -161,14 +161,14 @@ fn tg(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
     // local b1=Duel.IsExistingMatchingCard(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) and Duel.CheckReleaseGroupCost(tp,aux.TRUE,1,false,nil,nil)
     let b1 = duel::is_existing_matching_card(d, None, tp, LOCATION_ONFIELD, LOCATION_ONFIELD, 1, NO_EX)
-        && duel::check_release_group_cost(d, tp, None, 1, 1, false, None, NO_EX);
+        && duel::check_release_group_cost(d, tp, Some(&|_, _| true), 1, 1, false, None, NO_EX);
     // local b2=Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil,e,tp) and Duel.GetLocationCount(tp,LOCATION_MZONE)>=0 and Duel.CheckReleaseGroupCost(tp,aux.TRUE,2,false,nil,nil)
     let b2 = duel::is_existing_matching_card(d, Some(&|d, c| spfilter(d, c, a.e, tp)), tp, LOCATION_DECK, 0, 1, NO_EX)
         && duel::get_location_count(d, tp, LOCATION_MZONE as u8, None, None, None).0 >= 0
-        && duel::check_release_group_cost(d, tp, None, 2, 2, false, None, NO_EX);
+        && duel::check_release_group_cost(d, tp, Some(&|_, _| true), 2, 2, false, None, NO_EX);
     // local b3=Duel.IsExistingMatchingCard(s.svfilter,tp,LOCATION_GRAVE,0,1,nil) and Duel.CheckReleaseGroupCost(tp,aux.TRUE,3,false,nil,nil)
     let b3 = duel::is_existing_matching_card(d, Some(&svfilter), tp, LOCATION_GRAVE, 0, 1, NO_EX)
-        && duel::check_release_group_cost(d, tp, None, 3, 3, false, None, NO_EX);
+        && duel::check_release_group_cost(d, tp, Some(&|_, _| true), 3, 3, false, None, NO_EX);
     // if chk==0 then return b1 or b2 or b3 end
     if a.chk == Some(0) {
         return b1 || b2 || b3;
@@ -201,7 +201,7 @@ fn tg(d: &mut Duel, a: &EffArgs) -> bool {
     let op = duel::select_option(d, tp, true, &dtab) as usize;
     let sel = stab[op];
     // local g=Duel.SelectReleaseGroupCost(tp,aux.TRUE,sel,sel,false,nil,nil)
-    let g = duel::select_release_group_cost(d, tp, None, sel as usize, sel as usize, false, None, NO_EX);
+    let g = duel::select_release_group_cost(d, tp, Some(&|_, _| true), sel as usize, sel as usize, false, None, NO_EX);
     // Duel.Release(g,REASON_COST)
     duel::release(d, g.clone(), REASON_COST, None);
     // e:SetLabel(sel)

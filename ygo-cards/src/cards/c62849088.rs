@@ -81,10 +81,9 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // c:RegisterEffect(e4)
     card::register_effect(d, c, e4, false);
     // local g=Group.CreateGroup()
-    let g = d.new_group(CardSet::new());
     // g:KeepAlive()
     // e4:SetLabelObject(g)
-    effect::set_label_object(d, e4, Value::SharedGroup(g));
+    effect::set_label_object(d, e4, Value::Group(CardSet::new()));
     // Register summons
     // local e5=Effect.CreateEffect(c)
     let e5 = effect::create_effect(d, c);
@@ -97,16 +96,23 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e5:SetRange(LOCATION_MZONE)
     effect::set_range(d, e5, LOCATION_MZONE);
     // e5:SetLabelObject(g)
-    effect::set_label_object(d, e5, Value::SharedGroup(g));
+    effect::set_label_object(d, e5, Value::Effect(e4));
     // e5:SetOperation(s.regop)
     effect::set_operation(d, e5, Some(operation(regop)));
     // c:RegisterEffect(e5)
     card::register_effect(d, c, e5, false);
 }
-/// The group a card script keeps in an effect's label object (`e:GetLabelObject()`, a group).
-fn label_group(d: &Duel, e: EffectId) -> GroupRef {
+/// The effect that holds the shared group (e4): itself, or via `Value::Effect` for e5.
+fn group_owner(d: &Duel, e: EffectId) -> EffectId {
     match effect::get_label_object(d, e) {
-        Value::SharedGroup(g) => g,
+        Value::Effect(e4) => e4,
+        _ => e,
+    }
+}
+/// The group a card script keeps in an effect's label object (`e:GetLabelObject()`, a group).
+fn label_group(d: &Duel, e: EffectId) -> CardSet {
+    match effect::get_label_object(d, group_owner(d, e)) {
+        Value::Group(g) => g,
         _ => crate::lua_error("attempt to index a nil value"),
     }
 }
@@ -182,7 +188,7 @@ fn hdexcon(d: &mut Duel, a: &EffArgs) -> bool {
     } else if label == 3 {
         // elseif label==3 then loc=LOCATION_EXTRA; eg=e:GetLabelObject()
         loc = LOCATION_EXTRA;
-        eg = Some(d.group(label_group(d, a.e)).clone());
+        eg = Some(label_group(d, a.e));
     }
     // if eg and eg:IsExists(s.hdexfilter,1,nil,tp,loc) then
     if let Some(eg) = eg {
@@ -218,7 +224,7 @@ fn hdextg(d: &mut Duel, a: &EffArgs) -> bool {
         } else if label == 3 {
             // local g=e:GetLabelObject():Filter(s.hdexfilter,nil,tp,LOCATION_EXTRA)
             // return #g>0
-            let lg = d.group(label_group(d, e)).clone();
+            let lg = label_group(d, e);
             let g = group::filter(d, &lg, &|d, c| hdexfilter(d, c, tp, LOCATION_EXTRA), NO_EX);
             return !g.is_empty();
         }
@@ -238,7 +244,7 @@ fn hdextg(d: &mut Duel, a: &EffArgs) -> bool {
         duel::set_operation_info(d, 0, CATEGORY_DRAW, None, 0, tp, 2);
     } else if label == 3 {
         // local g=e:GetLabelObject():Filter(s.hdexfilter,nil,tp,LOCATION_EXTRA)
-        let lg = d.group(label_group(d, e)).clone();
+        let lg = label_group(d, e);
         let g = group::filter(d, &lg, &|d, c| hdexfilter(d, c, tp, LOCATION_EXTRA), NO_EX);
         // Duel.SetTargetCard(g)
         duel::set_target_card(d, g.clone());
@@ -275,7 +281,7 @@ fn hdexop(d: &mut Duel, a: &EffArgs) {
         // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
         duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_DESTROY as u64);
         // local g=e:GetLabelObject():Match(Card.IsRelateToEffect,nil,e)
-        let lg = d.group(label_group(d, e)).clone();
+        let lg = label_group(d, e);
         let g = group::filter(d, &lg, &|d, c| card::is_relate_to_effect(d, c, e), NO_EX);
         // g=g:FilterSelect(tp,s.hdexfilter,1,1,nil,tp,LOCATION_EXTRA)
         let g = group::filter_select(d, &g, tp, &|d, c| hdexfilter(d, c, tp, LOCATION_EXTRA), 1, 1, false, NO_EX).nil();
@@ -308,17 +314,17 @@ fn regop(d: &mut Duel, a: &EffArgs) {
             card::register_flag_effect(d, tc, ID, RESET_CHAIN, 0, 1, 0, 0);
         }
         // local g=e:GetLabelObject()
-        let r = label_group(d, a.e);
+        let owner = group_owner(d, a.e);
+        let mut g = label_group(d, a.e);
         // if Duel.GetCurrentChain()==0 then g:Clear() end
         if duel::get_current_chain(d, false) == 0 {
-            d.group_mut(r).clear();
+            g = CardSet::new();
         }
         // g:Remove(function(c) return c:GetFlagEffect(id)==0 end,nil)
-        let mut g = d.group(r).clone();
         group::remove(d, &mut g, &|d, cc| card::get_flag_effect(d, cc, ID) == 0, NO_EX);
         // g:Merge(tg)
         group::add_card(&mut g, &tg);
-        *d.group_mut(r) = g;
+        effect::set_label_object(d, owner, Value::Group(g));
         // Duel.RaiseSingleEvent(c,EVENT_CUSTOM+id,e,0,tp,tp,0)
         duel::raise_single_event(d, c, EVENT_CUSTOM + ID, Some(a.e), 0, tp, tp, 0);
     }

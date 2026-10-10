@@ -25,7 +25,7 @@ fn damcost(d: &mut Duel, a: &EffArgs) -> bool {
     if a.chk == Some(0) {
         return duel::check_release_group_cost(d, a.tp, None, 1, 1, false, None, NO_EX);
     }
-    let g = duel::select_release_group_cost(d, a.tp, None, 1, 1, false, None, NO_EX);
+    let g = duel::select_release_group_cost(d, a.tp, Some(&|_, _| true), 1, 1, false, None, NO_EX);
     duel::release(d, g, REASON_COST, None);
     true
 }

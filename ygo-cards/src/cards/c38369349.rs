@@ -115,7 +115,7 @@ fn spcon(d: &mut Duel, a: Args) -> bool {
     duel::check_release_group(
         d,
         tp,
-        None,
+        Some(&|_, _| true),
         2,
         duel::ReleaseArgs { use_hand: Some(false), max: Some(2), check_field: true, to_check: Some(c), toplayer: Some(tp), ..Default::default() },
         NO_EX,
@@ -133,7 +133,7 @@ fn sptg(d: &mut Duel, a: Args) -> bool {
     let g = duel::select_release_group(
         d,
         tp,
-        None,
+        Some(&|_, _| true),
         2,
         2,
         duel::ReleaseArgs { use_hand: Some(false), cancelable: true, check_field: true, to_check: None, ..Default::default() },

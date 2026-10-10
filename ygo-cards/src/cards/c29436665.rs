@@ -90,9 +90,9 @@ fn spcon(d: &mut Duel, a: Args) -> bool {
 fn sptg(d: &mut Duel, a: Args) -> bool {
     let e = a.e(0);
     let tp = a.p(1);
-    let c = a.c(8);
+    let c = a.card(8); // no chk parameter in Lua: c is the number 1, nil as a card
     // local g=Duel.SelectReleaseGroup(tp,Card.IsCode,1,1,false,true,true,c,nil,nil,false,nil,CARD_DARK_MAGICIAN)
-    let ra = duel::ReleaseArgs { use_hand: Some(false), max: None, check_field: true, to_check: Some(c), toplayer: None, zone: None, use_oppo: false, cancelable: true };
+    let ra = duel::ReleaseArgs { use_hand: Some(false), max: None, check_field: true, to_check: c, toplayer: None, zone: None, use_oppo: false, cancelable: true };
     let g = duel::select_release_group(d, tp, Some(&|d, x| card::is_code(d, x, &[CARD_DARK_MAGICIAN])), 1, 1, ra, NO_EX, false);
     // if g then
     if let Some(g) = g {

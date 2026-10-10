@@ -35,7 +35,8 @@ BUILTIN = {"aux.Next", "aux.TRUE", "aux.FALSE", "aux.NOT", "aux.AND", "aux.OR", 
            "aux.TargetEqualFunction", "aux.NULL", "aux.Stringid", "Group.CreateGroup", "Group.FromCards", "Effect.CreateEffect",
            "Effect.GlobalEffect"}
 # Lua names whose Rust function has another name; None: no function needed (see TRANSLATING.md)
-ALIAS = {"SendtoHand": "send_to_hand", "SendtoGrave": "send_to_grave", "SendtoDeck": "send_to_deck",
+ALIAS = {"Race": "info_race", "Attribute": "info_attribute", "Rscale": "info_rscale", "Lscale": "info_lscale", "LinkMarker": "info_link_marker", "LoadCardScript": None,
+         "SendtoHand": "send_to_hand", "SendtoGrave": "send_to_grave", "SendtoDeck": "send_to_deck",
          "SendtoExtraP": "send_to_extra_p", "Sendto": "send_to", "SetSPSummonOnce": "set_spsummon_once",
          "Merge": "add_card", "Sub": "remove_card", "Match": "match_", "GetChainData": "effect_data",
          "AnnounceLevel": "announce_number_range", "bfgcost": "self_banish", "InfiniteMats": "infinite_mats", "KeepAlive": None, "DeleteGroup": None, "GetNext": None,
@@ -72,6 +73,8 @@ def rust_names():
                     names.update(re.findall(r"^\s*([a-z_][a-z0-9_]*), [A-Z_]+,\s*$", s, re.M))
                     # functions defined by the `from_code!` macro: `name, field, type;`
                     names.update(re.findall(r"^\s*([a-z_][a-z0-9_]*), [a-z_]+, [a-z0-9]+;\s*$", s, re.M))
+                    # card info accessors (`info_` + name): Card.Race etc.
+                    names.update("info_" + n for n in re.findall(r"^\s*info_([a-z_]+), [a-z_]+, [a-z0-9]+;\s*$", s, re.M))
                     # re-exports under another name
                     names.update(re.findall(r"\bas ([a-z_][a-z0-9_]*)", s))
     return names

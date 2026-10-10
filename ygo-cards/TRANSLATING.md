@@ -146,6 +146,10 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - `c:IsHasEffect(code)` returns a `Vec` (all effects): `not c:IsHasEffect(X)` is `.is_empty()`.
 - Event codes: copy them exactly (`EVENT_PHASE_START|PHASE_STANDBY` is not `EVENT_PHASE|PHASE_STANDBY`).
 - `local e2=e1:Clone()` is `let e2 = effect::clone(d, e1);`.
+- `c:Race(v)` / `c:Attribute(v)` / `c:Level()` ... (the printed data, `CARD_INFO_FUNC` in libcard.cpp) are
+  `card::info_race(d, c, Some(v))` / `card::info_level(d, c, None)` and so on (`info_` + snake name).
+- `Duel.LoadCardScript("c980973.lua")` does nothing in Rust (all scripts are compiled in): leave it out and
+  refer to the other card's module (`super::c980973::...`) where the Lua uses its table.
 - A C function used as a filter (`Card.IsAbleToRemove` as a Fusion `matfilter`) gets the caller's extra
   arguments by position: with `(c, e, tp, chk)` the effect is not a number (default player), `tp` becomes
   the position and `chk` the reason: `card::is_able_to_remove(d, c, None, Some(tp), Some(chk as u32))`.

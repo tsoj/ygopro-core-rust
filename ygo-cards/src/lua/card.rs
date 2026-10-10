@@ -893,3 +893,39 @@ pub fn is_reincarnation_summoned(d: &mut Duel, c: CardId) -> bool {
 pub use crate::aux::is_rikka_releasable;
 /// `Card.IsGeminiStatus`/`Card.EnableGeminiStatus` (proc_gemini.lua aliases)
 pub use raw::{enable_gemini_state as enable_gemini_status, is_gemini_state as is_gemini_status};
+
+macro_rules! card_info {
+    ($(#[$m:meta] $name:ident, $field:ident, $t:ty;)*) => {$(
+        #[$m]
+        pub fn $name(d: &mut Duel, c: CardId, v: Option<$t>) -> $t {
+            if let Some(v) = v {
+                d.card_mut(c).data.$field = v;
+            }
+            d.card(c).data.$field
+        }
+    )*};
+}
+card_info! {
+    /// `c:Code()` (the printed data) / `c:Code(v)` (sets it)
+    info_code, code, u32;
+    /// `c:Alias()` / `c:Alias(v)`
+    info_alias, alias, u32;
+    /// `c:Type()` / `c:Type(v)`
+    info_type, type_, u32;
+    /// `c:Level()` / `c:Level(v)`
+    info_level, level, u32;
+    /// `c:Attribute()` / `c:Attribute(v)`
+    info_attribute, attribute, u32;
+    /// `c:Race()` / `c:Race(v)`
+    info_race, race, u64;
+    /// `c:Attack()` / `c:Attack(v)`
+    info_attack, attack, i32;
+    /// `c:Defense()` / `c:Defense(v)`
+    info_defense, defense, i32;
+    /// `c:Rscale()` / `c:Rscale(v)`
+    info_rscale, rscale, u32;
+    /// `c:Lscale()` / `c:Lscale(v)`
+    info_lscale, lscale, u32;
+    /// `c:LinkMarker()` / `c:LinkMarker(v)`
+    info_link_marker, link_marker, u32;
+}

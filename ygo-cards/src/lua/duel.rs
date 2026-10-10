@@ -221,3 +221,7 @@ pub fn count_tails(results: &[i32]) -> usize {
 pub fn check_pendulum_zones(d: &Duel, player: u8) -> bool {
     raw::check_location(d, player, LOCATION_PZONE, 0) || raw::check_location(d, player, LOCATION_PZONE, 1)
 }
+/// `local tc=Duel.GetFirstTarget()`: the first target (nil without targets)
+pub fn first_target(d: &Duel) -> Option<CardId> {
+    raw::get_first_target(d).first().copied()
+}

@@ -291,3 +291,49 @@ impl From<&CardSet> for CardSet {
         g.clone()
     }
 }
+
+impl From<bool> for Value {
+    fn from(v: bool) -> Value {
+        Value::Bool(v)
+    }
+}
+impl From<()> for Value {
+    fn from(_: ()) -> Value {
+        Value::Nil
+    }
+}
+macro_rules! value_from_int {
+    ($($t:ty),*) => {$(
+        impl From<$t> for Value {
+            fn from(v: $t) -> Value {
+                Value::Int(v as i64)
+            }
+        }
+    )*};
+}
+value_from_int!(i64, i32, u32, u16, u8, u64, usize);
+impl From<CardId> for Value {
+    fn from(v: CardId) -> Value {
+        Value::Card(v)
+    }
+}
+impl From<EffectId> for Value {
+    fn from(v: EffectId) -> Value {
+        Value::Effect(v)
+    }
+}
+impl From<CardSet> for Value {
+    fn from(v: CardSet) -> Value {
+        Value::Group(v)
+    }
+}
+impl From<LuaFn> for Value {
+    fn from(v: LuaFn) -> Value {
+        Value::Fn(v)
+    }
+}
+impl<T: Into<Value>> From<Option<T>> for Value {
+    fn from(v: Option<T>) -> Value {
+        v.map_or(Value::Nil, Into::into)
+    }
+}

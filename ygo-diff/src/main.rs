@@ -60,10 +60,14 @@ struct Args {
     seed: u64,
     max_decisions: usize,
     verbose: bool,
+    /// The share of scripted cards in the decks (in thousandths)
+    scripted_permille: usize,
+    /// The scripted cards the decks use (default: all translated ones)
+    cards: Option<Vec<u32>>,
 }
 
 fn parse_args() -> Args {
-    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false };
+    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None };
     let argv: Vec<String> = std::env::args().collect();
     let mut i = 1;
     while i < argv.len() {
@@ -78,6 +82,14 @@ fn parse_args() -> Args {
             }
             "--max-decisions" => {
                 a.max_decisions = argv[i + 1].parse().unwrap();
+                i += 1;
+            }
+            "--scripted" => {
+                a.scripted_permille = (argv[i + 1].parse::<f64>().unwrap() * 1000.0) as usize;
+                i += 1;
+            }
+            "--cards" => {
+                a.cards = Some(argv[i + 1].split(',').map(|x| x.parse().unwrap()).collect());
                 i += 1;
             }
             "-v" | "--verbose" => a.verbose = true,
@@ -181,7 +193,7 @@ fn compare_state(c: &mut CoreDuel, r: &mut Duel) -> Result<(), String> {
     Ok(())
 }
 
-fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: &[u32], codes: &[u32]) -> Result<Outcome, String> {
+fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: &[u32], scripted: &[u32], codes: &[u32]) -> Result<Outcome, String> {
     let mut rng = Rng(args.seed.wrapping_mul(1_000_003).wrapping_add(game));
     let seed = [rng.next(), rng.next(), rng.next(), rng.next()];
     let flags = DUEL_MODE_MR5;
@@ -192,7 +204,11 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
     ygo_cards::load_global_scripts(&mut r);
     for p in 0..2u8 {
         for _ in 0..40 {
-            let code = pool[rng.below(pool.len())];
+            let code = if !scripted.is_empty() && args.scripted_permille > 0 && rng.below(1000) < args.scripted_permille {
+                scripted[rng.below(scripted.len())]
+            } else {
+                pool[rng.below(pool.len())]
+            };
             let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc: LOCATION_DECK, seq: 0, pos: POS_FACEDOWN_DEFENSE };
             c.new_card(&info);
             r.ocg_new_card(&info);
@@ -315,13 +331,17 @@ fn main() {
     core_ffi::init(&root.join("build").join("libocgcore.so"), &root, db.clone());
     let scripts = Arc::new(ygo_cards::scripts());
     let pool = vanilla_pool(&db);
+    let scripted: Vec<u32> = args.cards.clone().unwrap_or_else(|| ygo_cards::cards::ALL.iter().map(|x| x.0).collect());
+    for c in &scripted {
+        assert!(scripts.get(*c).is_some(), "card {c} has no translated script");
+    }
     let mut codes: Vec<u32> = db.cards.keys().copied().collect();
     codes.sort();
-    eprintln!("{} vanilla monsters", pool.len());
+    eprintln!("{} vanilla monsters, {} scripted cards", pool.len(), scripted.len());
     let (mut ok, mut decisions, mut ended) = (0, 0, 0);
     let (mut tc, mut tr) = (Duration::ZERO, Duration::ZERO);
     for g in 0..args.games {
-        match play(g, &args, &db, &scripts, &pool, &codes) {
+        match play(g, &args, &db, &scripts, &pool, &scripted, &codes) {
             Ok(o) => {
                 ok += 1;
                 decisions += o.decisions;

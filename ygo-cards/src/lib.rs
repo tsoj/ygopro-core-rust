@@ -5,6 +5,7 @@
 //! make to it), write card functions with `prelude`, and use the constants of `constant.lua`.
 
 pub mod aux;
+pub mod cards;
 pub mod chain;
 pub mod constants;
 pub mod cost;
@@ -30,7 +31,11 @@ use ygo_core::script::Scripts;
 
 /// All card scripts (code -> initial_effect).
 pub fn scripts() -> Scripts {
-    Scripts::default()
+    let mut s = Scripts::default();
+    for &(code, f, _) in cards::ALL {
+        s.insert(code, f);
+    }
+    s
 }
 
 /// What loading `constant.lua`, `utility.lua` (with the scripts it loads) and the project's
@@ -89,8 +94,11 @@ impl Default for ScriptInfo {
 }
 
 /// The declarations of the script of `code`.
-pub fn script_info(_code: u32) -> ScriptInfo {
-    ScriptInfo::DEFAULT
+pub fn script_info(code: u32) -> ScriptInfo {
+    match cards::ALL.binary_search_by_key(&code, |x| x.0) {
+        Ok(i) => *cards::ALL[i].2,
+        Err(_) => ScriptInfo::DEFAULT,
+    }
 }
 
 /// The declarations of the script a card uses (its class table).

@@ -110,3 +110,55 @@ pub fn s_var(d: &Duel, code: u32, i: u64) -> Value {
 pub fn set_s_var(d: &mut Duel, code: u32, i: u64, v: Value) {
     d.set_script_var((code, i), v);
 }
+
+/// The arguments of a Lua function by position, read as the function's parameters (a missing or
+/// mistyped argument is a Lua error).
+#[derive(Clone, Copy)]
+pub struct Args<'a>(pub &'a [Value]);
+impl Args<'_> {
+    pub fn v(&self, i: usize) -> &Value {
+        self.0.get(i).unwrap_or(&Value::Nil)
+    }
+    /// An effect argument
+    pub fn e(&self, i: usize) -> EffectId {
+        self.v(i).as_effect().nil()
+    }
+    /// A card argument
+    pub fn c(&self, i: usize) -> CardId {
+        self.v(i).as_card().nil()
+    }
+    /// A card argument that may be nil
+    pub fn card(&self, i: usize) -> Option<CardId> {
+        self.v(i).as_card()
+    }
+    /// A player argument
+    pub fn p(&self, i: usize) -> u8 {
+        self.v(i).int() as u8
+    }
+    pub fn int(&self, i: usize) -> i64 {
+        self.v(i).int()
+    }
+    /// A group argument (a card as a group of one; empty if nil)
+    pub fn g(&self, i: usize) -> CardSet {
+        group_of(self.v(i)).unwrap_or_default()
+    }
+}
+/// A function with other arguments than the effect functions (e.g. the value of a field effect:
+/// `function(e, re, tp)`), returning what `f` returns.
+pub fn lua_fn<R: Into<Value>>(f: impl Fn(&mut Duel, Args) -> R + Send + Sync + 'static) -> LuaFn {
+    LuaFn::new(move |d, a| f(d, Args(a)).into())
+}
+
+/// Indexing `nil` in Lua is an error: `x.nil()` is `x`, or that error.
+pub trait Nil<T> {
+    fn nil(self) -> T;
+}
+impl<T> Nil<T> for Option<T> {
+    #[track_caller]
+    fn nil(self) -> T {
+        match self {
+            Some(x) => x,
+            None => crate::lua_error("attempt to index a nil value"),
+        }
+    }
+}

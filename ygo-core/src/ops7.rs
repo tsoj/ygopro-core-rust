@@ -500,7 +500,7 @@ impl Duel {
     }
 
     /// The MSG_MOVE of a card the sending moves (`card` leaves its Xyz monster first).
-    fn send_to_move(&mut self, ex: &mut SendToExargs, pcard: CardId, playerid: u8, dest: u8, seq: u8, position: u32) {
+    fn send_to_move(&mut self, ex: &mut SendToExargs, pcard: CardId, playerid: u8, dest: u8, seq: u8, position: Option<u32>) {
         let code = self.card(pcard).data.code;
         let from = pcard.get_info_location(self);
         if let Some(o) = self.card(pcard).overlay_target {
@@ -508,6 +508,8 @@ impl Duel {
             o.xyz_remove(self, pcard);
         }
         self.move_card(playerid, pcard, dest, seq, false);
+        // (`sendto_param` after `move_card`: `add_card` sets the position in the hand and the deck)
+        let position = position.unwrap_or(self.card(pcard).sendto_param.position as u32);
         self.card_mut(pcard).current.position = position;
         let to = pcard.get_info_location(self);
         let r = self.card(pcard).current.reason;
@@ -815,8 +817,7 @@ impl Duel {
                 }
                 let c = self.card(pcard);
                 if c.current.controler != playerid || c.current.location != dest {
-                    let position = c.sendto_param.position as u32;
-                    self.send_to_move(&mut param, pcard, playerid, dest, seq, position);
+                    self.send_to_move(&mut param, pcard, playerid, dest, seq, None);
                 }
                 let c = self.card(pcard);
                 if c.current.location as u32 == LOCATION_DECK && (self.core.deck_reversed || c.current.position == POS_FACEUP_DEFENSE) {
@@ -861,7 +862,7 @@ impl Duel {
                 let oloc = self.card(pcard).current.location;
                 let seq = self.returns.at_i8(2) as u8;
                 let ctrl = self.card(pcard).current.controler;
-                self.send_to_move(&mut param, pcard, ctrl, LOCATION_SZONE as u8, seq, POS_FACEUP);
+                self.send_to_move(&mut param, pcard, ctrl, LOCATION_SZONE as u8, seq, Some(POS_FACEUP));
                 self.card_mut(pcard).set_status(STATUS_LEAVE_CONFIRMED, false);
                 if self.card(pcard).status & (STATUS_SUMMON_DISABLED | STATUS_ACTIVATE_DISABLED) != 0 {
                     let c = self.card_mut(pcard);

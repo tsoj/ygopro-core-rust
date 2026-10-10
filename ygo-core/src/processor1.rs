@@ -92,6 +92,9 @@ impl Duel {
         let result = catch_unwind(AssertUnwindSafe(|| self.process_unit(unit)));
         match result {
             Ok(done) => {
+                // (the messages of this run go out while the scope can still drop those an
+                // earlier run sent)
+                self.generate_buffer();
                 self.scope = None;
                 Some(done)
             }

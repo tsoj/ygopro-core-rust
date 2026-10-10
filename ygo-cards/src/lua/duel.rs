@@ -80,3 +80,67 @@ pub fn select_effect(d: &mut Duel, tp: u8, choices: &[(bool, u64)]) -> Option<us
     let op = raw::select_option(d, tp, true, &eff);
     sel.get(op as usize).copied()
 }
+/// `Duel.MoveToDeckTop(targets)`
+pub fn move_to_deck_top(d: &mut Duel, targets: impl Into<super::CardOrGroup>) {
+    let t: super::CardOrGroup = targets.into();
+    for c in ygo_core::api::group::iter(d, &t.cards()) {
+        if ygo_core::api::card::is_location(d, c, LOCATION_DECK) {
+            raw::move_sequence(d, c, SEQ_DECKTOP as u8, None);
+        }
+    }
+}
+/// `Duel.MoveToDeckBottom(targets)` / `Duel.MoveToDeckBottom(count, tp)`
+pub fn move_to_deck_bottom(d: &mut Duel, targets: impl Into<super::CardOrGroup>) {
+    let t: super::CardOrGroup = targets.into();
+    for c in ygo_core::api::group::iter(d, &t.cards()) {
+        if ygo_core::api::card::is_location(d, c, LOCATION_DECK) {
+            raw::move_sequence(d, c, SEQ_DECKBOTTOM as u8, None);
+        }
+    }
+}
+pub fn move_decktop_to_bottom(d: &mut Duel, count: u32, tp: u8) {
+    for _ in 0..count {
+        let mg = raw::get_decktop_group(d, tp, 1);
+        let c = ygo_core::api::group::get_first(d, &mg).unwrap_or_else(|| crate::lua_error("attempt to index a nil value"));
+        raw::move_sequence(d, c, SEQ_DECKBOTTOM as u8, None);
+    }
+}
+/// `Duel.GetTargetCards(e)`: the targets still related to `e` (`None` without targets).
+pub fn get_target_cards(d: &mut Duel, e: EffectId) -> Option<CardSet> {
+    let tg = raw::get_chain_info(d, 0, &[crate::constants::CHAININFO_TARGET_CARDS]);
+    match tg.first() {
+        Some(Value::Group(g)) => {
+            let g = g.clone();
+            Some(ygo_core::api::group::filter(d, &g, &|d, c| super::card::is_relate_to_effect(d, c, e), super::NO_EX))
+        }
+        _ => None,
+    }
+}
+/// `Duel.GetZoneWithLinkedCount(count, tp)`
+pub fn get_zone_with_linked_count(d: &mut Duel, count: usize, tp: u8) -> u32 {
+    let g = raw::get_matching_group(d, Some(&|d, c| ygo_core::api::card::is_type(d, c, TYPE_LINK)), tp, LOCATION_MZONE, LOCATION_MZONE, super::NO_EX);
+    let mut rzone = 0u32;
+    for zone in [0x1u32, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40] {
+        let mut ct = 0;
+        for tc in ygo_core::api::group::iter(d, &g) {
+            if zone & ygo_core::api::card::get_linked_zone(d, tc, Some(tp)) != 0 {
+                ct += 1;
+            }
+        }
+        if ct >= count {
+            rzone |= zone;
+        }
+    }
+    rzone
+}
+/// `Duel.AnnounceAnotherAttribute(g, tp)`
+pub fn announce_another_attribute(d: &mut Duel, g: &CardSet, tp: u8) -> u32 {
+    let att = ygo_core::api::group::get_bitwise_or(d, g, &|d, c| ygo_core::api::card::get_attribute(d, c) as i64) as u32;
+    raw::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_ATTRIBUTE as u64);
+    raw::announce_attribute(d, tp, 1, if att & att.wrapping_sub(1) == 0 { !att & ATTRIBUTE_ALL } else { ATTRIBUTE_ALL })
+}
+pub fn announce_another_race(d: &mut Duel, g: &CardSet, tp: u8) -> u64 {
+    let race = ygo_core::api::group::get_bitwise_or(d, g, &|d, c| ygo_core::api::card::get_race(d, c) as i64);
+    raw::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_RACE as u64);
+    raw::announce_race(d, tp, 1, if race & race.wrapping_sub(1) == 0 { !race & RACE_ALL } else { RACE_ALL })
+}

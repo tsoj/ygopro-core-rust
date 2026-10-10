@@ -2,7 +2,7 @@
 //! global Lua scripts make (`proc_workaround.lua`, `utility.lua`, `chain.lua`,
 //! `proc_fusion_spell.lua` redefine some functions; those are defined here, the rest is the core's).
 
-pub use ygo_core::api::{CardOrGroup, Exclude, Filter, NO_EX, ValueFn};
+pub use ygo_core::api::{protected, CardOrGroup, Exclude, Filter, NO_EX, ValueFn};
 
 pub mod card;
 pub mod debug;

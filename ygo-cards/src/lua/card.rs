@@ -813,3 +813,11 @@ pub fn add_must_first_be_pendulum_summoned(d: &mut Duel, c: CardId) -> EffectId 
 pub fn add_must_first_be_link_summoned(d: &mut Duel, c: CardId) -> EffectId {
     must_first(d, c, |d, h, st| !raw::is_location(d, h, LOCATION_EXTRA) || st & SUMMON_TYPE_LINK == SUMMON_TYPE_LINK)
 }
+/// `c:ListsCounter(counter_type)`: in `counter_list`, or (without one) `counter_place_list`.
+pub fn lists_counter(d: &Duel, c: CardId, counter_type: u32) -> bool {
+    let info = crate::card_info(d, c);
+    if !info.counter_list.is_empty() { info.counter_list.contains(&counter_type) } else { info.counter_place_list.contains(&counter_type) }
+}
+pub fn places_counter(d: &Duel, c: CardId, counter_type: u32) -> bool {
+    crate::card_info(d, c).counter_place_list.contains(&counter_type)
+}

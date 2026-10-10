@@ -22,6 +22,8 @@ for _, k in ipairs(names) do
 	local t = "i64"
 	if v >= 0 and v <= 0xffffffff then t = "u32" elseif v >= 0 then t = "u64" end
 	if v < 0 and v >= -0x80000000 then t = "i32" end
+	-- (the 64-bit families, as in the core's constants)
+	if v >= 0 and (k:match("^RACE_") or k:match("^CATEGORY_") or k:match("^DUEL_")) then t = "u64" end
 	if t == "u64" or t == "i64" then
 		print(string.format("pub const %s: %s = %d;", k, t, v))
 	else

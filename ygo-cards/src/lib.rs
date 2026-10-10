@@ -46,6 +46,10 @@ pub struct ScriptInfo {
     pub material_setcode: &'static [u32],
     /// `s.min_tribute_req`, `s.max_tribute_req`
     pub tribute_req: Option<(u32, u32)>,
+    /// `s.counter_list`
+    pub counter_list: &'static [u32],
+    /// `s.counter_place_list`
+    pub counter_place_list: &'static [u32],
 }
 
 impl ScriptInfo {
@@ -59,6 +63,8 @@ impl ScriptInfo {
         material: &[],
         material_setcode: &[],
         tribute_req: None,
+        counter_list: &[],
+        counter_place_list: &[],
     };
 }
 

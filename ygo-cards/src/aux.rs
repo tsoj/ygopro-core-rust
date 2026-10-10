@@ -256,3 +256,193 @@ pub fn damcon1() -> LuaFn {
 pub fn stat_change_damage_step_condition(d: &Duel) -> bool {
     !(duel::is_phase(d, PHASE_DAMAGE) && duel::is_damage_calculated(d))
 }
+
+/// The `rescon` of `aux.SelectUnselectGroup`: `function(sg, e, tp, mg, c)` returning
+/// (the group is valid, stop extending it).
+pub type Rescon<'a> = &'a dyn Fn(&mut Duel, &CardSet, Option<EffectId>, u8, &CardSet, Option<CardId>) -> (bool, bool);
+
+struct LoopCtx<'a> {
+    mg: &'a CardSet,
+    e: Option<EffectId>,
+    tp: u8,
+    minc: usize,
+    maxc: usize,
+    rescon: Option<Rescon<'a>>,
+    /// (ygoai_overrides.lua) whether a group can be completed, per group, for one top-level call
+    memo: std::collections::HashMap<Vec<CardId>, bool>,
+}
+
+fn select_unselect_loop_inner(d: &mut Duel, x: &mut LoopCtx, c: CardId, sg: &mut CardSet) -> bool {
+    let mut res = x.rescon.is_none();
+    if sg.len() >= x.maxc {
+        return false;
+    }
+    sg.insert(c);
+    if let Some(rescon) = x.rescon {
+        let (r, stop) = rescon(d, sg, x.e, x.tp, x.mg, Some(c));
+        res = r;
+        if stop {
+            sg.remove(c);
+            return false;
+        }
+    }
+    if sg.len() < x.minc || (sg.len() < x.maxc && !res) {
+        res = extends(d, x, sg);
+    }
+    sg.remove(c);
+    res
+}
+
+/// `mg:IsExists(aux.SelectUnselectLoop, 1, sg, sg, mg, ...)`, remembered per group.
+fn extends(d: &mut Duel, x: &mut LoopCtx, sg: &mut CardSet) -> bool {
+    let key = sg.to_vec();
+    if let Some(&r) = x.memo.get(&key) {
+        return r;
+    }
+    let mut res = false;
+    for c in crate::lua::group::iter(d, x.mg) {
+        if sg.contains(c) {
+            continue;
+        }
+        if crate::lua::protected(d, false, |d| select_unselect_loop_inner(d, x, c, sg)) {
+            res = true;
+            break;
+        }
+    }
+    x.memo.insert(key, res);
+    res
+}
+
+/// `aux.SelectUnselectLoop(c, sg, mg, e, tp, minc, maxc, rescon)`: whether adding `c` to `sg`
+/// can lead to a valid group.
+#[allow(clippy::too_many_arguments)]
+pub fn select_unselect_loop(d: &mut Duel, c: CardId, sg: &mut CardSet, mg: &CardSet, e: Option<EffectId>, tp: u8, minc: usize, maxc: usize, rescon: Option<Rescon>) -> bool {
+    let mut x = LoopCtx { mg, e, tp, minc, maxc, rescon, memo: Default::default() };
+    select_unselect_loop_inner(d, &mut x, c, sg)
+}
+
+/// `aux.SelectUnselectGroup(g, e, tp, minc = 1, maxc = #g, rescon, chk, seltp, hintmsg, finishcon, breakcon, cancelable)`:
+/// with `chk == 0` whether a valid group exists (`Err`), else the group chosen card by card (`Ok`).
+#[allow(clippy::too_many_arguments)]
+pub fn select_unselect_group(
+    d: &mut Duel,
+    g: &CardSet,
+    e: Option<EffectId>,
+    tp: u8,
+    minc: Option<usize>,
+    maxc: Option<usize>,
+    rescon: Option<Rescon>,
+    chk: i64,
+    seltp: u8,
+    hintmsg: Option<u64>,
+    finishcon: Option<Rescon>,
+    breakcon: Option<Rescon>,
+    cancelable: bool,
+) -> Result<CardSet, bool> {
+    let minc = minc.unwrap_or(1);
+    let maxc = maxc.unwrap_or(g.len());
+    if chk == 0 {
+        if g.len() < minc {
+            return Err(false);
+        }
+        let mut eg = g.clone();
+        for c in crate::lua::group::iter(d, g) {
+            let mut sg = CardSet::new();
+            if select_unselect_loop(d, c, &mut sg, &eg, e, tp, minc, maxc, rescon) {
+                return Err(true);
+            }
+            eg.remove(c);
+        }
+        return Err(false);
+    }
+    let hintmsg = hintmsg.unwrap_or(0);
+    let mut sg = CardSet::new();
+    loop {
+        let finishable = sg.len() >= minc && finishcon.is_none_or(|f| f(d, &sg, e, tp, g, None).0);
+        let mut mg = CardSet::new();
+        for c in crate::lua::group::iter(d, g) {
+            if sg.contains(c) {
+                continue;
+            }
+            let mut sg2 = sg.clone();
+            if crate::lua::protected(d, false, |d| select_unselect_loop(d, c, &mut sg2, g, e, tp, minc, maxc, rescon)) {
+                mg.insert(c);
+            }
+        }
+        if breakcon.is_some_and(|b| b(d, &sg, e, tp, &mg, None).0) || mg.is_empty() || sg.len() >= maxc {
+            break;
+        }
+        duel::hint(d, HINT_SELECTMSG as u8, seltp, hintmsg);
+        let tc = crate::lua::group::select_unselect(d, &mg, Some(&sg), seltp, finishable, finishable || (cancelable && sg.is_empty()), Some(minc as u16), Some(maxc as u16));
+        let Some(tc) = tc else { break };
+        if sg.contains(tc) {
+            sg.remove(tc);
+        } else {
+            sg.insert(tc);
+        }
+    }
+    Ok(sg)
+}
+
+/// `aux.ChkfMMZ(sumcount)`: rescon "enough free Monster Zones after the group leaves"
+pub fn chkf_mmz(sumcount: i32) -> impl Fn(&mut Duel, &CardSet, Option<EffectId>, u8, &CardSet, Option<CardId>) -> (bool, bool) {
+    move |d, sg, _e, tp, _mg, _c| (duel::get_m_zone_count(d, tp, sg.into(), None, None, None).0 >= sumcount, false)
+}
+
+/// `aux.ResetEffects(g, code)`: resets the effects with that code of the cards.
+pub fn reset_effects(d: &mut Duel, g: &CardSet, code: u32) {
+    for c in crate::lua::group::iter(d, g) {
+        for v in card::get_card_effect(d, c, code) {
+            effect::reset(d, v);
+        }
+    }
+}
+/// `aux.IsZone(c, zone, tp)`
+pub fn is_zone(d: &Duel, c: CardId, zone: u32, tp: u8) -> bool {
+    let seq = card::get_sequence(d, c);
+    let mine = card::is_controler(d, c, tp);
+    let mut rzone = if mine { 1u32 << seq } else { 1u32 << (16 + seq) };
+    if seq == 5 || seq == 6 {
+        rzone |= if mine { 1 << (16 + 11 - seq) } else { 1 << (11 - seq) };
+    }
+    rzone & zone > 0
+}
+/// `aux.BitSplit(v)`: the set bits as values.
+pub fn bit_split(v: u64) -> Vec<u64> {
+    (0..64).map(|i| 1u64 << i).filter(|p| *p <= v && v & p != 0).collect()
+}
+pub fn get_coin_count_from_ev(ev: u32) -> u32 {
+    ev & 0xff
+}
+pub fn get_coin_heads_from_ev(ev: u32) -> u32 {
+    (ev >> 8) & 0xff
+}
+pub fn get_coin_tails_from_ev(ev: u32) -> u32 {
+    (ev >> 16) & 0xff
+}
+pub fn get_dice_count_self_from_ev(ev: u32) -> u32 {
+    ev & 0xffff
+}
+pub fn get_dice_count_oppo_from_ev(ev: u32) -> u32 {
+    (ev >> 16) & 0xffff
+}
+/// `aux.GetCoinEffectHintString(coin)`
+pub fn get_coin_effect_hint_string(coin: i32) -> Option<u64> {
+    match coin as u32 {
+        COIN_HEADS => Some(62),
+        COIN_TAILS => Some(63),
+        _ => None,
+    }
+}
+/// `aux.dpcheck(fun)`: rescon "all cards differ in fun" (fun: `function(c)` returning a number)
+pub fn dpcheck(fun: fn(&mut Duel, CardId) -> i64) -> impl Fn(&mut Duel, &CardSet, Option<EffectId>, u8, &CardSet, Option<CardId>) -> (bool, bool) {
+    move |d, sg, _e, _tp, _mg, _c| {
+        let c1 = crate::lua::group::get_class_count(d, sg, &fun);
+        let c2 = sg.len();
+        (c1 == c2, c1 != c2)
+    }
+}
+/// `aux.dncheck`: rescon "all cards have different names" (by their first code)
+pub fn dncheck() -> impl Fn(&mut Duel, &CardSet, Option<EffectId>, u8, &CardSet, Option<CardId>) -> (bool, bool) {
+    dpcheck(|d, c| card::get_code(d, c)[0] as i64)
+}

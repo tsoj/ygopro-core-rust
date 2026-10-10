@@ -85,6 +85,14 @@ always `d: &mut Duel` (or `&Duel`):
 | `aux.Stringid(id, 0)`                   | `aux::stringid(ID, 0)`                             |
 | `Cost.SelfDiscard`                      | `cost::self_discard()`                             |
 | `Duel.GetChainInfo(0, A, B)`            | `duel::get_chain_info(d, 0, &[A, B])` (a `Vec<Value>`) |
+| `Duel.GetMZoneCount(tp, g, tp)`         | `duel::get_m_zone_count(d, tp, (&g).into(), Some(tp), None, None).0` |
+| `Group.CreateGroup()`                   | `CardSet::new()`                                   |
+| `g:Merge(g2)` / `g:Sub(g2)`             | `group::add_card(&mut g, &g2)` / `group::remove_card(&mut g, &g2)` |
+| `for tc in aux.Next(g)` / `g:Iter()`    | `for tc in group::iter(d, &g)` (keep a `g:GetFirst()` before it as `let _ = group::get_first(d, &g);`) |
+| `Duel.GetOperationInfo(ev, cat)`        | `duel::get_operation_info(d, ev, cat)`: `None` = `ex` false, else `OpTarget { op_cards, op_count, op_player, op_param }` |
+| `Duel.NegateEffect(ev)`                 | `duel::negate_effect(d, a.ev as u8)`               |
+| `Duel.SelectEffect(tp, {b1,s1}, {b2,s2})` | `duel::select_effect(d, tp, &[(b1, s1), (b2, s2)])` (`Option<usize>`, 1-based like Lua) |
+| `Duel.AddCustomActivityCounter(id, ACTIVITY_CHAIN, function(re,tp,cid) ... end)` | `duel::add_custom_activity_counter(d, ID, ACTIVITY_CHAIN, lua_fn(f))`, `f(d, a: Args)` reads `re` as `a.e(0)` |
 
 Find the exact signature with `grep -rn "pub fn <name>(" rust/ygo-cards/src rust/ygo-core/src/api`
 (from the repository root). The module of a function (`card::`, `duel::`, ...) is the
@@ -94,14 +102,24 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 `duel::register_effect` are the Lua-wrapped versions.
 
 - **Optional arguments** are `Option`s: pass `None` where the Lua leaves the argument out or passes
-  `nil`. Look at the C++ (`build/ocgcore-src/lib*.cpp`) or the Rust doc comment when unsure what a
-  default means.
+  `nil`. Look at the C++ (`build/ocgcore-src/lib*.cpp`), the Lua libraries
+  (`external/CardScripts/utility.lua`, `proc_*.lua`: `Duel.SelectEffect`, `aux.*` and more are
+  defined there), or the Rust doc comment when unsure what a default means. Where the Rust
+  function takes a plain value for a Lua argument with a default, pass that default: a
+  one-argument `Duel.HintSelection(g)` is `duel::hint_selection(d, g, true)`.
+- A Lua **number where the C++ also accepts a table** (set codes in
+  `Duel.IsPlayerCanSpecialSummonMonster(tp, code, 0, ...)`) is a list of one value:
+  `setcodes: Some(vec![0])`. Only `nil` is "no value".
+- **Lua `nil` checks:** `if tc and tc:IsX() then` is `if let Some(tc) = tc { if ... }`;
+  `(x or 0)` on an `Option` is `x.map_or(0, ...)`.
 - **Summon context variants:** functions that take the extra `scard, sumtype, playerid` arguments
   (`c:IsAttribute(att, scard, sumtype, tp)`, ...) have a `_ctx` version:
   `card::is_attribute_ctx(d, c, att, scard, sumtype, Some(tp))`.
 - **Several return values** come back as a tuple or a `Vec`. Lua `local a,b=f()` usually reads the
   first ones. `duel::get_first_target(d)` returns all targets; `duel::first_target(d)` returns the
-  first one as an `Option`.
+  first one as an `Option`. A second value the function may not return
+  (`local code1,code2=c:GetOriginalCodeRule()`) is `nil` in Lua: use `v.get(1).copied()` and compare
+  with `Some(x)`, so `nil == x` stays false.
 - **Integers:** constants have the types the core uses (`u32` for most, `u64` for
   `CATEGORY_*`/`RACE_*`/hint descriptions). Cast with `as` where a signature needs another width
   (`HINT_SELECTMSG as u8`, `HINTMSG_DESTROY as u64`, `POS_FACEUP as u8`). The compiler tells you.
@@ -145,6 +163,10 @@ Conditions, costs, targets and operations are Rust functions wrapped into a `Lua
   `a.eg()`, which gives the group or an empty one.
 - `a.chk` is `Some(0)` in the check call of a cost/target, `Some(1)` otherwise.
 - `a.chkc()` is the Lua `chkc` (an `Option<CardId>`).
+- `a.re` is an `Option<EffectId>`: `a.re.nil()` where the Lua indexes `re`.
+- Where the Lua passes `eg` on to a parameter that accepts `nil` (`Duel.SetOperationInfo(0, cat,
+  eg, ...)`), pass `a.eg.clone()`.
+- Helper functions that return a Lua `function(...)` return `impl Fn(...)` in Rust.
 
 `Args` reads arguments by position: `a.e(0)` (an effect), `a.c(1)` (a card), `a.card(1)` (a card
 or nil), `a.p(2)` (a player), `a.int(i)`, `a.g(i)`. Unlike Lua, numbering starts at 0.
@@ -261,7 +283,10 @@ Groups are `CardSet` values. Lua groups are references, Rust groups are values:
   variable), store it again. The stored copy does not change with yours.
 - `g:Select(...)`, `Duel.SelectMatchingCard(...)`, ... return `Option<CardSet>`: `None` if the
   player canceled (only possible when `cancelable` is true). Lua's `nil`. When the selection is
-  not cancelable, write `.nil()` (`#g` on `nil` would be an error in Lua too).
+  not cancelable, write `.nil()` where the Lua indexes the result (`#g` on `nil` would be an error
+  in Lua too). Where the Lua only passes it on (`local g=Duel.SelectTarget(...)` then
+  `Duel.SetOperationInfo(0, cat, g, ...)`), pass the `Option` as it is.
+- `Duel.SelectMatchingCard` with 8 arguments and `g:Select` with 5 are not cancelable: pass `false`.
 
 ## Errors
 
@@ -319,6 +344,8 @@ cargo build --release
   around the place that produces that message. Most mismatches are a missing or extra call, a
   wrong default argument, or a wrong `ex`/location argument.
 - The game seed of a mismatch shows in the output: `--seed S --games G` replays the same games.
+- The coverage lines count activations and summons per card, not branches inside an operation. To
+  see whether a branch ran, add a temporary `eprintln!` to your card and remove it afterwards.
 
 Finish when the card's effects run in the coverage stats and several hundred games are identical
 (more for cards whose effects rarely run).

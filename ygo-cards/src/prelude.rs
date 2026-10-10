@@ -52,6 +52,10 @@ impl EffArgs {
         x.extra = a.get(9..).map_or(Vec::new(), |x| x.to_vec());
         x
     }
+    /// `chkc` of a target function: the card the core asks about (`Duel.CheckChainTarget`).
+    pub fn chkc(&self) -> Option<CardId> {
+        self.extra.first().and_then(|v| v.as_card())
+    }
     /// The event cards (empty if there are none).
     pub fn eg(&self) -> CardSet {
         self.eg.clone().unwrap_or_default()

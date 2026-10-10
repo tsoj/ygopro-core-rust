@@ -26,6 +26,26 @@ pub mod ns {
     pub const GLOBAL_CHECK: u32 = 2;
     /// `e:GetChainData()` (`chain.rs`)
     pub const CHAIN_DATA: u32 = 3;
+    /// Keys from here on in a card's namespace are fields the library sets on the card's script
+    /// table (`class`); a card's own `s_var` keys stay below.
+    pub const CLASS_FIELDS: u64 = 1 << 40;
+}
+
+/// Fields the library sets on a card's script table at run time (e.g. `Xyz.AddProcedure` sets
+/// `s.minxyzct`): `Duel::script_var((script code, ns::CLASS_FIELDS + field))`.
+pub mod class {
+    use crate::ns::CLASS_FIELDS;
+    /// `minxyzct`, `maxxyzct` (`Xyz.AddProcedure`)
+    pub const MIN_XYZ_CT: u64 = CLASS_FIELDS + 1;
+    pub const MAX_XYZ_CT: u64 = CLASS_FIELDS + 2;
+    /// The class field `f` of the script `c` uses.
+    pub fn get(d: &ygo_core::duel::Duel, c: ygo_core::types::CardId, f: u64) -> ygo_core::types::Value {
+        d.script_var((d.card(c).script_code, f))
+    }
+    pub fn set(d: &mut ygo_core::duel::Duel, c: ygo_core::types::CardId, f: u64, v: ygo_core::types::Value) {
+        let code = d.card(c).script_code;
+        d.set_script_var((code, f), v);
+    }
 }
 
 use ygo_core::script::Scripts;

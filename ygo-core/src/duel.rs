@@ -620,8 +620,9 @@ pub struct Duel {
     pub no_action: i32,
     /// The card scripts (code -> initial_effect), shared by all copies.
     pub scripts: Arc<crate::script::Scripts>,
-    /// Values kept by card scripts (the globals of the Lua scripts), by (code, key).
-    pub script_vars: Vec<((u32, u64), Value)>,
+    /// Values kept by card scripts (the globals of the Lua scripts), by (code, key); shared by
+    /// copies until one changes them.
+    pub script_vars: Arc<Vec<((u32, u64), Value)>>,
     /// The replay scope of the card function being run (see DESIGN.md).
     pub scope: Option<Box<crate::scope::Scope>>,
 }
@@ -727,9 +728,10 @@ impl Duel {
         self.script_vars.iter().find(|x| x.0 == key).map_or(Value::Nil, |x| x.1.clone())
     }
     pub fn set_script_var(&mut self, key: (u32, u64), v: Value) {
-        match self.script_vars.iter_mut().find(|x| x.0 == key) {
+        let vars = Arc::make_mut(&mut self.script_vars);
+        match vars.iter_mut().find(|x| x.0 == key) {
             Some(x) => x.1 = v,
-            None => self.script_vars.push((key, v)),
+            None => vars.push((key, v)),
         }
     }
     /// `duel::read_card`
@@ -852,7 +854,7 @@ impl Duel {
             call_depth: 0,
             no_action: 0,
             scripts,
-            script_vars: Vec::new(),
+            script_vars: Arc::new(Vec::new()),
             scope: None,
         };
         d.temp_card = d.new_card(0);

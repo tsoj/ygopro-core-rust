@@ -53,7 +53,10 @@ pub fn set_effect_data(d: &mut Duel, e: EffectId, ch: Option<u8>, f: u8, v: Valu
 fn prune_finished_chains(d: &mut Duel) {
     let n = duel::get_current_chain(d, false).max(0) as u8;
     let live: Vec<u64> = (1..=n).map(|ch| get_id(d, ch) as u64).collect();
-    d.script_vars.retain(|((ns, k), _)| *ns != NS_EFFECT_DATA || live.contains(&(k >> 40)));
+    let dead = |((ns, k), _): &((u32, u64), Value)| *ns == NS_EFFECT_DATA && !live.contains(&(k >> 40));
+    if d.script_vars.iter().any(dead) {
+        std::sync::Arc::make_mut(&mut d.script_vars).retain(|x| !dead(x));
+    }
 }
 
 /// The card properties of `chain.lua` (`CARD_PROPERTIES`).

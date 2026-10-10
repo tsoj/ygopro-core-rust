@@ -59,6 +59,8 @@ def rust_names():
                     names.update(re.findall(r"\bfn ([a-z_][a-z0-9_]*)", s))
                     # functions defined by macros: `name, STATIC,`
                     names.update(re.findall(r"^\s*([a-z_][a-z0-9_]*), [A-Z_]+,\s*$", s, re.M))
+                    # functions defined by the `from_code!` macro: `name, field, type;`
+                    names.update(re.findall(r"^\s*([a-z_][a-z0-9_]*), [a-z_]+, [a-z0-9]+;\s*$", s, re.M))
                     # re-exports under another name
                     names.update(re.findall(r"\bas ([a-z_][a-z0-9_]*)", s))
     return names

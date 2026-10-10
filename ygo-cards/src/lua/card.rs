@@ -856,3 +856,33 @@ pub fn equip_by_effect_and_limit_register(d: &mut Duel, c: CardId, e: EffectId, 
     register_effect(d, tc, e1, false);
     true
 }
+/// `c:GetTributeRequirement()`: the script's `min_tribute_req`/`max_tribute_req` if it declares them
+pub fn get_tribute_requirement(d: &mut Duel, c: CardId) -> (i32, i32) {
+    match crate::card_info(d, c).tribute_req {
+        Some((lo, hi)) => (lo as i32, hi as i32),
+        None => raw::get_tribute_requirement(d, c),
+    }
+}
+/// `c:GetSummonPhase()`: the phase the monster was Normal/Special Summoned in (0 if not recorded)
+pub fn get_summon_phase(d: &mut Duel, c: CardId) -> i64 {
+    if has_flag_effect(d, c, 160214042, None) { raw::get_flag_effect_label(d, c, 160214042).first().copied().unwrap_or(0) } else { 0 }
+}
+pub fn is_summon_phase(d: &mut Duel, c: CardId, phase: u32) -> bool {
+    get_summon_phase(d, c) == phase as i64
+}
+pub fn is_summon_phase_main(d: &mut Duel, c: CardId) -> bool {
+    let p = get_summon_phase(d, c);
+    p == PHASE_MAIN1 as i64 || p == PHASE_MAIN2 as i64
+}
+pub fn is_summon_phase_battle(d: &mut Duel, c: CardId) -> bool {
+    let p = get_summon_phase(d, c);
+    p >= PHASE_BATTLE_START as i64 && p <= PHASE_BATTLE as i64
+}
+/// `c:IsReincarnationSummoned()` (cards_specific_functions.lua): Summoned by "Salamangreat"
+/// Reincarnation (the flag of `aux.EnableCheckReincarnation`)
+pub fn is_reincarnation_summoned(d: &mut Duel, c: CardId) -> bool {
+    let label = raw::get_flag_effect_label(d, c, CARD_SALAMANGREAT_SANCTUARY).into_iter().fold(0, |l, x| l | x);
+    label & (raw::get_summon_player(d, c) as i64 + 1) != 0
+}
+/// `c:IsRikkaReleasable(tp)` (cards_specific_functions.lua)
+pub use crate::aux::is_rikka_releasable;

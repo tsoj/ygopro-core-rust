@@ -28,7 +28,7 @@ ALIAS = {"SendtoHand": "send_to_hand", "SendtoGrave": "send_to_grave", "SendtoDe
          "SendtoExtraP": "send_to_extra_p", "Sendto": "send_to", "SetSPSummonOnce": "set_spsummon_once",
          "Merge": "add_card", "Sub": "remove_card", "Match": "match_", "GetChainData": "effect_data",
          "AnnounceLevel": "announce_number_range", "bfgcost": "self_banish", "KeepAlive": None, "DeleteGroup": None, "GetNext": None,
-         "Iter": None, "Clear": None}
+         "Iter": None, "Clear": None, "ForEach": None}
 LIB = r"\b(aux|Auxiliary|Xyz|Synchro|Link|Fusion|Ritual|Pendulum|Gemini|Spirit|Union|Cost|Chain|Equip|Maximum|Duel|Card|Group|Effect)\.([A-Za-z_]\w*)"
 METHOD = r":([A-Z]\w*)\s*\("
 

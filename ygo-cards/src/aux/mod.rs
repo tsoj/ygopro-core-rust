@@ -837,3 +837,7 @@ pub fn default_field_return() -> DelayedFn {
 
 mod specific;
 pub use specific::*;
+mod workaround;
+pub use workaround::*;
+/// `aux.RemainFieldCost`, `aux.RemainFieldDisabled`, `aux.bfgcost` (= `Cost.SelfBanish`)
+pub use crate::cost::{remain_field_cost, remain_field_disabled, self_banish as bfgcost};

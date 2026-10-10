@@ -44,3 +44,27 @@ pub fn is_global_effect(d: &mut Duel, e: EffectId) -> bool {
         None => false,
     }
 }
+
+/// `e:IsCard<prop>(...)` / `e:GetCard<prop>()` of `chain.lua`: the properties of the effect's card
+/// (see `chain::effect_is_card`); these are the common ones as booleans.
+pub fn is_card_setcode(d: &mut Duel, e: EffectId, setcodes: &[u16]) -> bool {
+    crate::chain::effect_is_card(d, e, crate::chain::Prop::SetCard, &setcodes.iter().map(|&x| x as i64).collect::<Vec<_>>()).truthy()
+}
+pub fn is_card_code(d: &mut Duel, e: EffectId, codes: &[u32]) -> bool {
+    crate::chain::effect_is_card(d, e, crate::chain::Prop::Code, &codes.iter().map(|&x| x as i64).collect::<Vec<_>>()).truthy()
+}
+pub fn is_card_type(d: &mut Duel, e: EffectId, t: u32) -> bool {
+    crate::chain::effect_is_card(d, e, crate::chain::Prop::Type, &[t as i64]).truthy()
+}
+pub fn is_card_race(d: &mut Duel, e: EffectId, r: u64) -> bool {
+    crate::chain::effect_is_card(d, e, crate::chain::Prop::Race, &[r as i64]).truthy()
+}
+pub fn is_card_attribute(d: &mut Duel, e: EffectId, a: u32) -> bool {
+    crate::chain::effect_is_card(d, e, crate::chain::Prop::Attribute, &[a as i64]).truthy()
+}
+pub fn is_card_location(d: &mut Duel, e: EffectId, l: u32) -> bool {
+    crate::chain::effect_is_card(d, e, crate::chain::Prop::Location, &[l as i64]).truthy()
+}
+pub fn is_card_controler(d: &mut Duel, e: EffectId, p: u8) -> bool {
+    crate::chain::effect_is_card(d, e, crate::chain::Prop::Controler, &[p as i64]).truthy()
+}

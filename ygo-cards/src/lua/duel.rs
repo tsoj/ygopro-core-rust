@@ -225,3 +225,65 @@ pub fn check_pendulum_zones(d: &Duel, player: u8) -> bool {
 pub fn first_target(d: &Duel) -> Option<CardId> {
     raw::get_first_target(d).first().copied()
 }
+/// `Duel.CheckReleaseGroupCost`/`Duel.SelectReleaseGroupCost` (`proc_workaround.lua`)
+pub use crate::aux::{check_release_group_cost, select_release_group_cost};
+
+/// `Duel.GetTargetGroup(filter, player, loc1, loc2, ex, ...)`: `GetMatchingGroup` of the cards
+/// the current effect can target
+pub fn get_target_group(d: &mut Duel, f: Option<super::Filter>, p: u8, s: u32, o: u32, ex: super::Exclude) -> CardSet {
+    let mut g = raw::get_matching_group(d, f, p, s, o, ex);
+    let re = raw::get_reason_effect(d);
+    ygo_core::api::group::match_(d, &mut g, &|d, c| ygo_core::api::card::is_can_be_effect_target(d, c, re), super::NO_EX);
+    g
+}
+fn is_phase_of(d: &Duel, phase: u32, p: Option<u8>) -> bool {
+    raw::get_current_phase(d) == phase && p.is_none_or(|p| raw::is_turn_player(d, p))
+}
+/// `Duel.IsDrawPhase(player)`
+pub fn is_draw_phase(d: &Duel, p: Option<u8>) -> bool {
+    is_phase_of(d, PHASE_DRAW, p)
+}
+pub fn is_standby_phase(d: &Duel, p: Option<u8>) -> bool {
+    is_phase_of(d, PHASE_STANDBY, p)
+}
+pub fn is_main_phase1(d: &Duel, p: Option<u8>) -> bool {
+    is_phase_of(d, PHASE_MAIN1, p)
+}
+/// `Duel.IsStartOfBattlePhase(player)` (`Duel.IsStartStep`)
+pub fn is_start_of_battle_phase(d: &Duel, p: Option<u8>) -> bool {
+    is_phase_of(d, PHASE_BATTLE_START, p)
+}
+pub fn is_start_step(d: &Duel, p: Option<u8>) -> bool {
+    is_phase_of(d, PHASE_BATTLE_START, p)
+}
+pub fn is_battle_step(d: &Duel, p: Option<u8>) -> bool {
+    is_phase_of(d, PHASE_BATTLE_STEP, p)
+}
+pub fn is_damage_calculation(d: &Duel, p: Option<u8>) -> bool {
+    is_phase_of(d, PHASE_DAMAGE_CAL, p)
+}
+/// `Duel.IsEndOfBattlePhase(player)` (`Duel.IsEndStep`)
+pub fn is_end_of_battle_phase(d: &Duel, p: Option<u8>) -> bool {
+    is_phase_of(d, PHASE_BATTLE, p)
+}
+pub fn is_end_step(d: &Duel, p: Option<u8>) -> bool {
+    is_phase_of(d, PHASE_BATTLE, p)
+}
+pub fn is_main_phase2(d: &Duel, p: Option<u8>) -> bool {
+    is_phase_of(d, PHASE_MAIN2, p)
+}
+pub fn is_end_phase(d: &Duel, p: Option<u8>) -> bool {
+    is_phase_of(d, PHASE_END, p)
+}
+/// `Duel.IsPlayerCanAdditionalTributeSummon(player)`: no "Card Advance"-like effect used yet
+pub fn is_player_can_additional_tribute_summon(d: &mut Duel, p: u8) -> bool {
+    !has_flag_effect(d, p, CARD_CARD_ADVANCE, None)
+}
+/// `Duel.SwapSequence(c1, c2)`: whether the cards swapped
+pub fn swap_sequence(d: &mut Duel, c1: CardId, c2: CardId) -> bool {
+    use ygo_core::api::card as k;
+    let seq1 = k::get_sequence(d, c1);
+    let seq2 = k::get_sequence(d, c2);
+    raw::swap_sequence(d, c1, c2);
+    k::is_on_field(d, c1) && k::is_on_field(d, c2) && k::get_sequence(d, c1) == seq2 && k::get_sequence(d, c2) == seq1
+}

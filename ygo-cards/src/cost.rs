@@ -554,3 +554,5 @@ pub fn replaceable(base: LuaFn, extracon: Option<LuaFn>) -> LuaFn {
         res
     })
 }
+/// `Cost.SoftOncePerChain` etc. (the same functions)
+pub use self::{hard_use_limit_per_battle as hard_once_per_battle, hard_use_limit_per_chain as hard_once_per_chain, soft_use_limit_per_battle as soft_once_per_battle, soft_use_limit_per_chain as soft_once_per_chain};

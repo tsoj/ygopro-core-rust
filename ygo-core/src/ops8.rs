@@ -787,6 +787,29 @@ impl Duel {
     }
 
     pub fn process_operation_replace(&mut self, arg: &mut units::OperationReplace) -> bool {
+        // steps 15/16 (the destroy-replace chain of a battle) have no replace effect or targets (nullptr in the C++)
+        match arg.step {
+            15 => {
+                let Some(ch) = self.core.desrep_chain.pop_front() else { return true };
+                self.core.continuous_chain.push_back(ch);
+                let ch = self.core.continuous_chain.back().unwrap();
+                let reffect = ch.triggering_effect.unwrap();
+                if self.effect(reffect).operation.is_none() {
+                    return false;
+                }
+                let e = ch.evt.clone();
+                self.core.sub_solving_event.push_back(e);
+                let rp = reffect.get_handler_player(self);
+                self.emplace_process(units::ExecuteOperation { step: 0, triggering_player: rp, shuffle_check_was_disabled: false, triggering_effect: reffect });
+                return false;
+            }
+            16 => {
+                self.core.continuous_chain.pop_back();
+                arg.step = 14;
+                return false;
+            }
+            _ => {}
+        }
         let replace_effect = arg.replace_effect.unwrap();
         let g = arg.targets.unwrap();
         let (target, is_destroy) = (arg.target, arg.is_destroy);
@@ -906,25 +929,6 @@ impl Duel {
                 }
                 self.core.continuous_chain.pop_front();
                 true
-            }
-            15 => {
-                let Some(ch) = self.core.desrep_chain.pop_front() else { return true };
-                self.core.continuous_chain.push_back(ch);
-                let ch = self.core.continuous_chain.back().unwrap();
-                let reffect = ch.triggering_effect.unwrap();
-                if self.effect(reffect).operation.is_none() {
-                    return false;
-                }
-                let e = ch.evt.clone();
-                self.core.sub_solving_event.push_back(e);
-                let rp = reffect.get_handler_player(self);
-                self.emplace_process(units::ExecuteOperation { step: 0, triggering_player: rp, shuffle_check_was_disabled: false, triggering_effect: reffect });
-                false
-            }
-            16 => {
-                self.core.continuous_chain.pop_back();
-                arg.step = 14;
-                false
             }
             _ => true,
         }

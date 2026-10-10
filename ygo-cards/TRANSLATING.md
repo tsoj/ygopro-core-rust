@@ -146,6 +146,11 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - `c:IsHasEffect(code)` returns a `Vec` (all effects): `not c:IsHasEffect(X)` is `.is_empty()`.
 - Event codes: copy them exactly (`EVENT_PHASE_START|PHASE_STANDBY` is not `EVENT_PHASE|PHASE_STANDBY`).
 - `local e2=e1:Clone()` is `let e2 = effect::clone(d, e1);`.
+- `aux.SelectUnselectGroup`: a `rescon` returns `(valid, stop)`; a Lua rescon with one return value is
+  `(res, false)`. With `chk == 0` the result is `matches!(.., Err(true))`, with `chk == 1` `.unwrap_or_default()`.
+- `Duel.GetTargetCards(e)` is `duel::get_target_cards(d, e)` (an `Option`): `.nil()` where the Lua indexes it.
+- Calling a library `LuaFn` from Rust (`aux.bdocon(e,tp,...)`, `Gemini.EffectStatusCondition(e)`):
+  `f.call(d, &[Value::Effect(e), ...]).truthy()`.
 - `c.material` (of any card) is `crate::class::material(d, c)`: procedures such as `Fusion.AddProcMix` set it at
   run time, so `card_info(d, c).material` (the static declaration only) is wrong.
 - `c:Race(v)` / `c:Attribute(v)` / `c:Level()` ... (the printed data, `CARD_INFO_FUNC` in libcard.cpp) are

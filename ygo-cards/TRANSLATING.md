@@ -146,6 +146,9 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - `c:IsHasEffect(code)` returns a `Vec` (all effects): `not c:IsHasEffect(X)` is `.is_empty()`.
 - Event codes: copy them exactly (`EVENT_PHASE_START|PHASE_STANDBY` is not `EVENT_PHASE|PHASE_STANDBY`).
 - `local e2=e1:Clone()` is `let e2 = effect::clone(d, e1);`.
+- A C function used as a filter (`Card.IsAbleToRemove` as a Fusion `matfilter`) gets the caller's extra
+  arguments by position: with `(c, e, tp, chk)` the effect is not a number (default player), `tp` becomes
+  the position and `chk` the reason: `card::is_able_to_remove(d, c, None, Some(tp), Some(chk as u32))`.
 - `e:GetChainData().x = v` / `e:GetChainData().x` (a field the card invents) is
   `chain::set_effect_data(d, e, None, chain::field::CARD + n, v)` / `chain::effect_data(d, e, None, chain::field::CARD + n)`,
   with one `n` (0, 1, ...) per field name; the library fields are `chain::field::COST_*`.

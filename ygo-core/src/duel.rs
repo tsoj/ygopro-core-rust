@@ -645,7 +645,7 @@ impl Duel {
         Arc::make_mut(self.effects[e.0 as usize].as_mut().expect("deleted effect"))
     }
     pub fn effect_exists(&self, e: EffectId) -> bool {
-        self.effects.get(e.0 as usize).is_some_and(|x| x.is_some())
+        self.effects.get(e.0 as usize).is_some_and(|x| x.as_ref().is_some_and(|x| !x.deleted))
     }
 
     /// `duel::new_card` (with `interpreter::register_card`: the card's `initial_effect` runs,
@@ -681,7 +681,9 @@ impl Duel {
     }
     /// `duel::delete_effect`
     pub fn delete_effect(&mut self, e: EffectId) {
-        self.effects[e.0 as usize] = None;
+        if let Some(x) = self.effects[e.0 as usize].as_mut() {
+            Arc::make_mut(x).deleted = true;
+        }
     }
     /// A new shared group (`duel::new_group` for the core's own groups).
     pub fn new_group(&mut self, set: CardSet) -> GroupRef {

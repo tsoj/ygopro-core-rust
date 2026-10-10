@@ -8,6 +8,9 @@ use crate::units::LocationReason;
 /// `effect`
 #[derive(Clone, Debug)]
 pub struct Effect {
+    /// Deleted (`duel::delete_effect`): the C++ frees the effect but may still read it through a
+    /// stale pointer (e.g. a card's `reason_effect`), which reads the old data; so the data stays.
+    pub deleted: bool,
     pub count_limit: u8,
     pub count_limit_max: u8,
     pub count_flag: u8,
@@ -54,6 +57,7 @@ pub struct Effect {
 impl Effect {
     pub fn new() -> Self {
         Effect {
+            deleted: false,
             count_limit: 0,
             count_limit_max: 0,
             count_flag: 0,

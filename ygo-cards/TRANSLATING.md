@@ -96,6 +96,13 @@ always `d: &mut Duel` (or `&Duel`):
 | `Duel.NegateEffect(ev)`                 | `duel::negate_effect(d, a.ev as u8)`               |
 | `Duel.SelectEffect(tp, {b1,s1}, {b2,s2})` | `duel::select_effect(d, tp, &[(b1, s1), (b2, s2)])` (`Option<usize>`, 1-based like Lua) |
 | `Duel.AddCustomActivityCounter(id, ACTIVITY_CHAIN, function(re,tp,cid) ... end)` | `duel::add_custom_activity_counter(d, ID, ACTIVITY_CHAIN, lua_fn(f))`, `f(d, a: Args)` reads `re` as `a.e(0)` |
+| `c:IsSetCard(SET_X)`                    | `card::is_set_card(d, c, &[SET_X as u16])` (set codes are `u16` here); with the Lua extra args `(SET_X, lc, sumtype, tp)`: `card::is_set_card_ctx` |
+| `Duel.ChangePosition(c, au, 0, du, 0)`  | `duel::change_position(d, c, au, Some(0), Some(du), Some(0), false)`: an omitted `ad`/`du`/`dd` is `None` (= `au`), an explicit `0` is `Some(0)` |
+| `Cost.DetachFromSelf(n)` / `(n, m)`      | `cost::detach_from_self(cost::Count::N(n), None, None)` / `(Count::N(n), Some(Count::N(m)), None)` |
+| `Duel.IsMainPhase()` / `Duel.IsBattlePhase()` | `duel::is_main_phase(d, None)` / `duel::is_battle_phase(d, None)` |
+| `Duel.SSet(tp, g)`                      | `duel::s_set(d, tp, g, None, true)` (toplayer = tp, confirm = true) |
+| `c:GetMaterial()`                       | `card::get_material(d, c)` (the material group; `c.material` is something else: see below) |
+| `e:SetLabelObject(tc)` / `e:GetLabelObject()` (a card) | `effect::set_label_object(d, e, Value::Card(tc))` / `effect::get_label_object(d, e).as_card()` |
 | `g:AddCard(c)` / `g:RemoveCard(c)`     | `group::add_card(&mut g, &CardSet::from_card(c))` / `group::remove_card(...)` |
 | `g:FilterCount(f, nil)`                 | `group::filter_count(d, &g, &f, NO_EX)` (the `nil` is `ex`, not a filter argument; `filter_count`, `is_exists`, `filter` take the filter without `Option`) |
 | `local g1,g2=g:Split(f, nil)`           | `let (g1, g2) = group::split(d, &g, &f, NO_EX)` (matching, the rest) |
@@ -215,6 +222,9 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
   `lua_int(atk as f64 / 2.0)`. Keep comparisons in `f64` (`atk as f64 / 2.0 > x as f64`).
   `math.floor(a/b)` and `a//b` are integer floor division (`a.div_euclid(b)` for `b > 0`).
 - A value function that falls off the end returns `nil` in Lua, which the core reads as `0`.
+  A value function returning `false` is also read as `0`. A Lua number is always true in a condition:
+  `if Duel.SendtoGrave(...) and ...` / `Duel.SpecialSummon(...)` / `GetLocationCountFromEx(...)` used
+  as a boolean are true even when they return 0 (call them, then continue as true; never `> 0`).
 - An operation whose return value the core reads (the operation of a `*_REPLACE` effect such as
   `EFFECT_OVERLAY_REMOVE_REPLACE`: `return true` = replaced) must return it: write it as `condition(f)` (a
   `bool`), not `operation(f)`.

@@ -110,6 +110,11 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
   defined there), or the Rust doc comment when unsure what a default means. Where the Rust
   function takes a plain value for a Lua argument with a default, pass that default: a
   one-argument `Duel.HintSelection(g)` is `duel::hint_selection(d, g, true)`.
+  `Duel.IsPlayerCanDraw(p)` without a count is `duel::is_player_can_draw(d, p, 0)` (not 1: the
+  count only checks the Deck size). Always look the default up; never guess it.
+  `Duel.SelectOption(p, d1, d2)` is `duel::select_option(d, p, true, &[d1, d2])` (`sel_hint` defaults to
+  true: the opponent sees the choice); `Duel.SelectOption(p, false, d1, d2)` passes `false`.
+  `c:CancelToGrave()` is `card::cancel_to_grave(d, c, true)`.
 - A Lua **number where the C++ also accepts a table** (set codes in
   `Duel.IsPlayerCanSpecialSummonMonster(tp, code, 0, ...)`) is a list of one value:
   `setcodes: Some(vec![0])`. Only `nil` is "no value".

@@ -1,151 +1,336 @@
 # code	name	status	translated_by	notes
 # status: verified (ygo-diff identical, effects ran) | untested (identical, but some effects never ran) | missing (library gap) | failed
+50755	Magician's Circle	verified	haiku	
 62121	Castle of Dark Illusions	verified	haiku	
+126218	Skull Dice	verified	haiku	
+295517	A Legendary Ocean	verified	haiku	
+911883	Unexpected Dai	verified	haiku	
+1353770	Valhalla, Hall of the Fallen	verified	haiku	
 1412158	Super Roboyarou	verified	haiku	
+1435851	Dragon Treasure	verified	haiku	
 1475311	Allure of Darkness	verified	haiku	
+2084239	Wetlands	verified	haiku	
 2130625	Numinous Healer	verified	haiku	
+2347477	Micro Coder	verified	haiku	
+2370081	Steel Shell	verified	haiku	
+2460565	Marauding Captain	verified	haiku	
 2504891	Skull Knight	verified	haiku	
+2857636	Knightmare Phoenix	verified	haiku	
 3136426	Level Limit - Area B	verified	haiku	
 3544583	Allvain the Essence of Vanity	verified	main	
 3627449	Skull Guardian	verified	main	
+3643300	The Legendary Fisherman	verified	haiku	
+4019153	Number 4: Numeron Gate Catvari	verified	haiku	
 4031928	Change of Heart	verified	haiku	
+4178474	Raigeki Break	verified	haiku	
 4206964	Trap Hole	verified	main	
 4614116	Dark Energy	verified	haiku	
+4796100	Chimera the Flying Mythical Beast	verified	haiku	
 4849037	Performance of Sword	verified	main	
+4929256	Mobius the Frost Monarch	verified	haiku	
 5318639	Mystical Space Typhoon	verified	main	
 5402805	Berserker of the Tenyi	verified	main	
+6133894	Mazera DeVille	verified	haiku	
+6137095	Malfunction	verified	haiku	fixed CancelToGrave default
 7089711	Hane-Hane	verified	haiku	
+7572887	D.D. Warrior Lady	verified	haiku	
 8131171	Sinister Serpent	verified	haiku	
+8201910	Star Boy	verified	haiku	
 8687195	Dreamsprite	verified	haiku	
+8842266	Poison of the Old Man	verified	haiku	fixed SelectOption sel_hint default
+9032529	Graceful Tear	verified	haiku	
 9053187	Gagagigo the Risen	verified	main	
+9076207	Armed Ninja	verified	haiku	
 9293977	Metal Dragon	verified	haiku	
 9547962	Euler's Circuit	verified	haiku	
+9596126	Chaos Sorcerer	verified	haiku	
+9720537	Owner's Seal	verified	haiku	
 10045474	Infinite Impermanence	untested	haiku	identical 1000/1000; chkc branch needs a CheckChainTarget partner
+10813327	Waking the Dragon	verified	haiku	
+11224103	Horus the Black Flame Dragon LV6	verified	haiku	
 11375683	Tindangle Trinity	verified	haiku	
+11685347	Blast Asmodian	verified	haiku	
 11868825	Goblin's Secret Remedy	verified	haiku	
 12580477	Raigeki	verified	main	
 12607053	Waboku	verified	haiku	
 12678601	Tindangle Dholes	verified	haiku	
+12694768	Abaki	verified	haiku	
 12923641	Swords of Concealing Light	verified	haiku	
+13215230	Dream Clown	verified	haiku	
+13821299	Trap Eater	untested	haiku	never ran in its pair
+13944422	Granadora	verified	haiku	
 13945283	Wall of Illusion	verified	haiku	
+14087893	Book of Moon	verified	haiku	
 14315573	Negate Attack	verified	haiku	
 14318794	Life Absorbing Machine	verified	haiku	
+14536035	Dark Grepher	verified	haiku	
 14558127	Ash Blossom & Joyous Spring	verified	haiku	
+15232745	Number 1: Numeron Gate Ekam	verified	haiku	
+15237615	Empress Judge	untested	haiku	never ran in its pair
+15862758	Number iC1000: Numerounius Numerounia	verified	haiku	
+16226786	Night Assailant	verified	haiku	
 16527176	Naturia Leodrake	verified	main	
 17078030	Wall of Revealing Light	verified	haiku	
+17092736	Ancient Telescope	verified	haiku	
 17390179	Flash Knight	verified	main	
 17449108	Nobleman of Extermination	verified	haiku	
 17814387	Reinforcements	verified	haiku	
+17881964	Darkfire Dragon	verified	haiku	
+18144506	Harpie's Feather Duster	verified	haiku	
+18318842	Abyss Soldier	verified	haiku	
+18605135	Tornado Wall	verified	haiku	
+19066538	Roaring Ocean Snake	untested	haiku	never ran in its pair
 19159413	De-Spell	verified	haiku	
 19204398	Ally of Justice Light Gazer	verified	main	
+19230407	Offerings to the Doomed	verified	haiku	
+19384334	Molten Destruction	verified	haiku	
 19474136	Mandragon	verified	main	
 19613556	Heavy Storm	verified	main	
 19671102	Stairs of Mail	verified	haiku	
 20394040	Lava Battleguard	verified	haiku	
 20522190	Dark Mirror Force	verified	haiku	
+21598948	Fairy Box	verified	haiku	
 22046459	Megamorph	verified	haiku	fixed float division (lua_int)
 22537443	Sebek's Blessing	verified	haiku	
 22567609	Nimble Momonga	verified	haiku	
+22589918	Reload	verified	haiku	fixed IsPlayerCanDraw default
 22702055	Umi	verified	haiku	
 23205979	Spirit Reaper	verified	haiku	
 23265313	Cost Down	verified	haiku	
+23424603	Wasteland	verified	haiku	
 23434538	Maxx "C"	verified	haiku	needed core fix: reason_effect restored after nested runs
+23846921	Arcana Force XXI - The World	verified	haiku	
 24068492	Just Desserts	verified	haiku	
 24094653	Polymerization	verified	main	
 24158464	Tindangle Jhrelth	verified	haiku	
 24224830	Called by the Grave	verified	haiku	negation branch lightly exercised (21x)
+24317029	Gravekeeper's Spy	verified	haiku	
 24435369	Mermaid Knight	verified	haiku	
+24874630	Fiend's Sanctuary	verified	haiku	
 25311006	Triple Tactics Talent	verified	haiku	all 3 options ran
 25880422	Block Attack	verified	haiku	
+25955164	Sanga of the Thunder	verified	haiku	
+26185991	Pinch Hopper	verified	haiku	
 26202165	Sangan	verified	main	
 26932788	Javelin Beetle	verified	main	
 27204311	Nibiru, the Primal Being	verified	haiku	token path not confirmed separately
+28325165	Aqua Story - Urashima	verified	haiku	
 28363749	Fire Opal Head	verified	main	
 28725004	Tainted Wisdom	verified	haiku	
 28933734	Mask of Darkness	verified	haiku	
+28985331	Armageddon Knight	verified	haiku	
+29047353	Aquarium Stage	verified	haiku	
 29267084	Shadow Spell	verified	haiku	
+29401950	Bottomless Trap Hole	verified	haiku	
+30114823	Code Generator	verified	haiku	
 30397786	Blue-Eyes White Dragon, the White Phantom Beast	verified	haiku	
 30451366	Mystical Sheep #1	verified	haiku	
 30683373	Shield Crush	verified	haiku	
+30778711	Shadow Ghoul	verified	haiku	
 31066283	Revival of Dokurorider	verified	main	
+31281980	Healing Wave Generator	verified	haiku	
+31305911	Marshmallon	verified	haiku	
+31560081	Magician of Faith	verified	haiku	
+31709826	Revival Jam	verified	haiku	
 31759689	Tindangle Hound	verified	haiku	
+31786629	Thunder Dragon	verified	haiku	
+32539892	Minar	verified	haiku	
 32807846	Reinforcement of the Army	verified	haiku	
 32872239	Gallugallud the Endless Enigma	verified	main	
+33057951	Surface	verified	haiku	
 33066139	Reaper of the Cards	verified	haiku	
 33184167	Tribe-Infecting Virus	verified	haiku	
 33396948	Exodia the Forbidden One	verified	haiku	
+33508719	Morphing Jar	verified	haiku	
+33767325	Meteor of Destruction	verified	haiku	
+33782437	One Day of Peace	verified	haiku	
+33907039	Piri Reis Map	verified	haiku	
 35346968	Solemn Wishes	verified	haiku	
+35726888	Foolish Burial Goods	verified	haiku	
+35762283	Heart of the Underdog	verified	haiku	
+35956022	Acidic Downpour	verified	haiku	
+35975813	Terrorking Archfiend	verified	haiku	
+36354007	Gilford the Lightning	verified	haiku	
+36361633	Threatening Roar	verified	haiku	
+36690018	Reversal of Fate	verified	haiku	
+37053871	Astral Barrier	verified	haiku	
+37119142	Code Exporter	verified	haiku	
 37120512	Sword of Dark Destruction	verified	haiku	
+37421579	Charubin the Fire Knight	untested	haiku	never ran in its pair
+37520316	Mind Control	verified	haiku	
+37576645	Reckless Greed	verified	haiku	
 37580756	Michizure	verified	haiku	
+37812118	Cup of Ace	verified	haiku	
+38120068	Trade-In	verified	haiku	
 38199696	Red Medicine	verified	haiku	
+38342335	Knightmare Unicorn	verified	haiku	
 38992735	Wave-Motion Cannon	verified	haiku	fixed EVENT_PHASE_START
+39260991	Aquaactress Tetra	verified	haiku	
 39399168	Resurrection of Chakra	verified	main	
+39537362	Ordeal of a Traveler	verified	haiku	
+39701395	Cards of Consonance	verified	haiku	
+40044918	Elemental HERO Stratos	verified	haiku	
 40453765	Swamp Battleguard	verified	haiku	
+40640057	Kuriboh	verified	haiku	
 40916023	Aqua Spirit	verified	main	translated by main (KeepAlive)
 41182875	Javelin Beetle Pact	verified	main	
 41248270	Traffic Ghost	verified	main	
+41420027	Solemn Judgment	verified	haiku	
+41544074	Kamionwizard	untested	haiku	never ran in its pair
+41587307	Broken Bamboo Sword	verified	haiku	
+42199039	Cursed Bamboo Sword	verified	haiku	
+42230449	Number 2: Numeron Gate Dve	verified	haiku	
+42364374	Arsenal Bug	verified	haiku	
+42703248	Giant Trunade	verified	haiku	
 43417563	Commencement Dance	verified	main	
 43422537	Double Summon	verified	haiku	
 43694075	Novox's Prayer	verified	main	
 44095762	Mirror Force	verified	main	
+44209392	Castle Walls	verified	haiku	
+44763025	Delinquent Duo	verified	haiku	
 45231177	Flame Swordsman	verified	main	
 45311864	Goblin Thief	verified	haiku	
+45462149	Code Talker Inverted	verified	haiku	
+45778932	Rising Air Current	verified	haiku	
 45815891	Scrap Archfiend	verified	main	
+45986603	Snatch Steal	verified	haiku	
 46130346	Hinotama	verified	haiku	
 46461247	Trap Master	verified	haiku	
 46502013	Pixie Ring	verified	haiku	
 47295267	Cybernetic Zone	verified	haiku	
+48229808	Horus the Black Flame Dragon LV8	verified	haiku	
+48783998	Nova Summoner	verified	haiku	
+50045299	Dragon Capture Jar	verified	haiku	
+50259460	Versago the Destroyer	verified	haiku	
 50400231	Satellite Cannon	verified	haiku	
+50913601	Mountain	verified	haiku	
+52112003	Card Advance	verified	haiku	
+52296675	Anchamoufrite	verified	haiku	
 53046408	Emergency Provisions	verified	haiku	
 53129443	Dark Hole	verified	main	
+53183600	Blue-Eyes Toon Dragon	untested	haiku	never ran in its pair
+53239672	Spirit Barrier	verified	haiku	
 53530069	Spirit of the Breeze	verified	haiku	
+53582587	Torrential Tribute	verified	haiku	
 54541900	Karbonala Warrior	verified	haiku	
 54652250	Man-Eater Bug	verified	haiku	
+54752875	Twin-Headed Thunder Dragon	verified	haiku	
 55144522	Pot of Greed	verified	main	
+55713623	Shrink	verified	haiku	
+55878038	Chaos Dragon Levianeer	verified	haiku	
 56120475	Sakuretsu Armor	verified	haiku	
 56433456	The Sanctuary in the Sky	verified	haiku	
+56570271	Destiny HERO - Disk Commander	verified	haiku	
+56594520	Gaia Power	verified	haiku	
 57182235	Token Thanksgiving	verified	haiku	
+57839750	Mother Grizzly	verified	haiku	
+57953380	Card of Safe Return	verified	haiku	
+59036972	Mavelus	untested	haiku	never ran in its pair
 59197169	Yami	verified	main	
+59438930	Ghost Ogre & Snow Rabbit	verified	haiku	
 59490397	Gergonne's End	verified	haiku	
+59616123	Trap Stun	verified	haiku	
+59750328	Card of Demise	verified	haiku	
 59919307	Back to the Front	verified	haiku	
 60082869	Dust Tornado	verified	haiku	--cards run (with S/T partners), 901 activations
 60764581	Stray Lambs	verified	haiku	
 60806437	UFO Turtle	verified	haiku	
+60953118	Arcana Force XIV - Temperance	verified	haiku	
+61175706	Arcana Force IV - The Emperor	verified	haiku	
 61854111	Legendary Sword	verified	haiku	
 62279055	Magic Cylinder	verified	haiku	
 62325062	Adhesion Trap Hole	verified	haiku	
+62892347	Arcana Force 0 - The Fool	verified	haiku	
 63053267	Nagel's Protection	verified	haiku	needed Cost.AND library fix
 63102017	Stop Defense	verified	haiku	
+63120904	Orca Mega-Fortress of Darkness	verified	haiku	
+64047146	Horn of the Unicorn	verified	haiku	
+64306248	Skull-Mark Ladybug	verified	haiku	
 64752646	Fire Princess	verified	haiku	
+64788463	King's Knight	verified	haiku	
 65393205	Chakra	verified	main	
+65446452	Aquarium Set	verified	haiku	
 65681983	Crossout Designator	verified	haiku	--cards run, 1328 activations
+66668900	Aquaactress Guppy	verified	haiku	
 66788016	Fissure	verified	haiku	
 66889139	Gaia the Dragon Champion	verified	main	
+67169062	Pot of Avarice	verified	haiku	
 67598234	Gaia Saber, the Lightning Shadow	verified	main	
+67616300	Chicken Game	verified	haiku	
 67744384	Tindangle Protector	verified	haiku	
+67775894	Wonder Wand	verified	haiku	
 67886895	Deep-Eyes White Dragon, the Blue Abyss	verified	haiku	
 68005187	Soul Exchange	verified	haiku	
 68860936	Tindangle Angel	verified	haiku	
 69069911	Kachi Kochi Dragon	verified	main	
+69162969	Lightning Vortex	verified	haiku	
+69196160	Thunder Crash	verified	haiku	
+69831560	Arcana Force EX - The Dark Ruler	verified	haiku	
+70095154	Cyber Dragon	verified	haiku	
 70368879	Upstart Goblin	verified	main	
+70681994	Dragoness the Wicked Knight	verified	haiku	
+70791313	Royal Magical Library	verified	haiku	
+70828912	Premature Burial	verified	haiku	
+71044499	Nobleman of Crossout	verified	haiku	
+71413901	Breaker the Magical Warrior	verified	haiku	
+71587526	Karma Cut	verified	haiku	
 71594310	Gem-Knight Pearl	verified	main	
+72192100	Desrook Archfiend	verified	haiku	
 72302403	Swords of Revealing Light	verified	haiku	
 72336818	Pentestag	verified	main	
+72443568	Silent Magician LV8	verified	haiku	
 72520073	Dark Artist	verified	haiku	
+72657739	Malice Doll of Demise	verified	haiku	
 72869010	Soul Hunter	verified	haiku	
-72892473	Card Destruction	verified	haiku	
+72892473	Card Destruction	verified	haiku	fixed IsPlayerCanDraw default
+72989439	Black Luster Soldier - Envoy of the Beginning	verified	haiku	
+73134081	Final Flame	verified	haiku	
+73206827	Light Barrier	verified	haiku	
 73628505	Terraforming	verified	haiku	
+73665146	Silent Magician LV4	verified	haiku	
 73915051	Scapegoat	verified	haiku	
+74029853	Golden Bamboo Sword	verified	haiku	
+74117290	Dark World Dealings	verified	haiku	
+74131780	Exiled Force	verified	haiku	
+74191528	Card of Fate	verified	haiku	
+74519184	Hand Destruction	verified	haiku	
+74703140	Punished Eagle	untested	haiku	never ran in its pair
+74968065	Hecatrice	verified	haiku	
+74997493	Saryuja Skull Dread	verified	haiku	
 75119040	Tindangle Acute Cerberus	verified	haiku	
+75130221	Code Radiator	verified	haiku	
+75500286	Gold Sarcophagus	verified	haiku	
+75830094	Horus the Black Flame Dragon LV4	verified	haiku	
 75923050	Super Robolady	verified	haiku	
+76039636	Doom Dozer	verified	haiku	
+76321376	Mine Golem	verified	haiku	
+76806714	Turtle Oath	verified	haiku	
 77027445	Power of Kaishin	verified	haiku	
 77044671	Pyramid Turtle	verified	haiku	
+77207191	Berfomet	verified	haiku	
+77252217	Chainsaw Insect	verified	haiku	
+77414722	Magic Jammer	verified	haiku	
+77584012	Pseudo Space	verified	haiku	
 77585513	Jinzo	verified	haiku	
 77637979	LANphorhynchus	verified	main	
+77754944	Widespread Ruin	verified	haiku	
+78010363	Witch of the Black Forest	verified	haiku	
+78625448	Number 3: Numeron Gate Trini	verified	haiku	
+78651105	Beast King Barbaros	verified	haiku	
+79109599	King of the Swamp	verified	haiku	
+79126789	Broww, Huntsman of Dark World	verified	haiku	
+79279397	D-Boyz	verified	haiku	
 79571449	Graceful Charity	verified	haiku	
 79575620	Injection Fairy Lily	verified	haiku	
+79747096	Number C1: Numeron Chaos Gate Sunya	verified	haiku	
+79814787	The White Stone of Legend	verified	haiku	
 81439173	Foolish Burial	verified	haiku	
+82003859	Toll	verified	haiku	
+82301904	Chaos Emperor Dragon - Envoy of the End	verified	haiku	
+82542267	Gravedigger Ghoul	verified	haiku	
 82999629	Umiiruka	verified	haiku	
+83011277	Mystic Tomato	verified	haiku	
+83555666	Ring of Destruction	verified	haiku	
 83764718	Monster Reborn	verified	main	
 83887306	Two-Pronged Attack	verified	haiku	
 83968380	Jar of Greed	verified	haiku	
@@ -154,18 +339,49 @@
 84211599	Pot of Prosperity	verified	haiku	else branch (top card not addable) never ran
 84834865	Flying Kamakiri #1	verified	haiku	
 85106525	Bonfire	verified	haiku	
+85562745	Dark Room of Nightmare	verified	haiku	
+85602018	Last Will	verified	haiku	
+85802526	Cure Mermaid	verified	haiku	
+85852291	Magical Mallet	verified	haiku	fixed IsPlayerCanDraw default
 86318356	Sogen	verified	haiku	
 87430998	Forest	verified	main	
+87910978	Brain Control	verified	haiku	
+88240808	Kycoo the Ghost Destroyer	verified	haiku	
+88279736	Robbin' Goblin	verified	haiku	
+88472456	Zombyra the Dark	verified	haiku	
+89997728	Toon Table of Contents	verified	haiku	
+90337190	Torpedo Fish	verified	haiku	
 90925163	Dancing Fairy	verified	haiku	
 90928333	Dark Factory of Mass Production	verified	haiku	
+91782219	Crab Turtle	verified	haiku	
+91831066	Aquarium Lighting	verified	haiku	
 91949988	Gaia Dragon, the Thunder Charger	verified	main	
+92053608	Aquaactress Arowana	verified	haiku	
+93107608	Howling Insect	verified	haiku	
+93920745	Penguin Soldier	verified	haiku	
+93946239	Into the Void	verified	haiku	
 94142993	Tindangle Intruder	verified	haiku	
 94145021	Droll & Lock Bird	verified	haiku	
 94365540	Tindangle Base Gardna	verified	haiku	
+94585852	Pandemonium	verified	haiku	
+94739788	Remove Brainwashing	verified	haiku	
+95614612	Cannonball Spear Shellfish	verified	haiku	
+95956346	Shining Angel	verified	haiku	
+96235275	Jain, Lightsworn Paladin	verified	haiku	
 96334243	Sea Monster of Theseus	verified	main	
+96947648	Salvage	verified	haiku	
 97077563	Call of the Haunted	verified	haiku	
+97169186	Smashing Ground	verified	haiku	
 97204936	Gaia Knight, the Force of Earth	verified	main	
 97268402	Effect Veiler	verified	haiku	
+97342942	Ectoplasmer	verified	haiku	
+97574404	Arcana Force VI - The Lovers	verified	haiku	
+98045062	Enemy Controller	verified	haiku	
 98374133	Invigoration	verified	haiku	
+98434877	Suijin	verified	haiku	
+98494543	Magical Stone Excavation	verified	haiku	
+98645731	Pot of Duality	verified	haiku	
 99157310	Tindangle Delaunay	verified	haiku	
+99365553	Lightpulsar Dragon	verified	haiku	
+99551425	Labyrinth Tank	untested	haiku	never ran in its pair
 99721536	Dokurorider	verified	main	

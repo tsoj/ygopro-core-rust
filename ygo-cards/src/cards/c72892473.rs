@@ -27,7 +27,7 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
         // return (h1+h2>0) and (Duel.IsPlayerCanDraw(tp,h1) or h1==0) and (Duel.IsPlayerCanDraw(1-tp) or h2==0)
         return h1 + h2 > 0
             && (duel::is_player_can_draw(d, a.tp, h1 as u32) || h1 == 0)
-            && (duel::is_player_can_draw(d, 1 - a.tp, 1) || h2 == 0);
+            && (duel::is_player_can_draw(d, 1 - a.tp, 0) || h2 == 0);
     }
     // Duel.SetOperationInfo(0,CATEGORY_HANDES,nil,0,PLAYER_ALL,1)
     duel::set_operation_info(d, 0, CATEGORY_HANDES, None, 0, PLAYER_ALL as u8, 1);

@@ -21,7 +21,7 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EFFECT)
     duel::hint(d, HINT_SELECTMSG as u8, a.tp, HINTMSG_EFFECT as u64);
     // local op=Duel.SelectOption(tp,aux.Stringid(id,0),aux.Stringid(id,1))
-    let op = duel::select_option(d, a.tp, false, &[aux::stringid(ID, 0), aux::stringid(ID, 1)]);
+    let op = duel::select_option(d, a.tp, true, &[aux::stringid(ID, 0), aux::stringid(ID, 1)]);
     // e:SetLabel(op)
     effect::set_label(d, a.e, &[op as i64]);
     if op == 0 {

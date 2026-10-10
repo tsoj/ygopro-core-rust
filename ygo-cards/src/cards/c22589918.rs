@@ -16,7 +16,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
 }
 fn target(d: &mut Duel, a: &EffArgs) -> bool {
     if a.chk == Some(0) {
-        if !duel::is_player_can_draw(d, a.tp, 1) {
+        if !duel::is_player_can_draw(d, a.tp, 0) {
             return false;
         }
         let h = effect::get_handler(d, a.e).nil();

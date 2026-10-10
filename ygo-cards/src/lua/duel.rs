@@ -7,7 +7,7 @@ use ygo_core::duel::Duel;
 use ygo_core::types::*;
 
 /// `Duel.RegisterEffect(e, player)` with the wrappers of `chain.lua` (it records the card
-/// properties of the registering effect: not ported yet, see `chain.lua`) and
+/// properties of the registering effect) and
 /// `proc_workaround.lua` ("Card Advance" flag, the assumed properties of "cannot summon").
 pub fn register_effect(d: &mut Duel, e: EffectId, p: u8) {
     // (proc_workaround.lua, the last wrapper: the "Card Advance" flag for extra Tribute Summons)
@@ -15,6 +15,8 @@ pub fn register_effect(d: &mut Duel, e: EffectId, p: u8) {
         let (reset, count) = ygo_core::api::effect::get_reset(d, e);
         raw::register_flag_effect(d, p, CARD_CARD_ADVANCE, reset, 0, count as u16, 0);
     }
+    // (chain.lua)
+    crate::chain::record_registering_props(d, e);
     raw::register_effect(d, e, p);
     super::wrap_cannot_summon_target(d, e);
 }

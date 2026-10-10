@@ -46,6 +46,9 @@ pub struct Effect {
     pub active_handler: Option<CardId>,
     pub description: u64,
     pub label: Vec<i64>,
+    /// Data the scripts attach to this effect object (not part of the C++ effect, e.g. the
+    /// card properties `chain.lua` records when the effect is registered). Not copied by `Clone`.
+    pub script_data: Option<std::sync::Arc<[Value]>>,
 }
 
 impl Effect {
@@ -87,6 +90,7 @@ impl Effect {
             active_handler: None,
             description: 0,
             label: Vec::new(),
+            script_data: None,
         }
     }
     #[inline]
@@ -1032,6 +1036,7 @@ impl EffectId {
         let src = d.effect(self).clone();
         let mut c = src.clone();
         c.handler = None;
+        c.script_data = None;
         if majestic && src.is_flag2(EFFECT_FLAG2_MAJESTIC_MUST_COPY) {
             // (the copy already holds every field: the C++ copies them again)
         }

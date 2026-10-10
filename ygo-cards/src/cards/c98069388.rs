@@ -45,10 +45,10 @@ fn cond(d: &mut Duel, _a: &EffArgs) -> bool {
 fn cost(d: &mut Duel, a: &EffArgs) -> bool {
     // if chk==0 then return Duel.CheckReleaseGroupCost(tp,aux.TRUE,1,false,nil,nil) end
     if a.chk == Some(0) {
-        return aux::check_release_group_cost(d, a.tp, None, 1, 1, false, None, NO_EX);
+        return aux::check_release_group_cost(d, a.tp, Some(&|_, _| true), 1, 1, false, None, NO_EX);
     }
     // local g=Duel.SelectReleaseGroupCost(tp,aux.TRUE,1,1,false,nil,nil)
-    let g = aux::select_release_group_cost(d, a.tp, None, 1, 1, false, None, NO_EX);
+    let g = aux::select_release_group_cost(d, a.tp, Some(&|_, _| true), 1, 1, false, None, NO_EX);
     // Duel.Release(g,REASON_COST)
     duel::release(d, g, REASON_COST, None);
     true

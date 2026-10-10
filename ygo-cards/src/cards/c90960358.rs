@@ -109,7 +109,7 @@ fn spcon(d: &mut Duel, a: Args) -> bool {
     // return Duel.CheckReleaseGroup(c:GetControler(),aux.TRUE,1,false,1,true,c,c:GetControler(),nil,false,nil)
     //     and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,15259703),c:GetControler(),LOCATION_ONFIELD,0,1,nil)
     let ra = duel::ReleaseArgs { use_hand: Some(false), max: Some(1), check_field: true, to_check: Some(c), toplayer: Some(tp), ..Default::default() };
-    duel::check_release_group(d, tp, None, 1, ra, NO_EX, false)
+    duel::check_release_group(d, tp, Some(&|_, _| true), 1, ra, NO_EX, false)
         && duel::is_existing_matching_card(d, Some(&|d, cc| card::is_faceup(d, cc) && card::is_code(d, cc, &[15259703])), tp, LOCATION_ONFIELD, 0, 1, NO_EX)
 }
 /// `s.sptg(e,tp,eg,ep,ev,re,r,rp,c)`
@@ -119,7 +119,7 @@ fn sptg(d: &mut Duel, a: Args) -> bool {
     let _ft = duel::get_location_count(d, tp, LOCATION_MZONE as u8, None, None, None);
     // local g=Duel.SelectReleaseGroup(tp,aux.TRUE,1,1,false,true,true,c,nil,nil,false,nil)
     let ra = duel::ReleaseArgs { use_hand: Some(false), cancelable: true, check_field: true, to_check: a.card(8), ..Default::default() };
-    let g = duel::select_release_group(d, tp, None, 1, 1, ra, NO_EX, false);
+    let g = duel::select_release_group(d, tp, Some(&|_, _| true), 1, 1, ra, NO_EX, false);
     // if g then
     if let Some(g) = g {
         // g:KeepAlive()

@@ -70,6 +70,8 @@ pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_BLUEEYES_W_DRAGON
 
 The fields are in `ScriptInfo` (`src/lib.rs`). If the script declares a field `ScriptInfo` does not
 have, stop and report it (see "When something is missing").
+`s.roll_dice=true` / `s.toss_coin=true` are `roll_dice: true` / `toss_coin: true`; `s.LVnum=4`
+`s.LVset=SET_X` is `lv: Some((4, SET_X))`. `s.xyz_number=39` is `xyz_number: Some(39)` (likewise the other number fields).
 
 ## API names
 
@@ -88,8 +90,9 @@ always `d: &mut Duel` (or `&Duel`):
 | `Duel.GetMZoneCount(tp, g, tp)`         | `duel::get_m_zone_count(d, tp, (&g).into(), Some(tp), None, None).0` |
 | `Group.CreateGroup()`                   | `CardSet::new()`                                   |
 | `g:Merge(g2)` / `g:Sub(g2)`             | `group::add_card(&mut g, &g2)` / `group::remove_card(&mut g, &g2)` |
-| `for tc in aux.Next(g)` / `g:Iter()`    | `for tc in group::iter(d, &g)` (keep a `g:GetFirst()` before it as `let _ = group::get_first(d, &g);`) |
+| `for tc in aux.Next(g)` / `g:Iter()`    | `for tc in group::iter(d, &g)` (if the Lua has a `local tc=g:GetFirst()` before it, keep it as `let _ = group::get_first(d, &g);`) |
 | `Duel.GetOperationInfo(ev, cat)`        | `duel::get_operation_info(d, ev, cat)`: `None` = `ex` false, else `OpTarget { op_cards, op_count, op_player, op_param }` |
+| `Duel.AnnounceLevel(p, min, max, ...)`  | `duel::announce_number_range(d, p, Some(min), Some(max), &[...])` (the C++ alias) |
 | `Duel.NegateEffect(ev)`                 | `duel::negate_effect(d, a.ev as u8)`               |
 | `Duel.SelectEffect(tp, {b1,s1}, {b2,s2})` | `duel::select_effect(d, tp, &[(b1, s1), (b2, s2)])` (`Option<usize>`, 1-based like Lua) |
 | `Duel.AddCustomActivityCounter(id, ACTIVITY_CHAIN, function(re,tp,cid) ... end)` | `duel::add_custom_activity_counter(d, ID, ACTIVITY_CHAIN, lua_fn(f))`, `f(d, a: Args)` reads `re` as `a.e(0)` |
@@ -134,6 +137,8 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
   `(d, e, a, Some(b))`.
 - `c:IsHasEffect(code)` returns a `Vec` (all effects): `not c:IsHasEffect(X)` is `.is_empty()`.
 - Event codes: copy them exactly (`EVENT_PHASE_START|PHASE_STANDBY` is not `EVENT_PHASE|PHASE_STANDBY`).
+- `local e2=e1:Clone()` is `let e2 = effect::clone(d, e1);`.
+- `aux.TRUE` where a function takes a plain `Filter` (`group::filter_select`, `group::is_exists`) is `&|_, _| true`.
 - `g:KeepAlive()` and `g:DeleteGroup()` do nothing in Rust (groups are values): leave them out.
 - A Lua helper function the script never calls can be left out.
 - `Duel.SetOperationInfo(0, cat, 0, ...)` (the number 0 as the cards) is the same as `nil`: `None`.

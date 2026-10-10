@@ -169,6 +169,32 @@ pub struct ScriptInfo {
     pub mat_filter: Option<fn(&mut ygo_core::duel::Duel, ygo_core::types::CardId, u8) -> bool>,
     /// `s.ritual_custom_check(e, tp, g, c)`: (the materials are valid, stop adding materials)
     pub ritual_custom_check: Option<fn(&mut ygo_core::duel::Duel, ygo_core::types::EffectId, u8, &ygo_core::types::CardSet, ygo_core::types::CardId) -> (bool, bool)>,
+    /// `s.roll_dice` (read by cards that support dice cards)
+    pub roll_dice: bool,
+    /// `s.toss_coin` (read by cards that support coin cards)
+    pub toss_coin: bool,
+    /// `s.LVnum`, `s.LVset`: the Level and set code of a LV monster (e.g. read by Level Up!)
+    pub lv: Option<(u32, u32)>,
+    /// `s.xyz_number` (the "Number" of a Number monster)
+    pub xyz_number: Option<u32>,
+    /// `s.synchro_nt_required` (how many non-Tuners the Synchro needs, read by other cards)
+    pub synchro_nt_required: Option<u32>,
+    /// `s.synchro_tuner_required`
+    pub synchro_tuner_required: Option<u32>,
+    /// `s.miracle_synchro_fusion`
+    pub miracle_synchro_fusion: bool,
+    /// `s.assault_mode`: the code of the monster this "/Assault Mode" card comes from
+    pub assault_mode: Option<u32>,
+    /// `s.self_tuner`
+    pub self_tuner: bool,
+    /// `s.material_trap`: the Trap Card a Fusion uses as material
+    pub material_trap: Option<u32>,
+    /// `s.material_race`
+    pub material_race: Option<u64>,
+    /// `s.material_location`
+    pub material_location: Option<u32>,
+    /// `s.max_metalmorph_stats={level, race}`
+    pub max_metalmorph_stats: Option<(u32, u64)>,
 }
 
 impl ScriptInfo {
@@ -188,6 +214,19 @@ impl ScriptInfo {
         pendulum_level: None,
         mat_filter: None,
         ritual_custom_check: None,
+        roll_dice: false,
+        toss_coin: false,
+        lv: None,
+        xyz_number: None,
+        synchro_nt_required: None,
+        synchro_tuner_required: None,
+        miracle_synchro_fusion: false,
+        assault_mode: None,
+        self_tuner: false,
+        material_trap: None,
+        material_race: None,
+        material_location: None,
+        max_metalmorph_stats: None,
     };
 }
 

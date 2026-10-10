@@ -2550,6 +2550,7 @@ pub fn is_player_can_pendulum_summon(d: &mut Duel, p: u8) -> bool {
 pub fn is_player_can_procedure_summon_group(d: &mut Duel, p: u8, sumtype: u32) -> bool {
     is_player_can_procedure_summon_group_impl(d, p, sumtype)
 }
+/// `Duel.IsChainNegatable(ct)`: always true, as in the C++ (libduel.cpp)
 pub fn is_chain_negatable(_d: &Duel, _chaincount: u8) -> bool {
     true
 }

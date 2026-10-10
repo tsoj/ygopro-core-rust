@@ -46,7 +46,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(function(e,tp,eg,ep,ev,re,r,rp) ... end)
     effect::set_condition(d, e2, Some(condition(replace_cond)));
     // e2:SetOperation(function() Duel.Hint(HINT_CARD,0,id) return true end)
-    effect::set_operation(d, e2, Some(operation(replace_op)));
+    effect::set_operation(d, e2, Some(condition(replace_op)));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
 }
@@ -181,7 +181,9 @@ fn replace_cond(d: &mut Duel, a: &EffArgs) -> bool {
         && card::get_overlay_count(d, rc) as i64 >= a.ev as i64 - 1
 }
 /// The operation of the replacement effect `e2`.
-fn replace_op(d: &mut Duel, _a: &EffArgs) {
+fn replace_op(d: &mut Duel, _a: &EffArgs) -> bool {
     // Duel.Hint(HINT_CARD,0,id)
     duel::hint(d, HINT_CARD as u8, 0, ID as u64);
+    // return true
+    true
 }

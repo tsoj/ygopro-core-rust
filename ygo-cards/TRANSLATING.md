@@ -174,6 +174,9 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
   `lua_int(atk as f64 / 2.0)`. Keep comparisons in `f64` (`atk as f64 / 2.0 > x as f64`).
   `math.floor(a/b)` and `a//b` are integer floor division (`a.div_euclid(b)` for `b > 0`).
 - A value function that falls off the end returns `nil` in Lua, which the core reads as `0`.
+- An operation whose return value the core reads (the operation of a `*_REPLACE` effect such as
+  `EFFECT_OVERLAY_REMOVE_REPLACE`: `return true` = replaced) must return it: write it as `condition(f)` (a
+  `bool`), not `operation(f)`.
 - Core functions that take `&Duel` (`card::is_faceup`, ...) cannot be passed as a filter directly:
   write `Some(&|d, c| card::is_faceup(d, c))`.
 - A one-argument `Duel.HintSelection(g)` is `duel::hint_selection(d, g, true)` (the default is

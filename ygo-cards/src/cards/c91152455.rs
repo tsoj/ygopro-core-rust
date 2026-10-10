@@ -115,7 +115,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
             // Duel.BreakEffect()
             duel::break_effect(d);
             // if not tc:EquipByEffectAndLimitRegister(e,tp,c,nil,true) then return end
-            if !card::equip_by_effect_and_limit_register(d, c, e, tp, tc, None, Some(true)) {
+            if !card::equip_by_effect_and_limit_register(d, tc, e, tp, c, None, Some(true)) {
                 return;
             }
             // --Equip limit

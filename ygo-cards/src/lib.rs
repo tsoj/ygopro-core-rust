@@ -12,6 +12,7 @@ pub mod cost;
 pub mod global;
 pub mod lua;
 pub mod prelude;
+pub mod procs;
 
 /// Namespaces of `Duel::script_var` keys `(namespace, key)`: all script state lives in the duel,
 /// so that it is copied with it. A card script's own state (`s.x`, `s[0]`, ...) uses its card

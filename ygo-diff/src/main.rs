@@ -66,10 +66,12 @@ struct Args {
     scripted_permille: usize,
     /// The scripted cards the decks use (default: all translated ones)
     cards: Option<Vec<u32>>,
+    /// Extra Deck size (from the scripted Extra Deck monsters)
+    extra: usize,
 }
 
 fn parse_args() -> Args {
-    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None };
+    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15 };
     let argv: Vec<String> = std::env::args().collect();
     let mut i = 1;
     while i < argv.len() {
@@ -92,6 +94,10 @@ fn parse_args() -> Args {
             }
             "--cards" => {
                 a.cards = Some(argv[i + 1].split(',').map(|x| x.parse().unwrap()).collect());
+                i += 1;
+            }
+            "--extra" => {
+                a.extra = argv[i + 1].parse().unwrap();
                 i += 1;
             }
             "-v" | "--verbose" => a.verbose = true,
@@ -195,7 +201,8 @@ fn compare_state(c: &mut CoreDuel, r: &mut Duel) -> Result<(), String> {
     Ok(())
 }
 
-fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: &[u32], scripted: &[u32], codes: &[u32]) -> Result<Outcome, String> {
+#[allow(clippy::too_many_arguments)]
+fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: &[u32], scripted: &[u32], scripted_extra: &[u32], codes: &[u32]) -> Result<Outcome, String> {
     let mut rng = Rng(args.seed.wrapping_mul(1_000_003).wrapping_add(game));
     let seed = [rng.next(), rng.next(), rng.next(), rng.next()];
     let flags = DUEL_MODE_MR5;
@@ -214,6 +221,14 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
             let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc: LOCATION_DECK, seq: 0, pos: POS_FACEDOWN_DEFENSE };
             c.new_card(&info);
             r.ocg_new_card(&info);
+        }
+        if !scripted_extra.is_empty() {
+            for _ in 0..args.extra {
+                let code = scripted_extra[rng.below(scripted_extra.len())];
+                let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc: LOCATION_EXTRA, seq: 0, pos: POS_FACEDOWN_DEFENSE };
+                c.new_card(&info);
+                r.ocg_new_card(&info);
+            }
         }
     }
     c.start();
@@ -350,13 +365,16 @@ fn main() {
     for c in &scripted {
         assert!(scripts.get(*c).is_some(), "card {c} has no translated script");
     }
+    let is_extra = |c: &u32| db.cards.get(c).is_some_and(|x| x.type_ & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK) != 0);
+    let scripted_extra: Vec<u32> = scripted.iter().copied().filter(is_extra).collect();
+    let scripted: Vec<u32> = scripted.iter().copied().filter(|c| !is_extra(c)).collect();
     let mut codes: Vec<u32> = db.cards.keys().copied().collect();
     codes.sort();
-    eprintln!("{} vanilla monsters, {} scripted cards", pool.len(), scripted.len());
+    eprintln!("{} vanilla monsters, {} scripted cards, {} scripted Extra Deck monsters", pool.len(), scripted.len(), scripted_extra.len());
     let (mut ok, mut decisions, mut ended) = (0, 0, 0);
     let (mut tc, mut tr) = (Duration::ZERO, Duration::ZERO);
     for g in 0..args.games {
-        match play(g, &args, &db, &scripts, &pool, &scripted, &codes) {
+        match play(g, &args, &db, &scripts, &pool, &scripted, &scripted_extra, &codes) {
             Ok(o) => {
                 ok += 1;
                 decisions += o.decisions;
@@ -384,7 +402,7 @@ fn main() {
     });
     COVERAGE.with(|cov| {
         let cov = cov.borrow();
-        let mut v: Vec<String> = scripted.iter().map(|c| {
+        let mut v: Vec<String> = scripted.iter().chain(scripted_extra.iter()).map(|c| {
             let (a, s) = cov.get(c).copied().unwrap_or_default();
             format!("{c}: {a} activations, {s} summons")
         }).collect();

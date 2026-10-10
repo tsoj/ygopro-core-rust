@@ -11,6 +11,7 @@ pub mod prelude {
     pub use crate::constants::*;
     pub use crate::lua::{card, debug, duel, effect, group, CardOrGroup, Exclude, Filter, NO_EX};
     pub use crate::prelude::*;
+    pub use crate::procs::{group_check, link, mat_filter, GroupCheck, MatFilter};
     pub use crate::{aux, chain, cost, ScriptInfo};
 }
 

@@ -686,7 +686,7 @@ pub fn change_battle_damage(player: u8, value: i64) -> LuaFn {
 }
 /// `aux.GetMMZonesPointedTo(player, by_filter, player_location, oppo_location, target_player, ...)`:
 /// the Main Monster Zones of `target_player` that face-up Link cards (matching `by_filter`) point to
-pub fn get_mmzones_pointed_to(d: &mut Duel, player: u8, by_filter: Option<Filter>, player_location: Option<u32>, oppo_location: Option<u32>, target_player: Option<u8>) -> u32 {
+pub fn get_mm_zones_pointed_to(d: &mut Duel, player: u8, by_filter: Option<Filter>, player_location: Option<u32>, oppo_location: Option<u32>, target_player: Option<u8>) -> u32 {
     let loc1 = player_location.unwrap_or(LOCATION_MZONE);
     let loc2 = oppo_location.unwrap_or(loc1);
     let target_player = target_player.unwrap_or(player);

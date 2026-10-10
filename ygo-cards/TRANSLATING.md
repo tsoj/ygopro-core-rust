@@ -53,7 +53,7 @@ fn activate(d: &mut Duel, _a: &EffArgs) {
 - `s.initial_effect(c)` becomes `pub fn initial_effect(d: &mut Duel, c: CardId)`.
 - The other `s.<name>` functions become private `fn <name>` (snake_case, the same names). The
   exceptions are names that clash with the prelude's wrappers: `s.condition` becomes `fn cond`
-  `s.operation` becomes `fn op`, and `s.drop` becomes `fn drop_op` (`drop` is `std::mem::drop`).
+  `s.operation` becomes `fn op`, `s.cost` becomes `fn cost_fn` (`cost` is the library module), and `s.drop` becomes `fn drop_op` (`drop` is `std::mem::drop`).
 - `use super::prelude::*;` imports everything you need: the constants, the API modules `card`,
   `duel`, `effect`, `group`, `debug`, the library modules `aux`, `cost`, `chain`, and the
   helpers below.

@@ -1,0 +1,99 @@
+//! Master Monk
+//! マスターモンク
+use super::prelude::*;
+
+pub const ID: u32 = 49814180;
+
+pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[3810071], ..ScriptInfo::DEFAULT };
+
+pub fn initial_effect(d: &mut Duel, c: CardId) {
+    // c:EnableReviveLimit()
+    card::enable_revive_limit(d, c);
+    // cannot special summon
+    // local e1=Effect.CreateEffect(c)
+    let e1 = effect::create_effect(d, c);
+    // e1:SetType(EFFECT_TYPE_SINGLE)
+    effect::set_type(d, e1, EFFECT_TYPE_SINGLE);
+    // e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+    effect::set_property(d, e1, EFFECT_FLAG_CANNOT_DISABLE + EFFECT_FLAG_UNCOPYABLE, 0);
+    // e1:SetCode(EFFECT_SPSUMMON_CONDITION)
+    effect::set_code(d, e1, EFFECT_SPSUMMON_CONDITION);
+    // c:RegisterEffect(e1)
+    card::register_effect(d, c, e1, false);
+    // special summon
+    // local e2=Effect.CreateEffect(c)
+    let e2 = effect::create_effect(d, c);
+    // e2:SetType(EFFECT_TYPE_FIELD)
+    effect::set_type(d, e2, EFFECT_TYPE_FIELD);
+    // e2:SetCode(EFFECT_SPSUMMON_PROC)
+    effect::set_code(d, e2, EFFECT_SPSUMMON_PROC);
+    // e2:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+    effect::set_property(d, e2, EFFECT_FLAG_UNCOPYABLE, 0);
+    // e2:SetRange(LOCATION_HAND)
+    effect::set_range(d, e2, LOCATION_HAND);
+    // e2:SetCondition(s.spcon)
+    effect::set_condition(d, e2, Some(lua_fn(spcon)));
+    // e2:SetTarget(s.sptg)
+    effect::set_target(d, e2, Some(lua_fn(sptg)));
+    // e2:SetOperation(s.spop)
+    effect::set_operation(d, e2, Some(lua_fn(spop)));
+    // c:RegisterEffect(e2)
+    card::register_effect(d, c, e2, false);
+    // double atk
+    // local e3=Effect.CreateEffect(c)
+    let e3 = effect::create_effect(d, c);
+    // e3:SetType(EFFECT_TYPE_SINGLE)
+    effect::set_type(d, e3, EFFECT_TYPE_SINGLE);
+    // e3:SetCode(EFFECT_EXTRA_ATTACK)
+    effect::set_code(d, e3, EFFECT_EXTRA_ATTACK);
+    // e3:SetValue(1)
+    effect::set_value(d, e3, 1);
+    // c:RegisterEffect(e3)
+    card::register_effect(d, c, e3, false);
+}
+/// `Card.IsCode` with the extra argument 3810071 (the filter of the release group)
+fn release_filter(d: &mut Duel, c: CardId) -> bool {
+    card::is_code(d, c, &[3810071])
+}
+/// `s.spcon(e,c)`
+fn spcon(d: &mut Duel, a: Args) -> bool {
+    // if c==nil then return true end
+    let Some(c) = a.card(1) else {
+        return true;
+    };
+    // return Duel.CheckReleaseGroup(c:GetControler(),Card.IsCode,1,false,1,true,c,c:GetControler(),nil,false,nil,3810071)
+    let p = card::get_controler(d, c);
+    let ra = duel::ReleaseArgs { use_hand: Some(false), max: Some(1), check_field: true, to_check: Some(c), toplayer: Some(p), zone: None, use_oppo: false, cancelable: false };
+    duel::check_release_group(d, p, Some(&release_filter), 1, ra, NO_EX, false)
+}
+/// `s.sptg(e,tp,eg,ep,ev,re,r,rp,c)`: the 9th Lua parameter is the number 1 (`chk`) here, so `c` is nil for the card API
+fn sptg(d: &mut Duel, a: Args) -> bool {
+    let e = a.e(0);
+    let tp = a.p(1);
+    let c = a.card(8);
+    // local g=Duel.SelectReleaseGroup(tp,Card.IsCode,1,1,false,true,true,c,nil,nil,false,nil,3810071)
+    let ra = duel::ReleaseArgs { use_hand: Some(false), max: None, check_field: true, to_check: c, toplayer: None, zone: None, use_oppo: false, cancelable: true };
+    let g = duel::select_release_group(d, tp, Some(&release_filter), 1, 1, ra, NO_EX, false);
+    // if g then
+    if let Some(g) = g {
+        // g:KeepAlive()
+        // e:SetLabelObject(g)
+        effect::set_label_object(d, e, Value::Group(g));
+        // return true
+        return true;
+    }
+    // return false
+    false
+}
+/// `s.spop(e,tp,eg,ep,ev,re,r,rp,c)`
+fn spop(d: &mut Duel, a: Args) {
+    let e = a.e(0);
+    // local g=e:GetLabelObject()
+    // if not g then return end
+    let Value::Group(g) = effect::get_label_object(d, e) else {
+        return;
+    };
+    // Duel.Release(g,REASON_COST)
+    duel::release(d, g, REASON_COST, None);
+    // g:DeleteGroup()
+}

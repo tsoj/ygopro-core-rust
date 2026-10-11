@@ -58,7 +58,8 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_code(d, e4, EFFECT_MATERIAL_CHECK);
     // e4:SetValue(s.valcheck)
     effect::set_value_fn(d, e4, effect_card_value(valcheck));
-    // (e4 is not registered in the Lua script: it is only the label object of e5)
+    // c:RegisterEffect(e4)
+    card::register_effect(d, c, e4, false);
     // give atk/def effect only when summonned
     // local e5=Effect.CreateEffect(c)
     let e5 = effect::create_effect(d, c);

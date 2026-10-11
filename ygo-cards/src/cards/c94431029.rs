@@ -41,7 +41,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     duel::confirm_cards(d, tp, &CardSet::from_card(tc1));
     if compare(d, tc0, tc1) {
         if duel::send_to_grave(d, &CardSet::from_card(tc1), REASON_EFFECT, None, None) != 0
-            && duel::get_location_count_from_ex(d, tp, Some(tp), NO_EX, duel::ExtraCard::Card(tc0), None).0 > 0
+            && duel::get_location_count_from_ex(d, tp, Some(tp), tc0.into(), duel::ExtraCard::None, None).0 > 0
             && duel::special_summon(d, CardSet::from_card(tc0), 0, tp, tp, false, false, POS_FACEUP as u8, None) != 0
             && card::get_original_race(d, tc0) == card::get_original_race(d, tc1)
             && card::get_original_attribute(d, tc0) == card::get_original_attribute(d, tc1)
@@ -53,7 +53,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
             }
         }
     } else if duel::send_to_grave(d, &CardSet::from_card(tc0), REASON_EFFECT, None, None) != 0
-        && duel::get_location_count_from_ex(d, 1 - tp, Some(1 - tp), NO_EX, duel::ExtraCard::Card(tc1), None).0 > 0
+        && duel::get_location_count_from_ex(d, 1 - tp, Some(1 - tp), tc1.into(), duel::ExtraCard::None, None).0 > 0
     {
         duel::special_summon(d, CardSet::from_card(tc1), 0, 1 - tp, 1 - tp, false, false, POS_FACEUP as u8, None);
     }

@@ -100,7 +100,10 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     let g = effect::get_label_object(d, a.e).as_group().cloned();
     // if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.filter(chkc,g,tp) end
     if let Some(chkc) = a.chkc() {
-        return card::is_location(d, chkc, LOCATION_MZONE) && card::is_controler(d, chkc, tp) && filter(d, chkc, &g.clone().nil(), tp);
+        return g.is_some()
+            && card::is_location(d, chkc, LOCATION_MZONE)
+            && card::is_controler(d, chkc, tp)
+            && filter(d, chkc, &g.clone().unwrap_or_default(), tp);
     }
     // if chk==0 then return true end
     if a.chk == Some(0) {
@@ -109,8 +112,11 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_FACEUP as u64);
     // Duel.SelectTarget(tp,s.filter,tp,LOCATION_MZONE,0,1,1,nil,g,tp)
-    let gg = g.nil();
-    duel::select_target(d, tp, Some(&|d, c| filter(d, c, &gg, tp)), tp, LOCATION_MZONE, 0, 1, 1, false, NO_EX);
+    // (`#sg` of a nil label object raises a Lua error in the filter: no candidate matches, as when
+    // Transaction Rollback copies this target with its own, empty label object)
+    let gg = g.clone().unwrap_or_default();
+    let has_g = g.is_some();
+    duel::select_target(d, tp, Some(&|d, c| has_g && filter(d, c, &gg, tp)), tp, LOCATION_MZONE, 0, 1, 1, false, NO_EX);
     true
 }
 /// `s.activate(e,tp,eg,ep,ev,re,r,rp)`

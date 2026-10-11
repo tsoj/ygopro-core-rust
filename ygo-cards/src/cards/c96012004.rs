@@ -24,7 +24,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
 fn coincon(d: &mut Duel, a: &EffArgs) -> bool {
     let info = duel::get_operation_info(d, a.ev, CATEGORY_COIN);
     if let Some(info) = info {
-        if info.op_count == 1 && effect::is_active_type(d, a.re.nil(), TYPE_MONSTER) {
+        if info.op_param == 1 && effect::is_active_type(d, a.re.nil(), TYPE_MONSTER) {
             effect::set_label_object(d, a.e, Value::Effect(a.re.nil()));
             return true;
         }

@@ -72,9 +72,8 @@ fn xyzop(d: &mut Duel, a: Args) -> bool {
         return duel::get_flag_effect(d, tp, ID) == 0;
     }
     // return Duel.RegisterFlagEffect(tp,id,RESET_PHASE|PHASE_END,EFFECT_FLAG_OATH,1)
-    // (Duel.RegisterFlagEffect returns nothing: the Lua value is nil)
-    duel::register_flag_effect(d, tp, ID, RESET_PHASE | PHASE_END, EFFECT_FLAG_OATH, 1, 0);
-    false
+    // (Duel.RegisterFlagEffect returns the effect: truthy)
+    duel::register_flag_effect(d, tp, ID, RESET_PHASE | PHASE_END, EFFECT_FLAG_OATH, 1, 0).is_some()
 }
 /// `s.cannotxyzmatcon(e)`
 fn cannotxyzmatcon(d: &mut Duel, a: Args) -> bool {

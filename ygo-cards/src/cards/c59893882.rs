@@ -4,6 +4,7 @@ use super::prelude::*;
 pub const ID: u32 = 59893882;
 
 pub const INFO: ScriptInfo = ScriptInfo {
+    dark_calling: true,
     material_setcode: &[SET_HERO, SET_ELEMENTAL_HERO],
     listed_names: &[21844576, 58932615, CARD_DARK_FUSION],
     listed_series: &[SET_HERO],

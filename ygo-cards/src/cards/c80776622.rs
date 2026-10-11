@@ -110,7 +110,7 @@ fn distg(d: &mut Duel, a: &EffArgs) -> bool {
     }
     let ct: u16 = if duel::is_existing_matching_card(d, Some(&|d, c| card::is_faceup(d, c) && card::is_odd_scale(d, c)), tp, LOCATION_PZONE, 0, 1, NO_EX) { 2 } else { 1 };
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_NEGATE as u64);
-    let g = duel::select_target(d, tp, Some(&|d, c| card::is_negatable(d, c)), tp, LOCATION_ONFIELD, 0, 1, ct, false, NO_EX).nil();
+    let g = duel::select_target(d, tp, Some(&|d, c| card::is_negatable(d, c)), tp, 0, LOCATION_ONFIELD, 1, ct, false, NO_EX).nil();
     duel::set_operation_info(d, 0, CATEGORY_DISABLE, Some(g.clone()), g.len() as u8, 0, 0);
     true
 }

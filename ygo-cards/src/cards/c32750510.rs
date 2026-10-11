@@ -20,7 +20,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCondition(s.spcon)
     effect::set_condition(d, e1, Some(lua_fn(|d, a: Args| spcon(d, a.e(0), a.card(1)))));
     // e1:SetTarget(s.sptg)
-    effect::set_target(d, e1, Some(lua_fn(|d, a: Args| sptg(d, a.e(0), a.p(1), a.c(8)))));
+    effect::set_target(d, e1, Some(lua_fn(|d, a: Args| sptg(d, a.e(0), a.p(1)))));
     // e1:SetOperation(s.spop)
     effect::set_operation(d, e1, Some(lua_fn(|d, a: Args| spop(d, a.e(0)))));
     // c:RegisterEffect(e1)
@@ -85,13 +85,14 @@ fn spcon(d: &mut Duel, _e: EffectId, c: Option<CardId>) -> bool {
     duel::check_release_group(d, ctrl, Some(&|d, x| card::is_attribute(d, x, ATTRIBUTE_WATER)), 2, ra, NO_EX, false)
 }
 // s.sptg(e,tp,eg,ep,ev,re,r,rp,c)
-fn sptg(d: &mut Duel, e: EffectId, tp: u8, c: CardId) -> bool {
+fn sptg(d: &mut Duel, e: EffectId, tp: u8) -> bool {
     // local g=Duel.SelectReleaseGroup(tp,Card.IsAttribute,2,2,false,true,true,c,nil,nil,false,nil,ATTRIBUTE_WATER)
     let ra = duel::ReleaseArgs {
         use_hand: Some(false),
         cancelable: true,
         check_field: true,
-        to_check: Some(c),
+        // the Lua parameter `c` is really chk (a number), so to_check is nil
+        to_check: None,
         ..Default::default()
     };
     let g = duel::select_release_group(d, tp, Some(&|d, x| card::is_attribute(d, x, ATTRIBUTE_WATER)), 2, 2, ra, NO_EX, false);

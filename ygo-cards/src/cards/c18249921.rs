@@ -1,0 +1,223 @@
+//! Virtual World Gate - Xuanwu
+//! Logical Nonsense
+//! Substitute ID
+use super::prelude::*;
+
+pub const ID: u32 = 18249921;
+
+pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_VIRTUAL_WORLD, SET_VIRTUAL_WORLD_GATE], ..ScriptInfo::DEFAULT };
+
+pub fn initial_effect(d: &mut Duel, c: CardId) {
+    // Activate
+    // local e0=Effect.CreateEffect(c)
+    let e0 = effect::create_effect(d, c);
+    // e0:SetType(EFFECT_TYPE_ACTIVATE)
+    effect::set_type(d, e0, EFFECT_TYPE_ACTIVATE);
+    // e0:SetCode(EVENT_FREE_CHAIN)
+    effect::set_code(d, e0, EVENT_FREE_CHAIN);
+    // e0:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
+    effect::set_count_limit(d, e0, 1, ID, 0, EFFECT_COUNT_CODE_OATH as u8);
+    // c:RegisterEffect(e0)
+    card::register_effect(d, c, e0, false);
+    // Change battle positions
+    // local e1=Effect.CreateEffect(c)
+    let e1 = effect::create_effect(d, c);
+    // e1:SetCategory(CATEGORY_POSITION)
+    effect::set_category(d, e1, CATEGORY_POSITION);
+    // e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
+    effect::set_property(d, e1, EFFECT_FLAG_CARD_TARGET, 0);
+    // e1:SetType(EFFECT_TYPE_QUICK_O)
+    effect::set_type(d, e1, EFFECT_TYPE_QUICK_O);
+    // e1:SetCode(EVENT_FREE_CHAIN)
+    effect::set_code(d, e1, EVENT_FREE_CHAIN);
+    // e1:SetRange(LOCATION_SZONE)
+    effect::set_range(d, e1, LOCATION_SZONE);
+    // e1:SetCountLimit(1,{id,1})
+    effect::set_count_limit(d, e1, 1, ID, 1, 0);
+    // e1:SetCondition(s.poscon)
+    effect::set_condition(d, e1, Some(condition(poscon)));
+    // e1:SetTarget(s.postg)
+    effect::set_target(d, e1, Some(cost_target(postg)));
+    // e1:SetOperation(s.posop)
+    effect::set_operation(d, e1, Some(operation(posop)));
+    // e1:SetHintTiming(0,TIMING_BATTLE_START)
+    effect::set_hint_timing(d, e1, 0, Some(TIMING_BATTLE_START));
+    // c:RegisterEffect(e1)
+    card::register_effect(d, c, e1, false);
+    // Special summon 1 "Virtual World" monster from GY
+    // local e2=Effect.CreateEffect(c)
+    let e2 = effect::create_effect(d, c);
+    // e2:SetDescription(aux.Stringid(id,1))
+    effect::set_description(d, e2, aux::stringid(ID, 1));
+    // e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
+    effect::set_category(d, e2, CATEGORY_SPECIAL_SUMMON);
+    // e2:SetType(EFFECT_TYPE_QUICK_O)
+    effect::set_type(d, e2, EFFECT_TYPE_QUICK_O);
+    // e2:SetCode(EVENT_FREE_CHAIN)
+    effect::set_code(d, e2, EVENT_FREE_CHAIN);
+    // e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+    effect::set_property(d, e2, EFFECT_FLAG_CARD_TARGET, 0);
+    // e2:SetRange(LOCATION_GRAVE)
+    effect::set_range(d, e2, LOCATION_GRAVE);
+    // e2:SetCountLimit(1,{id,2})
+    effect::set_count_limit(d, e2, 1, ID, 2, 0);
+    // e2:SetCost(Cost.SelfBanish)
+    effect::set_cost(d, e2, Some(cost::self_banish()));
+    // e2:SetCondition(s.spcon)
+    effect::set_condition(d, e2, Some(condition(spcon)));
+    // e2:SetTarget(s.sptg)
+    effect::set_target(d, e2, Some(cost_target(sptg)));
+    // e2:SetOperation(s.spop)
+    effect::set_operation(d, e2, Some(operation(spop)));
+    // c:RegisterEffect(e2)
+    card::register_effect(d, c, e2, false);
+}
+/// `s.poscon(e,tp,eg,ep,ev,re,r,rp)`
+fn poscon(d: &mut Duel, a: &EffArgs) -> bool {
+    // return Duel.IsBattlePhase() and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,SET_VIRTUAL_WORLD_GATE),tp,LOCATION_ONFIELD,0,1,e:GetHandler())
+    if !duel::is_battle_phase(d, None) {
+        return false;
+    }
+    let ex = effect::get_handler(d, a.e).nil();
+    duel::is_existing_matching_card(
+        d,
+        Some(&|d, c| card::is_faceup(d, c) && card::is_set_card(d, c, &[SET_VIRTUAL_WORLD_GATE as u16])),
+        a.tp,
+        LOCATION_ONFIELD,
+        0,
+        1,
+        ex.into(),
+    )
+}
+/// `s.postg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
+fn postg(d: &mut Duel, a: &EffArgs) -> bool {
+    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.filter(chkc) end
+    if let Some(chkc) = a.chkc() {
+        if card::is_controler(d, chkc, a.tp) && card::is_location(d, chkc, LOCATION_MZONE) {
+            // `s.filter` is never defined in this script: calling it is a Lua error
+            crate::lua_error("attempt to call a nil value");
+        }
+        return false;
+    }
+    // if chk==0 then return Duel.IsExistingTarget(aux.FaceupFilter(Card.IsCanChangePosition),tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
+    if a.chk == Some(0) {
+        return duel::is_existing_target(
+            d,
+            Some(&|d, c| card::is_faceup(d, c) && card::is_can_change_position(d, c)),
+            a.tp,
+            LOCATION_MZONE,
+            LOCATION_MZONE,
+            1,
+            NO_EX,
+        );
+    }
+    // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_POSCHANGE)
+    duel::hint(d, HINT_SELECTMSG as u8, a.tp, HINTMSG_POSCHANGE as u64);
+    // local g=Duel.SelectTarget(tp,aux.FaceupFilter(Card.IsCanChangePosition),tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil)
+    let g = duel::select_target(
+        d,
+        a.tp,
+        Some(&|d, c| card::is_faceup(d, c) && card::is_can_change_position(d, c)),
+        a.tp,
+        LOCATION_MZONE,
+        LOCATION_MZONE,
+        1,
+        1,
+        false,
+        NO_EX,
+    );
+    // Duel.SetOperationInfo(0,CATEGORY_POSITION,g,1,0,0)
+    duel::set_operation_info(d, 0, CATEGORY_POSITION, g, 1, 0, 0);
+    true
+}
+/// `s.posop(e,tp,eg,ep,ev,re,r,rp)`
+fn posop(d: &mut Duel, a: &EffArgs) {
+    // local tc=Duel.GetFirstTarget()
+    let tc = duel::first_target(d);
+    // if tc and tc:IsRelateToEffect(e) then
+    if let Some(tc) = tc {
+        if card::is_relate_to_effect(d, tc, a.e) {
+            // Duel.ChangePosition(tc,POS_FACEUP_DEFENSE,POS_FACEDOWN_DEFENSE,POS_FACEUP_ATTACK,POS_FACEUP_ATTACK)
+            duel::change_position(
+                d,
+                tc,
+                POS_FACEUP_DEFENSE as u8,
+                Some(POS_FACEDOWN_DEFENSE as u8),
+                Some(POS_FACEUP_ATTACK as u8),
+                Some(POS_FACEUP_ATTACK as u8),
+                false,
+            );
+        }
+    }
+}
+/// `s.spcon(e,tp,eg,ep,ev,re,r,rp)`
+fn spcon(d: &mut Duel, a: &EffArgs) -> bool {
+    // return Duel.IsMainPhase() and Duel.IsTurnPlayer(tp)
+    duel::is_main_phase(d, None) && duel::is_turn_player(d, a.tp)
+}
+/// `s.spfilter(c,e,tp)`
+fn spfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
+    // return c:IsSetCard(SET_VIRTUAL_WORLD) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+    card::is_set_card(d, c, &[SET_VIRTUAL_WORLD as u16]) && card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, None, None, None)
+}
+/// `s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
+fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
+    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.spfilter(chkc,e,tp) end
+    if let Some(chkc) = a.chkc() {
+        return card::is_controler(d, chkc, a.tp) && card::is_location(d, chkc, LOCATION_GRAVE) && spfilter(d, chkc, a.e, a.tp);
+    }
+    // if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and Duel.GetMatchingGroupCount(aux.TRUE,tp,LOCATION_HAND,0,nil)>0
+    //     and Duel.IsExistingTarget(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
+    if a.chk == Some(0) {
+        return duel::get_location_count(d, a.tp, LOCATION_MZONE as u8, None, None, None).0 > 0
+            && duel::get_matching_group_count(d, None, a.tp, LOCATION_HAND, 0, NO_EX) > 0
+            && duel::is_existing_target(d, Some(&|d, c| spfilter(d, c, a.e, a.tp)), a.tp, LOCATION_GRAVE, 0, 1, NO_EX);
+    }
+    // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+    duel::hint(d, HINT_SELECTMSG as u8, a.tp, HINTMSG_SPSUMMON as u64);
+    // local g=Duel.SelectTarget(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
+    let g = duel::select_target(d, a.tp, Some(&|d, c| spfilter(d, c, a.e, a.tp)), a.tp, LOCATION_GRAVE, 0, 1, 1, false, NO_EX);
+    // Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,g,1,0,0)
+    duel::set_operation_info(d, 0, CATEGORY_SPECIAL_SUMMON, g, 1, 0, 0);
+    true
+}
+/// `s.spop(e,tp,eg,ep,ev,re,r,rp)`
+fn spop(d: &mut Duel, a: &EffArgs) {
+    // local tc=Duel.GetFirstTarget()
+    let tc = duel::first_target(d);
+    // if tc and tc:IsRelateToEffect(e) and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP) then
+    if let Some(tc) = tc {
+        if card::is_relate_to_effect(d, tc, a.e) {
+            // A number is always true in a condition: the summon is done, then the effect goes on
+            duel::special_summon(d, tc, 0, a.tp, a.tp, false, false, POS_FACEUP as u8, None);
+            // local e1=Effect.CreateEffect(e:GetHandler())
+            let h = effect::get_handler(d, a.e).nil();
+            let e1 = effect::create_effect(d, h);
+            // e1:SetType(EFFECT_TYPE_SINGLE)
+            effect::set_type(d, e1, EFFECT_TYPE_SINGLE);
+            // e1:SetCode(EFFECT_DISABLE)
+            effect::set_code(d, e1, EFFECT_DISABLE);
+            // e1:SetReset(RESET_EVENT|RESETS_STANDARD)
+            effect::set_reset(d, e1, RESET_EVENT | RESETS_STANDARD, 1);
+            // tc:RegisterEffect(e1)
+            card::register_effect(d, tc, e1, false);
+            // local e2=Effect.CreateEffect(e:GetHandler())
+            let e2 = effect::create_effect(d, h);
+            // e2:SetType(EFFECT_TYPE_SINGLE)
+            effect::set_type(d, e2, EFFECT_TYPE_SINGLE);
+            // e2:SetCode(EFFECT_DISABLE_EFFECT)
+            effect::set_code(d, e2, EFFECT_DISABLE_EFFECT);
+            // e2:SetReset(RESET_EVENT|RESETS_STANDARD)
+            effect::set_reset(d, e2, RESET_EVENT | RESETS_STANDARD, 1);
+            // tc:RegisterEffect(e2)
+            card::register_effect(d, tc, e2, false);
+            // if Duel.GetFieldGroupCount(tp,LOCATION_HAND,0)>0 then
+            if duel::get_field_group_count(d, a.tp, LOCATION_HAND, 0) > 0 {
+                // Duel.BreakEffect()
+                duel::break_effect(d);
+                // Duel.DiscardHand(tp,nil,1,1,REASON_EFFECT)
+                duel::discard_hand(d, a.tp, None, 1, 1, REASON_EFFECT, NO_EX);
+            }
+        }
+    }
+}

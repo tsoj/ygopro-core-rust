@@ -3,7 +3,7 @@ use super::prelude::*;
 
 pub const ID: u32 = 86282581;
 
-pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_DARK_FUSION], ..ScriptInfo::DEFAULT };
+pub const INFO: ScriptInfo = ScriptInfo { dark_calling: true, listed_names: &[CARD_DARK_FUSION], ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // c:EnableReviveLimit()

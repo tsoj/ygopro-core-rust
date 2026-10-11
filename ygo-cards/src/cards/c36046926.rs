@@ -43,7 +43,7 @@ fn operation_fn(d: &mut Duel, a: &EffArgs) {
     }
     let mut ac: i64 = 1;
     if ct > 1 {
-        duel::hint(d, HINT_NUMBER as u8, tp, HINTMSG_NUMBER as u64);
+        duel::hint(d, HINTMSG_NUMBER as u8, tp, HINT_NUMBER as u64);
         ac = duel::announce_number(d, tp, &[1, 2]).nil().0 as i64;
     }
     duel::confirm_decktop(d, tp, ac as u32);

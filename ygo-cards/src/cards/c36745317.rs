@@ -30,7 +30,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e1, false);
     // Send 1 EARTH monster to the GY
     // Vernusylph.AddSpSummonEffect(c,id,1,CATEGORY_TOGRAVE,s.tgtg,s.tgop)
-    aux::vernusylph::add_sp_summon_effect(d, c, ID, 1, CATEGORY_TOGRAVE, cost_target(tgtg), operation(tgop));
+    aux::vernusylph::add_sp_summon_effect(d, c, ID, 1, CATEGORY_TOGRAVE, cost_target(tgtg), lua_fn(tgop));
 }
 /// `aux.FaceupFilter(Card.IsSetCard,SET_VERNUSYLPH)`
 fn vernusylph_faceup(d: &mut Duel, c: CardId) -> bool {
@@ -93,9 +93,9 @@ fn tgtg(d: &mut Duel, a: &EffArgs) -> bool {
     duel::set_operation_info(d, 0, CATEGORY_TOHAND, None, 1, tp, LOCATION_DECK as i32);
     true
 }
-/// `s.tgop(e,tp,eg,ep,ev,re,r,rp)`: `return true,tc:GetCode()` (the values are not read by the core)
-fn tgop(d: &mut Duel, a: &EffArgs) {
-    let tp = a.tp;
+/// `s.tgop(e,tp,eg,ep,ev,re,r,rp)`: `return true,tc:GetCode()` (read by Vernusylph.AddSpSummonEffect)
+fn tgop(d: &mut Duel, a: Args) -> Value {
+    let tp = a.p(1);
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_TOGRAVE as u64);
     // local tc=Duel.SelectMatchingCard(tp,s.tgfilter,tp,LOCATION_DECK,0,1,1,nil):GetFirst()
@@ -105,6 +105,9 @@ fn tgop(d: &mut Duel, a: &EffArgs) {
     if let Some(tc) = tc {
         if duel::send_to_grave(d, tc, REASON_EFFECT, None, None) > 0 && card::is_location(d, tc, LOCATION_GRAVE) {
             // return true,tc:GetCode()
+            let code = card::get_code(d, tc);
+            return Value::Multi(vec![true.into(), (code.first().copied().unwrap_or(0) as i64).into()]);
         }
     }
+    Value::Nil
 }

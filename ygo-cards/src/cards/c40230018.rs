@@ -43,7 +43,7 @@ fn chainfilter(d: &mut Duel, a: Args) -> bool {
         return true;
     }
     let rc = effect::get_handler(d, re).nil();
-    !card::is_set_card(d, rc, &[SET_SPELLBOOK as u16])
+    card::is_set_card(d, rc, &[SET_SPELLBOOK as u16])
 }
 /// `s.confilter(c)`
 fn confilter(d: &mut Duel, c: CardId) -> bool {

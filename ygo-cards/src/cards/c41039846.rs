@@ -80,6 +80,9 @@ fn op(d: &mut Duel, a: &EffArgs) {
 /// `s.hdtg(e,tp,eg,ep,ev,re,r,rp,chk)`
 fn hdtg(d: &mut Duel, a: &EffArgs) -> bool {
     // if chk==0 then return true end
+    if a.chk == Some(0) {
+        return true;
+    }
     // Duel.SetOperationInfo(0,CATEGORY_HANDES,nil,0,1-tp,1)
     duel::set_operation_info(d, 0, CATEGORY_HANDES, None, 0, 1 - a.tp, 1);
     true

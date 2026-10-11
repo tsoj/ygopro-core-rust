@@ -278,10 +278,9 @@ fn malefic_summon_condition(cd: Option<u32>, loc: u32, excon: Option<LuaFn>) -> 
         }
         let Some(c) = c else { return true };
         let p = card::get_controler(d, c);
-        // (the substitute filter gets `cd` as its `tp`: its argument list is (c, cd, tp))
         duel::get_location_count(d, p, LOCATION_MZONE as u8, None, None, None).0 > 0
             && (duel::is_existing_matching_card(d, Some(&|d, x| malefic_summon_filter(d, x, cd)), p, loc, 0, 1, NO_EX)
-                || duel::is_existing_matching_card(d, Some(&|d, x| malefic_summon_substitute(d, x, cd.map_or(0, |v| v as u8))), p, LOCATION_ONFIELD + LOCATION_GRAVE, 0, 1, NO_EX))
+                || duel::is_existing_matching_card(d, Some(&|d, x| malefic_summon_substitute(d, x, p)), p, LOCATION_ONFIELD + LOCATION_GRAVE, 0, 1, NO_EX))
     })
 }
 fn malefic_summon_target(cd: Option<u32>, loc: u32) -> LuaFn {

@@ -103,6 +103,8 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
             return duel::is_existing_matching_card(d, Some(&tgfilter1), tp, LOCATION_DECK, 0, 1, NO_EX)
                 || duel::is_existing_matching_card(d, Some(&tgfilter2), tp, LOCATION_DECK, 0, 1, NO_EX);
         }
+        // var==0: the function falls through, and with chk==0 it ends by returning nil
+        return false;
     }
     // if var==1 then
     if var == 1 {

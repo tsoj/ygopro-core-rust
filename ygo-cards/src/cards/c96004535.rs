@@ -145,7 +145,7 @@ fn attachtg(d: &mut Duel, a: &EffArgs) -> bool {
     }
     // if chk==0 then return Duel.IsExistingTarget(s.xyzfilter,tp,LOCATION_MZONE,0,1,nil,tp) end
     if a.chk == Some(0) {
-        return duel::is_existing_target(d, Some(&|d, c| xyzfilter(d, c, a.tp)), a.tp, 0, LOCATION_MZONE, 1, NO_EX);
+        return duel::is_existing_target(d, Some(&|d, c| xyzfilter(d, c, a.tp)), a.tp, LOCATION_MZONE, 0, 1, NO_EX);
     }
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
     duel::hint(d, HINT_SELECTMSG as u8, a.tp, HINTMSG_TARGET as u64);

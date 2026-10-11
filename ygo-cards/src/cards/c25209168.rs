@@ -109,7 +109,7 @@ fn tgop(d: &mut Duel, a: &EffArgs) {
     let e = a.e;
     let tp = a.tp;
     // local tg=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
-    let tg = duel::get_matching_group(d, Some(&|d, c| card::is_able_to_grave(d, c, None)), tp, LOCATION_MZONE, LOCATION_MZONE, NO_EX);
+    let mut tg = duel::get_matching_group(d, Some(&|d, c| card::is_able_to_grave(d, c, None)), tp, LOCATION_MZONE, LOCATION_MZONE, NO_EX);
     // if #tg<1 or Duel.SendtoGrave(tg,REASON_EFFECT)<1 or #tg:Match(Card.IsLocation,nil,LOCATION_GRAVE)<1 then return end
     if tg.is_empty() {
         return;
@@ -117,7 +117,9 @@ fn tgop(d: &mut Duel, a: &EffArgs) {
     if duel::send_to_grave(d, tg.clone(), REASON_EFFECT, None, None) < 1 {
         return;
     }
-    if group::filter(d, &tg, &|d, c| card::is_location(d, c, LOCATION_GRAVE), NO_EX).is_empty() {
+    // (Group.Match filters tg in place)
+    group::match_(d, &mut tg, &|d, c| card::is_location(d, c, LOCATION_GRAVE), NO_EX);
+    if tg.is_empty() {
         return;
     }
     // local p=Duel.GetTurnPlayer()

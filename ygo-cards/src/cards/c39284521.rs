@@ -1,0 +1,92 @@
+//! Machina Cannon
+//! (マシンナーズ・カノン)
+use super::prelude::*;
+
+pub const ID: u32 = 39284521;
+
+pub fn initial_effect(d: &mut Duel, c: CardId) {
+    // c:EnableReviveLimit()
+    card::enable_revive_limit(d, c);
+    // special summon
+    // local e1=Effect.CreateEffect(c)
+    let e1 = effect::create_effect(d, c);
+    // e1:SetType(EFFECT_TYPE_FIELD)
+    effect::set_type(d, e1, EFFECT_TYPE_FIELD);
+    // e1:SetCode(EFFECT_SPSUMMON_PROC)
+    effect::set_code(d, e1, EFFECT_SPSUMMON_PROC);
+    // e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+    effect::set_property(d, e1, EFFECT_FLAG_UNCOPYABLE, 0);
+    // e1:SetRange(LOCATION_HAND)
+    effect::set_range(d, e1, LOCATION_HAND);
+    // e1:SetCondition(s.spcon)
+    effect::set_condition(d, e1, Some(lua_fn(spcon)));
+    // e1:SetTarget(s.sptg)
+    effect::set_target(d, e1, Some(lua_fn(sptg)));
+    // e1:SetOperation(s.spop)
+    effect::set_operation(d, e1, Some(lua_fn(spop)));
+    // c:RegisterEffect(e1)
+    card::register_effect(d, c, e1, false);
+}
+/// `s.spfilter(c,tp)`
+fn spfilter(d: &mut Duel, c: CardId) -> bool {
+    // return c:IsRace(RACE_MACHINE) and c:IsAbleToGraveAsCost()
+    card::is_race(d, c, RACE_MACHINE) && card::is_able_to_grave_as_cost(d, c)
+}
+/// `s.spcon(e,c)`
+fn spcon(d: &mut Duel, a: Args) -> bool {
+    // if c==nil then return true end
+    let Some(c) = a.card(1) else {
+        return true;
+    };
+    // local rg=Duel.GetMatchingGroup(s.spfilter,c:GetControler(),LOCATION_HAND,0,e:GetHandler())
+    let tp = card::get_controler(d, c);
+    let h = effect::get_handler(d, a.e(0)).nil();
+    let rg = duel::get_matching_group(d, Some(&spfilter), tp, LOCATION_HAND, 0, h.into());
+    // return aux.SelectUnselectGroup(rg,e,c:GetControler(),1,#rg,aux.ChkfMMZ(1),0)
+    matches!(aux::select_unselect_group(d, &rg, Some(a.e(0)), tp, Some(1), Some(rg.len()), Some(&aux::chkf_mmz(1)), 0, tp, None, None, None, false), Err(true))
+}
+/// `s.sptg(e,tp,eg,ep,ev,re,r,rp,c)`
+fn sptg(d: &mut Duel, a: Args) -> bool {
+    let e = a.e(0);
+    let tp = a.p(1);
+    // local rg=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_HAND,0,e:GetHandler())
+    let h = effect::get_handler(d, e).nil();
+    let rg = duel::get_matching_group(d, Some(&spfilter), tp, LOCATION_HAND, 0, h.into());
+    // local g=aux.SelectUnselectGroup(rg,e,tp,1,#rg,aux.ChkfMMZ(1),1,tp,HINTMSG_TOGRAVE,nil,nil,true)
+    let g = aux::select_unselect_group(d, &rg, Some(e), tp, Some(1), Some(rg.len()), Some(&aux::chkf_mmz(1)), 1, tp, Some(HINTMSG_TOGRAVE as u64), None, None, true).unwrap_or_default();
+    // if #g>0 then
+    if !g.is_empty() {
+        // g:KeepAlive()
+        // e:SetLabelObject(g)
+        effect::set_label_object(d, e, Value::Group(g));
+        // return true
+        return true;
+    }
+    // return false
+    false
+}
+/// `s.spop(e,tp,eg,ep,ev,re,r,rp,c)`
+fn spop(d: &mut Duel, a: Args) {
+    let e = a.e(0);
+    // local g=e:GetLabelObject()
+    // if not g then return end
+    let Some(g) = effect::get_label_object(d, e).as_group().cloned() else {
+        return;
+    };
+    // Duel.SendtoGrave(g,REASON_COST)
+    duel::send_to_grave(d, g.clone(), REASON_COST, None, None);
+    // local e1=Effect.CreateEffect(c)
+    let c = a.c(8);
+    let e1 = effect::create_effect(d, c);
+    // e1:SetType(EFFECT_TYPE_SINGLE)
+    effect::set_type(d, e1, EFFECT_TYPE_SINGLE);
+    // e1:SetCode(EFFECT_UPDATE_ATTACK)
+    effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
+    // e1:SetValue(#g*800)
+    effect::set_value(d, e1, g.len() as i64 * 800);
+    // e1:SetReset(RESET_EVENT|RESETS_STANDARD_DISABLE&~RESET_TOFIELD)
+    effect::set_reset(d, e1, RESET_EVENT | (RESETS_STANDARD_DISABLE & !RESET_TOFIELD), 1);
+    // c:RegisterEffect(e1)
+    card::register_effect(d, c, e1, false);
+    // g:DeleteGroup()
+}

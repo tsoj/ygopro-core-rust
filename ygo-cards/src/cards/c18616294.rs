@@ -53,7 +53,7 @@ fn revealfilter(d: &mut Duel, c: CardId, tp: u8) -> bool {
     card::is_race(d, c, RACE_MACHINE) && duel::is_existing_matching_card(d, Some(&|d, x| thfilter(d, x, attr)), tp, LOCATION_DECK, 0, 1, NO_EX)
 }
 fn thfilter(d: &mut Duel, c: CardId, attr: u32) -> bool {
-    card::is_race(d, c, RACE_MACHINE) && !card::is_attribute_except(d, c, attr, None, 0, None) && card::is_able_to_hand(d, c, None)
+    card::is_race(d, c, RACE_MACHINE) && card::is_attribute_except(d, c, attr, None, 0, None) && card::is_able_to_hand(d, c, None)
 }
 fn thtg(d: &mut Duel, a: &EffArgs) -> bool {
     if a.chk == Some(0) {

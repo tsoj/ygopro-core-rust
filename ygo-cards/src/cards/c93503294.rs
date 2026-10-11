@@ -13,7 +13,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
         c,
         Some(mat_filter(|d, c, sc, st, tp| card::is_set_card_ctx(d, c, &[SET_ALTERGEIST as u16], sc, st, Some(tp)))),
         2,
-        Some(2),
+        None,
         None,
         None,
         None,

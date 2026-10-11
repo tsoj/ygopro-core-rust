@@ -2,6 +2,7 @@
 use super::prelude::*;
 
 pub const ID: u32 = 32152870;
+pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_VISAS_STARFROST, 56063182], listed_series: &[SET_SCARECLAW], ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // Return 1 "Primitive Planet Reichphobia" to the hand

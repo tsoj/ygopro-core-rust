@@ -2,6 +2,7 @@
 use super::prelude::*;
 
 pub const ID: u32 = 27541267;
+pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_LSWARM], ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // All your "lswarm" monsters are unaffected by other card effects

@@ -2,6 +2,7 @@
 use super::prelude::*;
 
 pub const ID: u32 = 69809989;
+pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_GHOSTRICK], ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // Special Summon 1 "Ghostrick" monster from your hand or GY, then you can change 1 face-down "Ghostrick" monster you control to face-up Attack Position

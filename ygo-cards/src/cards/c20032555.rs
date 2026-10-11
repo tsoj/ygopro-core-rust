@@ -2,6 +2,7 @@
 use super::prelude::*;
 
 pub const ID: u32 = 20032555;
+pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_GIMMICK_PUPPET], ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // effects

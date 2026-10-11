@@ -2,6 +2,7 @@
 use super::prelude::*;
 
 pub const ID: u32 = 49191560;
+pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_SPELLBOOK], ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // salvage

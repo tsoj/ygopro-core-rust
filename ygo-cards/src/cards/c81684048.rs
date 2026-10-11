@@ -3,7 +3,7 @@ use super::prelude::*;
 
 pub const ID: u32 = 81684048;
 
-pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_CALL_OF_THE_HAUNTED, ID], ..ScriptInfo::DEFAULT };
+pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_CALL_OF_THE_HAUNTED], ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // You can reveal this card in your hand; Set 1 "Call of the Haunted" from your Deck or GY, and if you do, discard 1 card. That Set card can be activated this turn

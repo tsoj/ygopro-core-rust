@@ -8,8 +8,9 @@ your task appears in the first differing message of them. Find what is wrong and
 You work in a git worktree. MAIN=/home/tsoj/Dokumente/Projects/yugioh_AI_2 is the main checkout;
 your worktree lacks `external/` and `build/` (read them from MAIN: Lua scripts in
 MAIN/external/CardScripts/official/c<CODE>.lua and utility.lua/proc_*.lua there, the C++ core in
-MAIN/build/ocgcore-src/). The failing games are files in MAIN/build/coverage_fails/ (named in your
-task); the first line of each is the ygo-diff command, the rest its output.
+MAIN/build/ocgcore-src/). The failing games are files in MAIN/build/coverage_fails/ (random play) or
+MAIN/build/replay_fails/ (recorded games of the Python agents, replayed with `ygo-diff --replay`),
+named in your task; the first line of each is the ygo-diff command, the rest its output.
 
 Reproduce one (from your worktree's rust/ directory, in the foreground):
 ```

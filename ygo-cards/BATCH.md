@@ -6,7 +6,8 @@ use these cards.
 
 You work in a git worktree of the repository. MAIN=/home/tsoj/Dokumente/Projects/yugioh_AI_2 is the
 main checkout. Your worktree lacks `external/` and `build/`: read the Lua from
-MAIN/external/CardScripts/official/c<CODE>.lua (if it is not there: pre-release/, pre-errata/ or goat/, the
+MAIN/core_ext/lua/cards/c<CODE>.lua if it exists (the project's patched scripts, which the reference
+core loads first), else MAIN/external/CardScripts/official/c<CODE>.lua (if it is not there: pre-release/, pre-errata/ or goat/, the
 order the core uses; library: MAIN/external/CardScripts/utility.lua,
 proc_*.lua, cards_specific_functions.lua) and the C++ core from MAIN/build/ocgcore-src/.
 

@@ -26,7 +26,7 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     //     and Duel.IsExistingMatchingCard(Card.IsAbleToRemove,tp,0,LOCATION_DECK,1,nil,1-tp,POS_FACEDOWN) end
     if a.chk == Some(0) {
         return duel::is_existing_matching_card(d, Some(&|d, c| card::is_able_to_remove(d, c, Some(a.tp), Some(POS_FACEDOWN as u8), None)), a.tp, LOCATION_DECK, 0, 1, NO_EX)
-            && duel::is_existing_matching_card(d, Some(&|d, c| card::is_able_to_remove(d, c, Some(1 - a.tp), Some(POS_FACEDOWN as u8), None)), 1 - a.tp, 0, LOCATION_DECK, 1, NO_EX);
+            && duel::is_existing_matching_card(d, Some(&|d, c| card::is_able_to_remove(d, c, Some(1 - a.tp), Some(POS_FACEDOWN as u8), None)), a.tp, 0, LOCATION_DECK, 1, NO_EX);
     }
     true
 }

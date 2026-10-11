@@ -6,6 +6,7 @@ pub const ID: u32 = 52846880;
 pub const INFO: ScriptInfo = ScriptInfo {
     listed_names: &[ID],
     listed_series: &[SET_NEKROZ],
+    mat_filter: Some(mat_filter),
     ..ScriptInfo::DEFAULT
 };
 
@@ -66,6 +67,11 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_operation(d, e3, Some(operation(op)));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
+}
+/// `s.mat_filter(c)`
+fn mat_filter(d: &mut Duel, c: CardId, _tp: u8) -> bool {
+    // return not c:IsCode(id)
+    !card::is_code(d, c, &[ID])
 }
 /// `s.spfilter(c,e,tp)`
 fn spfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {

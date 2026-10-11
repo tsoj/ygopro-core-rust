@@ -3,7 +3,12 @@ use super::prelude::*;
 
 pub const ID: u32 = 88240999;
 
-pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_NEKROZ], ..ScriptInfo::DEFAULT };
+pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_NEKROZ], mat_filter: Some(mat_filter), ..ScriptInfo::DEFAULT };
+/// `s.mat_filter(c)`
+fn mat_filter(d: &mut Duel, c: CardId, _tp: u8) -> bool {
+    // return c:GetLevel()~=10
+    card::get_level(d, c) != 10
+}
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // c:EnableReviveLimit()

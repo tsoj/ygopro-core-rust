@@ -38,10 +38,16 @@ impl Duel {
     }
     /// Runs a card function; `None` if it raised a Lua error (logged, as `lua_pcall` fails).
     pub fn protected_call(&mut self, f: &LuaFn, args: &[Value]) -> Option<Value> {
-        match catch_unwind(AssertUnwindSafe(|| {
+        self.call_depth += 1;
+        let r = catch_unwind(AssertUnwindSafe(|| {
             crate::api::script_step(self);
             f.call(self, args)
-        })) {
+        }));
+        self.call_depth -= 1;
+        if self.call_depth == 0 {
+            self.restore_assumes();
+        }
+        match r {
             Ok(v) => Some(v),
             Err(payload) => match payload.downcast::<LuaError>() {
                 Ok(e) => {

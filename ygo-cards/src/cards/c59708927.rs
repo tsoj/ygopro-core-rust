@@ -49,10 +49,10 @@ fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
         return !duel::is_player_affected_by_effect(d, tp, CARD_BLUEEYES_SPIRIT).is_some()
             && duel::get_location_count(d, tp, LOCATION_MZONE as u8, None, None, None).0 > 1
             && card::is_can_be_special_summoned(d, h, a.e, 0, tp, false, false, None, None, None)
-            && duel::is_existing_matching_card(d, Some(&|d, c| filter(d, c, a.e, tp)), tp, LOCATION_HAND, 0, 1, NO_EX);
+            && duel::is_existing_matching_card(d, Some(&|d, c| filter(d, c, a.e, tp)), tp, LOCATION_HAND, 0, 1, h.into());
     }
     let h = effect::get_handler(d, a.e).nil();
-    duel::set_operation_info(d, 0, CATEGORY_SPECIAL_SUMMON, Some(CardSet::from_card(h)), 2, tp, LOCATION_HAND as i32);
+    duel::set_operation_info(d, 0, CATEGORY_SPECIAL_SUMMON, None, 2, tp, LOCATION_HAND as i32);
     true
 }
 /// `s.spop(e,tp,eg,ep,ev,re,r,rp)`

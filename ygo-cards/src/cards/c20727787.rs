@@ -25,8 +25,9 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
 }
 /// `s.filter(c)`
 fn filter(d: &mut Duel, c: CardId) -> bool {
-    // return c:IsType(TYPE_EQUIP)
-    card::is_type(d, c, TYPE_EQUIP)
+    // return c:IsFaceup() and c:IsType(TYPE_EQUIP)
+    // (ygoai override core_ext/lua/cards/c20727787.lua: a Set Equip Spell does not count)
+    card::is_faceup(d, c) && card::is_type(d, c, TYPE_EQUIP)
 }
 /// `s.target(e,tp,eg,ep,ev,re,r,rp,chk)`
 fn target(d: &mut Duel, a: &EffArgs) -> bool {

@@ -17,7 +17,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e1, 0, LOCATION_MZONE);
     // e1:SetCondition(s.atkcon)
-    effect::set_condition(d, e1, Some(effect_card_fn(atkcon)));
+    effect::set_condition(d, e1, Some(condition(atkcon)));
     // e1:SetValue(-800)
     effect::set_value(d, e1, -800);
     // c:RegisterEffect(e1)
@@ -45,9 +45,9 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e2, false);
 }
 // function s.atkcon(e,c)
-fn atkcon(d: &mut Duel, e: EffectId, _c: CardId) -> bool {
+fn atkcon(d: &mut Duel, a: &EffArgs) -> bool {
     // local tp=e:GetHandlerPlayer()
-    let tp = effect::get_handler_player(d, e);
+    let tp = effect::get_handler_player(d, a.e);
     // return Duel.GetFieldGroupCount(tp,LOCATION_HAND,0)==0
     duel::get_field_group_count(d, tp, LOCATION_HAND, 0) == 0
 }

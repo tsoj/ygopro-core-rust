@@ -20,6 +20,37 @@ pub fn register_effect(d: &mut Duel, e: EffectId, p: u8) {
     raw::register_effect(d, e, p);
     super::wrap_cannot_summon_target(d, e);
 }
+/// `Duel.GetReleaseGroup(player, use_hand, use_oppo, reason)` with the wrapper of
+/// `proc_workaround.lua`: also the player's Extra Deck cards that an `EFFECT_EXTRA_RELEASE_NONSUM`
+/// effect lets be released ("Duel Evolution - Assault Zone").
+pub fn get_release_group(d: &mut Duel, p: u8, hand: bool, oppo: bool, reason: Option<u32>) -> Group {
+    let reason = reason.unwrap_or(REASON_COST);
+    let mut g = raw::get_release_group(d, p, hand, oppo, Some(reason));
+    let extra = raw::get_field_group(d, p, LOCATION_EXTRA, 0);
+    let mut exg = Vec::new();
+    for c in extra.iter() {
+        if !ygo_core::api::card::is_has_effect(d, c, EFFECT_EXTRA_RELEASE_NONSUM, None).is_empty() && super::card::is_releasable(d, c, Some(reason), None) {
+            exg.push(c);
+        }
+    }
+    if !exg.is_empty() {
+        let re = raw::get_reason_effect(d);
+        for c in exg {
+            for eff in ygo_core::api::card::is_has_effect(d, c, EFFECT_EXTRA_RELEASE_NONSUM, None) {
+                let ok = match ygo_core::api::effect::get_value(d, eff) {
+                    Value::Int(1) => true,
+                    Value::Fn(f) => f.call(d, &[Value::Effect(eff), re.map_or(Value::Nil, Value::Effect), Value::Int(reason as i64), Value::Int(p as i64)]).truthy(),
+                    // (`value(...)` on another number is a Lua error in the script)
+                    _ => crate::lua_error("attempt to call a number value"),
+                };
+                if ok {
+                    g.insert(c);
+                }
+            }
+        }
+    }
+    g
+}
 /// `Duel.IsMainPhase(player)`: also that it is `player`'s turn.
 pub fn is_main_phase(d: &Duel, p: Option<u8>) -> bool {
     raw::is_main_phase(d) && p.is_none_or(|p| raw::is_turn_player(d, p))

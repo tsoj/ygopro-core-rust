@@ -484,7 +484,7 @@ impl Duel {
                 if self.core.self_destroy_set.is_empty() {
                     return false;
                 }
-                let c = public_order(self, &self.core.self_destroy_set.clone())[0];
+                let c = public_order(self, &self.core.self_destroy_set)[0];
                 if let Some(pe) = c.is_affected_by_effect(self, EFFECT_SELF_DESTROY) {
                     let hp = pe.get_handler_player(self);
                     let cc = self.card_mut(c);
@@ -513,7 +513,7 @@ impl Duel {
                 if self.core.self_tograve_set.is_empty() {
                     return false;
                 }
-                let c = public_order(self, &self.core.self_tograve_set.clone())[0];
+                let c = public_order(self, &self.core.self_tograve_set)[0];
                 if let Some(pe) = c.is_affected_by_effect(self, EFFECT_SELF_TOGRAVE) {
                     let hp = pe.get_handler_player(self);
                     let cc = self.card_mut(c);

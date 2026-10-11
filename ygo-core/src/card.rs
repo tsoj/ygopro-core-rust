@@ -35,6 +35,47 @@ pub struct CardState {
     pub reason_effect: Option<EffectId>,
 }
 
+/// The values of a card being computed (`card::temp`, for the stats): kept out of `Card` so that
+/// these short-lived writes do not copy a card shared with a copy of the duel.
+#[derive(Clone, Copy, Debug)]
+pub struct StatTemp {
+    pub code: u32,
+    pub type_: u32,
+    pub level: u32,
+    pub rank: u32,
+    pub link: u32,
+    pub link_marker: u32,
+    pub lscale: u32,
+    pub rscale: u32,
+    pub attribute: u32,
+    pub race: u64,
+    pub attack: i32,
+    pub defense: i32,
+    pub base_attack: i32,
+    pub base_defense: i32,
+}
+
+impl Default for StatTemp {
+    fn default() -> Self {
+        StatTemp {
+            code: u32::MAX,
+            type_: u32::MAX,
+            level: u32::MAX,
+            rank: u32::MAX,
+            link: u32::MAX,
+            link_marker: u32::MAX,
+            lscale: u32::MAX,
+            rscale: u32::MAX,
+            attribute: u32::MAX,
+            race: u64::MAX,
+            attack: -1,
+            defense: -1,
+            base_attack: -1,
+            base_defense: -1,
+        }
+    }
+}
+
 /// The location part of a card state (`card_state::is_location`).
 #[derive(Clone, Copy, Debug)]
 pub struct LocState {
@@ -425,6 +466,9 @@ pub fn sort_by_less<T: Copy, F: Fn(T, T) -> bool>(v: &mut [T], less: F) {
 
 /// `card::public_order`: the cards of a set in public order.
 pub fn public_order(d: &Duel, cset: &CardSet) -> Vec<CardId> {
+    if cset.is_empty() {
+        return Vec::new();
+    }
     let mut cv = cset.to_vec();
     if cv.len() > 1 {
         sort_by_less(&mut cv, |a, b| card_public_sort(d, a, b));
@@ -606,18 +650,18 @@ impl CardId {
         if let Some(v) = self.c(d).get_assumed(ASSUME_CODE) {
             return v as u32;
         }
-        if self.c(d).temp.code != u32::MAX {
-            return self.c(d).temp.code;
+        if d.stat_temp[self.0 as usize].code != u32::MAX {
+            return d.stat_temp[self.0 as usize].code;
         }
         let data_code = self.c(d).data.code;
         let mut code = data_code;
-        d.card_mut(self).temp.code = data_code;
+        d.stat_temp[self.0 as usize].code = data_code;
         let mut effects = Vec::new();
         self.filter_effect(d, EFFECT_CHANGE_CODE, &mut effects, true);
         if let Some(&last) = effects.last() {
             code = last.get_value_card(d, Some(self), 0) as u32;
         }
-        d.card_mut(self).temp.code = u32::MAX;
+        d.stat_temp[self.0 as usize].code = u32::MAX;
         if code == data_code {
             effects.clear();
             self.filter_effect(d, EFFECT_ADD_CODE, &mut effects, true);
@@ -782,8 +826,8 @@ impl CardId {
         if c.current.is_location(LOCATION_PZONE) && sumtype == 0 {
             return TYPE_PENDULUM + TYPE_SPELL;
         }
-        if c.temp.type_ != u32::MAX {
-            return c.temp.type_;
+        if d.stat_temp[self.0 as usize].type_ != u32::MAX {
+            return d.stat_temp[self.0 as usize].type_;
         }
         let data_type = c.data.type_;
         let mut typ = data_type as i32;
@@ -792,7 +836,7 @@ impl CardId {
             alttype = data_type as i32;
         }
         let mut changed = false;
-        d.card_mut(self).temp.type_ = data_type;
+        d.stat_temp[self.0 as usize].type_ = data_type;
         let mut effects = Vec::new();
         self.filter_effect(d, EFFECT_ADD_TYPE, &mut effects, false);
         self.filter_effect(d, EFFECT_REMOVE_TYPE, &mut effects, false);
@@ -830,14 +874,14 @@ impl CardId {
                 } else {
                     typ = v;
                 }
-                d.card_mut(self).temp.type_ = typ as u32;
+                d.stat_temp[self.0 as usize].type_ = typ as u32;
             }
         }
         typ |= alttype;
         if changed {
             typ = alttype;
         }
-        d.card_mut(self).temp.type_ = u32::MAX;
+        d.stat_temp[self.0 as usize].type_ = u32::MAX;
         typ as u32
     }
     fn is_monster_for_stats(self, d: &mut Duel) -> bool {
@@ -854,13 +898,13 @@ impl CardId {
         if c.current.location as u32 != LOCATION_MZONE || c.get_status(STATUS_SUMMONING | STATUS_SPSUMMON_STEP) != 0 {
             return c.data.attack;
         }
-        if c.temp.base_attack != -1 {
-            return c.temp.base_attack;
+        if d.stat_temp[self.0 as usize].base_attack != -1 {
+            return d.stat_temp[self.0 as usize].base_attack;
         }
         let mut batk = c.data.attack.max(0);
         let mut bdef = c.data.defense.max(0);
         let is_link = c.data.type_ & TYPE_LINK != 0;
-        d.card_mut(self).temp.base_attack = batk;
+        d.stat_temp[self.0 as usize].base_attack = batk;
         let mut eset = Vec::new();
         let mut swap = false;
         if !is_link {
@@ -881,7 +925,7 @@ impl CardId {
                 match code {
                     EFFECT_SET_BASE_ATTACK => {
                         batk = (e.get_value_card(d, Some(self), 0) as i32).max(0);
-                        d.card_mut(self).temp.base_attack = batk;
+                        d.stat_temp[self.0 as usize].base_attack = batk;
                         eset.remove(i);
                         continue;
                     }
@@ -902,9 +946,9 @@ impl CardId {
                 EFFECT_SWAP_BASE_AD => std::mem::swap(&mut batk, &mut bdef),
                 _ => {}
             }
-            d.card_mut(self).temp.base_attack = batk;
+            d.stat_temp[self.0 as usize].base_attack = batk;
         }
-        d.card_mut(self).temp.base_attack = -1;
+        d.stat_temp[self.0 as usize].base_attack = -1;
         batk
     }
     pub fn get_attack(self, d: &mut Duel) -> i32 {
@@ -918,14 +962,14 @@ impl CardId {
         if c.current.location as u32 != LOCATION_MZONE || c.get_status(STATUS_SUMMONING | STATUS_SPSUMMON_STEP) != 0 {
             return c.data.attack;
         }
-        if c.temp.attack != -1 {
-            return c.temp.attack;
+        if d.stat_temp[self.0 as usize].attack != -1 {
+            return d.stat_temp[self.0 as usize].attack;
         }
         let mut batk = c.data.attack.max(0);
         let mut bdef = c.data.defense.max(0);
         let is_link = c.data.type_ & TYPE_LINK != 0;
-        d.card_mut(self).temp.base_attack = batk;
-        d.card_mut(self).temp.attack = batk;
+        d.stat_temp[self.0 as usize].base_attack = batk;
+        d.stat_temp[self.0 as usize].attack = batk;
         let mut atk: i32 = -1;
         let mut up_atk: i32 = 0;
         let mut upc_atk: i32 = 0;
@@ -953,7 +997,7 @@ impl CardId {
                 match code {
                     EFFECT_SET_BASE_ATTACK => {
                         batk = (e.get_value_card(d, Some(self), 0) as i32).max(0);
-                        d.card_mut(self).temp.base_attack = batk;
+                        d.stat_temp[self.0 as usize].base_attack = batk;
                         eset.remove(i);
                         continue;
                     }
@@ -967,7 +1011,7 @@ impl CardId {
             }
             i += 1;
         }
-        d.card_mut(self).temp.attack = batk;
+        d.stat_temp[self.0 as usize].attack = batk;
         for peffect in eset {
             let (typ, single_range, code, delay) = {
                 let e = d.effect(peffect);
@@ -1013,7 +1057,7 @@ impl CardId {
                 EFFECT_SWAP_BASE_AD => std::mem::swap(&mut batk, &mut bdef),
                 _ => {}
             }
-            let t = &mut d.card_mut(self).temp;
+            let t = &mut d.stat_temp[self.0 as usize];
             t.base_attack = batk;
             let base = if atk < 0 { batk } else { atk };
             t.attack = if !rev {
@@ -1027,24 +1071,24 @@ impl CardId {
         }
         for peffect in effects_atk {
             let v = peffect.get_value_card(d, Some(self), 0) as i32;
-            d.card_mut(self).temp.attack = v;
+            d.stat_temp[self.0 as usize].attack = v;
         }
-        if self.c(d).temp.defense == -1 {
+        if d.stat_temp[self.0 as usize].defense == -1 {
             if swap_final {
                 let v = self.get_defense(d);
-                d.card_mut(self).temp.attack = v;
+                d.stat_temp[self.0 as usize].attack = v;
             }
             for peffect in effects_atk_r {
                 let v = peffect.get_value_card(d, Some(self), 0) as i32;
-                d.card_mut(self).temp.attack = v;
+                d.stat_temp[self.0 as usize].attack = v;
                 if d.effect(peffect).is_flag(EFFECT_FLAG_REPEAT) {
                     let v = peffect.get_value_card(d, Some(self), 0) as i32;
-                    d.card_mut(self).temp.attack = v;
+                    d.stat_temp[self.0 as usize].attack = v;
                 }
             }
         }
-        let atk = self.c(d).temp.attack.max(0);
-        let t = &mut d.card_mut(self).temp;
+        let atk = d.stat_temp[self.0 as usize].attack.max(0);
+        let t = &mut d.stat_temp[self.0 as usize];
         t.base_attack = -1;
         t.attack = -1;
         atk
@@ -1060,12 +1104,12 @@ impl CardId {
         if c.current.location as u32 != LOCATION_MZONE || c.get_status(STATUS_SUMMONING | STATUS_SPSUMMON_STEP) != 0 {
             return c.data.defense;
         }
-        if c.temp.base_defense != -1 {
-            return c.temp.base_defense;
+        if d.stat_temp[self.0 as usize].base_defense != -1 {
+            return d.stat_temp[self.0 as usize].base_defense;
         }
         let mut batk = c.data.attack.max(0);
         let mut bdef = c.data.defense.max(0);
-        d.card_mut(self).temp.base_defense = bdef;
+        d.stat_temp[self.0 as usize].base_defense = bdef;
         let mut eset = Vec::new();
         self.filter_effect(d, EFFECT_SWAP_BASE_AD, &mut eset, false);
         let swap = !eset.is_empty();
@@ -1087,7 +1131,7 @@ impl CardId {
                     }
                     EFFECT_SET_BASE_DEFENSE => {
                         bdef = (e.get_value_card(d, Some(self), 0) as i32).max(0);
-                        d.card_mut(self).temp.base_defense = bdef;
+                        d.stat_temp[self.0 as usize].base_defense = bdef;
                         eset.remove(i);
                         continue;
                     }
@@ -1103,9 +1147,9 @@ impl CardId {
                 EFFECT_SWAP_BASE_AD => std::mem::swap(&mut batk, &mut bdef),
                 _ => {}
             }
-            d.card_mut(self).temp.base_defense = bdef;
+            d.stat_temp[self.0 as usize].base_defense = bdef;
         }
-        d.card_mut(self).temp.base_defense = -1;
+        d.stat_temp[self.0 as usize].base_defense = -1;
         bdef
     }
     pub fn get_defense(self, d: &mut Duel) -> i32 {
@@ -1122,13 +1166,13 @@ impl CardId {
         if c.current.location as u32 != LOCATION_MZONE || c.get_status(STATUS_SUMMONING | STATUS_SPSUMMON_STEP) != 0 {
             return c.data.defense;
         }
-        if c.temp.defense != -1 {
-            return c.temp.defense;
+        if d.stat_temp[self.0 as usize].defense != -1 {
+            return d.stat_temp[self.0 as usize].defense;
         }
         let mut batk = c.data.attack.max(0);
         let mut bdef = c.data.defense.max(0);
-        d.card_mut(self).temp.base_defense = bdef;
-        d.card_mut(self).temp.defense = bdef;
+        d.stat_temp[self.0 as usize].base_defense = bdef;
+        d.stat_temp[self.0 as usize].defense = bdef;
         let mut def: i32 = -1;
         let mut up_def: i32 = 0;
         let mut upc_def: i32 = 0;
@@ -1159,7 +1203,7 @@ impl CardId {
                     }
                     EFFECT_SET_BASE_DEFENSE => {
                         bdef = (e.get_value_card(d, Some(self), 0) as i32).max(0);
-                        d.card_mut(self).temp.base_defense = bdef;
+                        d.stat_temp[self.0 as usize].base_defense = bdef;
                         eset.remove(i);
                         continue;
                     }
@@ -1168,7 +1212,7 @@ impl CardId {
             }
             i += 1;
         }
-        d.card_mut(self).temp.defense = bdef;
+        d.stat_temp[self.0 as usize].defense = bdef;
         for peffect in eset {
             let (typ, single_range, code, delay) = {
                 let e = d.effect(peffect);
@@ -1214,7 +1258,7 @@ impl CardId {
                 EFFECT_SWAP_BASE_AD => std::mem::swap(&mut batk, &mut bdef),
                 _ => {}
             }
-            let t = &mut d.card_mut(self).temp;
+            let t = &mut d.stat_temp[self.0 as usize];
             t.base_defense = bdef;
             let base = if def < 0 { bdef } else { def };
             t.defense = if !rev {
@@ -1228,24 +1272,24 @@ impl CardId {
         }
         for peffect in effects_def {
             let v = peffect.get_value_card(d, Some(self), 0) as i32;
-            d.card_mut(self).temp.defense = v;
+            d.stat_temp[self.0 as usize].defense = v;
         }
-        if self.c(d).temp.attack == -1 {
+        if d.stat_temp[self.0 as usize].attack == -1 {
             if swap_final {
                 let v = self.get_attack(d);
-                d.card_mut(self).temp.defense = v;
+                d.stat_temp[self.0 as usize].defense = v;
             }
             for peffect in effects_def_r {
                 let v = peffect.get_value_card(d, Some(self), 0) as i32;
-                d.card_mut(self).temp.defense = v;
+                d.stat_temp[self.0 as usize].defense = v;
                 if d.effect(peffect).is_flag(EFFECT_FLAG_REPEAT) {
                     let v = peffect.get_value_card(d, Some(self), 0) as i32;
-                    d.card_mut(self).temp.defense = v;
+                    d.stat_temp[self.0 as usize].defense = v;
                 }
             }
         }
-        let def = self.c(d).temp.defense.max(0);
-        let t = &mut d.card_mut(self).temp;
+        let def = d.stat_temp[self.0 as usize].defense.max(0);
+        let t = &mut d.stat_temp[self.0 as usize];
         t.base_defense = -1;
         t.defense = -1;
         def
@@ -1266,11 +1310,11 @@ impl CardId {
         if let Some(v) = self.c(d).get_assumed(ASSUME_LEVEL) {
             return v as u32;
         }
-        if self.c(d).temp.level != u32::MAX {
-            return self.c(d).temp.level;
+        if d.stat_temp[self.0 as usize].level != u32::MAX {
+            return d.stat_temp[self.0 as usize].level;
         }
         let mut level = self.c(d).data.level as i32;
-        d.card_mut(self).temp.level = level as u32;
+        d.stat_temp[self.0 as usize].level = level as u32;
         let mut up = 0i32;
         let mut upc = 0i32;
         let mut effects = Vec::new();
@@ -1311,13 +1355,13 @@ impl CardId {
                 }
                 _ => {}
             }
-            d.card_mut(self).temp.level = level.wrapping_add(up).wrapping_add(upc) as u32;
+            d.stat_temp[self.0 as usize].level = level.wrapping_add(up).wrapping_add(upc) as u32;
         }
         level = level.wrapping_add(up).wrapping_add(upc);
         if level < 1 && self.get_type(d, None, 0, 2) & TYPE_MONSTER != 0 && self.is_affected_by_effect(d, EFFECT_ALLOW_NEGATIVE).is_none() {
             level = 1;
         }
-        d.card_mut(self).temp.level = u32::MAX;
+        d.stat_temp[self.0 as usize].level = u32::MAX;
         level as u32
     }
     pub fn get_rank(self, d: &mut Duel) -> u32 {
@@ -1335,11 +1379,11 @@ impl CardId {
         if self.c(d).current.location as u32 & LOCATION_MZONE == 0 {
             return self.c(d).data.level;
         }
-        if self.c(d).temp.rank != u32::MAX {
-            return self.c(d).temp.rank;
+        if d.stat_temp[self.0 as usize].rank != u32::MAX {
+            return d.stat_temp[self.0 as usize].rank;
         }
         let mut rank = self.c(d).data.level as i32;
-        d.card_mut(self).temp.rank = rank as u32;
+        d.stat_temp[self.0 as usize].rank = rank as u32;
         let mut up = 0i32;
         let mut upc = 0i32;
         let mut effects = Vec::new();
@@ -1380,13 +1424,13 @@ impl CardId {
                 }
                 _ => {}
             }
-            d.card_mut(self).temp.rank = rank.wrapping_add(up).wrapping_add(upc) as u32;
+            d.stat_temp[self.0 as usize].rank = rank.wrapping_add(up).wrapping_add(upc) as u32;
         }
         rank = rank.wrapping_add(up).wrapping_add(upc);
         if rank < 1 && self.get_type(d, None, 0, 2) & TYPE_MONSTER != 0 && self.is_affected_by_effect(d, EFFECT_ALLOW_NEGATIVE).is_none() {
             rank = 1;
         }
-        d.card_mut(self).temp.rank = u32::MAX;
+        d.stat_temp[self.0 as usize].rank = u32::MAX;
         rank as u32
     }
     pub fn get_link(self, d: &mut Duel) -> u32 {
@@ -1400,11 +1444,11 @@ impl CardId {
         if c.current.location as u32 & LOCATION_MZONE == 0 {
             return c.data.level;
         }
-        if c.temp.link != u32::MAX {
-            return c.temp.link;
+        if d.stat_temp[self.0 as usize].link != u32::MAX {
+            return d.stat_temp[self.0 as usize].link;
         }
         let mut link = c.data.level as i32;
-        d.card_mut(self).temp.link = link as u32;
+        d.stat_temp[self.0 as usize].link = link as u32;
         let mut up = 0i32;
         let mut upc = 0i32;
         let mut effects = Vec::new();
@@ -1436,13 +1480,13 @@ impl CardId {
                 }
                 _ => {}
             }
-            d.card_mut(self).temp.link = link.wrapping_add(up).wrapping_add(upc) as u32;
+            d.stat_temp[self.0 as usize].link = link.wrapping_add(up).wrapping_add(upc) as u32;
         }
         link = link.wrapping_add(up).wrapping_add(upc);
         if link < 1 && self.get_type(d, None, 0, 2) & TYPE_MONSTER != 0 && self.is_affected_by_effect(d, EFFECT_ALLOW_NEGATIVE).is_none() {
             link = 1;
         }
-        d.card_mut(self).temp.link = u32::MAX;
+        d.stat_temp[self.0 as usize].link = u32::MAX;
         link as u32
     }
     pub fn get_synchro_level(self, d: &mut Duel, pcard: Option<CardId>) -> u32 {
@@ -1510,13 +1554,13 @@ impl CardId {
         if !self.is_monster_for_stats(d) {
             return 0;
         }
-        if self.c(d).temp.attribute != u32::MAX {
-            return self.c(d).temp.attribute;
+        if d.stat_temp[self.0 as usize].attribute != u32::MAX {
+            return d.stat_temp[self.0 as usize].attribute;
         }
         let mut attribute = self.c(d).data.attribute as i32;
         let mut altattribute = 0i32;
         let mut changed = false;
-        d.card_mut(self).temp.attribute = attribute as u32;
+        d.stat_temp[self.0 as usize].attribute = attribute as u32;
         let mut effects = Vec::new();
         self.filter_effect(d, EFFECT_ADD_ATTRIBUTE, &mut effects, false);
         self.filter_effect(d, EFFECT_REMOVE_ATTRIBUTE, &mut effects, false);
@@ -1554,14 +1598,14 @@ impl CardId {
                 } else if code == EFFECT_CHANGE_ATTRIBUTE {
                     attribute = v;
                 }
-                d.card_mut(self).temp.attribute = attribute as u32;
+                d.stat_temp[self.0 as usize].attribute = attribute as u32;
             }
         }
         attribute |= altattribute;
         if changed {
             attribute = altattribute;
         }
-        d.card_mut(self).temp.attribute = u32::MAX;
+        d.stat_temp[self.0 as usize].attribute = u32::MAX;
         attribute as u32
     }
     pub fn get_race(self, d: &mut Duel, scard: Option<CardId>, sumtype: u64, playerid: u8) -> u64 {
@@ -1571,13 +1615,13 @@ impl CardId {
         if !self.is_monster_for_stats(d) {
             return 0;
         }
-        if self.c(d).temp.race != u64::MAX {
-            return self.c(d).temp.race;
+        if d.stat_temp[self.0 as usize].race != u64::MAX {
+            return d.stat_temp[self.0 as usize].race;
         }
         let mut race = self.c(d).data.race;
         let mut altrace = 0u64;
         let mut changed = false;
-        d.card_mut(self).temp.race = race;
+        d.stat_temp[self.0 as usize].race = race;
         let mut effects = Vec::new();
         self.filter_effect(d, EFFECT_ADD_RACE, &mut effects, false);
         self.filter_effect(d, EFFECT_REMOVE_RACE, &mut effects, false);
@@ -1615,14 +1659,14 @@ impl CardId {
                 } else if code == EFFECT_CHANGE_RACE {
                     race = v;
                 }
-                d.card_mut(self).temp.race = race;
+                d.stat_temp[self.0 as usize].race = race;
             }
         }
         race |= altrace;
         if changed {
             race = altrace;
         }
-        d.card_mut(self).temp.race = u64::MAX;
+        d.stat_temp[self.0 as usize].race = u64::MAX;
         race
     }
     fn get_scale(self, d: &mut Duel, right: bool) -> u32 {
@@ -1631,15 +1675,15 @@ impl CardId {
         if !c.current.is_location(LOCATION_PZONE) {
             return base;
         }
-        let cached = if right { c.temp.rscale } else { c.temp.lscale };
+        let cached = if right { d.stat_temp[self.0 as usize].rscale } else { d.stat_temp[self.0 as usize].lscale };
         if cached != u32::MAX {
             return cached;
         }
         let set_temp = |d: &mut Duel, v: u32| {
             if right {
-                d.card_mut(self).temp.rscale = v
+                d.stat_temp[self.0 as usize].rscale = v
             } else {
-                d.card_mut(self).temp.lscale = v
+                d.stat_temp[self.0 as usize].lscale = v
             }
         };
         let mut scale = base as i32;
@@ -1699,11 +1743,11 @@ impl CardId {
         if self.get_type(d, None, 0, 2) & TYPE_LINK == 0 {
             return 0;
         }
-        if self.c(d).temp.link_marker != u32::MAX {
-            return self.c(d).temp.link_marker;
+        if d.stat_temp[self.0 as usize].link_marker != u32::MAX {
+            return d.stat_temp[self.0 as usize].link_marker;
         }
         let mut link_marker = self.c(d).data.link_marker;
-        d.card_mut(self).temp.link_marker = link_marker;
+        d.stat_temp[self.0 as usize].link_marker = link_marker;
         let mut effects = Vec::new();
         self.filter_effect(d, EFFECT_ADD_LINKMARKER, &mut effects, false);
         self.filter_effect(d, EFFECT_REMOVE_LINKMARKER, &mut effects, false);
@@ -1718,9 +1762,9 @@ impl CardId {
             } else if code == EFFECT_CHANGE_LINKMARKER {
                 link_marker = v;
             }
-            d.card_mut(self).temp.link_marker = link_marker;
+            d.stat_temp[self.0 as usize].link_marker = link_marker;
         }
-        d.card_mut(self).temp.link_marker = u32::MAX;
+        d.stat_temp[self.0 as usize].link_marker = u32::MAX;
         let c = self.c(d);
         if c.current.position & POS_ATTACK == 0 && c.current.is_location(LOCATION_ONFIELD) {
             link_marker = rotate(link_marker);

@@ -248,12 +248,24 @@ impl PlayerInfo {
 #[derive(Clone, Debug, Default)]
 pub struct EffectContainer {
     pub items: Vec<(u32, EffectId)>,
+    /// A filter of the codes present: one bit per code hash (a code whose bit is clear has no effect
+    /// here; most lookups are for absent codes)
+    codes: u64,
+}
+
+#[inline]
+fn code_bit(code: u32) -> u64 {
+    1u64 << (code.wrapping_mul(0x9E37_79B9) >> 26)
 }
 
 impl EffectContainer {
     pub fn insert(&mut self, code: u32, e: EffectId) {
         let pos = self.items.partition_point(|&(c, _)| c <= code);
         self.items.insert(pos, (code, e));
+        self.codes |= code_bit(code);
+    }
+    fn refilter(&mut self) {
+        self.codes = self.items.iter().fold(0, |m, &(c, _)| m | code_bit(c));
     }
     /// Removes `e` (filed under `code`); returns whether it was there.
     pub fn remove(&mut self, code: u32, e: EffectId) -> bool {
@@ -261,6 +273,7 @@ impl EffectContainer {
         let hi = self.items.partition_point(|&(c, _)| c <= code);
         if let Some(i) = self.items[lo..hi].iter().position(|&(_, x)| x == e) {
             self.items.remove(lo + i);
+            self.refilter();
             return true;
         }
         false
@@ -268,15 +281,32 @@ impl EffectContainer {
     pub fn remove_any(&mut self, e: EffectId) -> bool {
         if let Some(i) = self.items.iter().position(|&(_, x)| x == e) {
             self.items.remove(i);
+            self.refilter();
             return true;
         }
         false
     }
     /// The effects filed under `code` (`equal_range`), in order.
+    #[inline]
     pub fn range(&self, code: u32) -> Vec<EffectId> {
+        if self.codes & code_bit(code) == 0 {
+            return Vec::new();
+        }
+        self.range_slow(code)
+    }
+    fn range_slow(&self, code: u32) -> Vec<EffectId> {
+        // (small containers: a scan beats two binary searches)
+        if self.items.len() <= 16 {
+            return self.items.iter().filter(|&&(c, _)| c == code).map(|&(_, e)| e).collect();
+        }
         let lo = self.items.partition_point(|&(c, _)| c < code);
         let hi = self.items.partition_point(|&(c, _)| c <= code);
         self.items[lo..hi].iter().map(|&(_, e)| e).collect()
+    }
+    /// Whether an effect is filed under `code`.
+    #[inline]
+    pub fn has(&self, code: u32) -> bool {
+        self.codes & code_bit(code) != 0 && self.items.iter().any(|&(c, _)| c == code)
     }
     pub fn all(&self) -> Vec<EffectId> {
         self.items.iter().map(|&(_, e)| e).collect()
@@ -589,6 +619,8 @@ pub struct Duel {
     /// `effect_mut` copy one only when another copy still uses it), so copying a duel is cheap.
     pub cards: Vec<Arc<Card>>,
     pub effects: Vec<Option<Arc<Effect>>>,
+    /// `card::temp` for the stats, by card (see `StatTemp`)
+    pub stat_temp: Vec<crate::card::StatTemp>,
     pub assumes: Vec<CardId>,
     /// Effects added while copying effects that are not copyable (`duel::uncopy`).
     pub uncopy: Vec<EffectId>,
@@ -661,6 +693,7 @@ impl Duel {
         c.data.code = code;
         let (alias, script) = (c.data.alias, c.data.code);
         self.cards.push(Arc::new(c));
+        self.stat_temp.push(Default::default());
         // (the script of an alternative artwork is the original's)
         let script = if alias != 0 && alias < script + 10 && script < alias + 10 { alias } else { script };
         self.card_mut(id).script_code = script;
@@ -834,6 +867,7 @@ impl Duel {
         let mut d = Duel {
             cards: Vec::with_capacity(128),
             effects: Vec::with_capacity(256),
+            stat_temp: Vec::with_capacity(128),
             assumes: Vec::new(),
             uncopy: Vec::new(),
             groups: Vec::new(),
@@ -871,4 +905,57 @@ impl Duel {
 #[inline]
 pub fn b2i(b: bool) -> i32 {
     b as i32
+}
+
+#[cfg(test)]
+mod copy_tests {
+    use super::*;
+
+    fn duel() -> Duel {
+        let p = PlayerOptions { starting_lp: 8000, starting_draw_count: 5, draw_count_per_turn: 1 };
+        let options = DuelOptions { seed: [1, 2, 3, 4], flags: 0, team1: p, team2: p };
+        let mut d = Duel::new(&options, Arc::new(CardDb::default()), Arc::new(crate::script::Scripts::default()));
+        for _ in 0..40 {
+            d.new_card(0);
+        }
+        for _ in 0..40 {
+            d.new_effect();
+        }
+        d
+    }
+
+    /// A copy of a duel shares its cards and effects (copying them is what made copies slow),
+    /// and writing to either copy leaves the other unchanged.
+    #[test]
+    fn copies_share_cards_and_stay_independent() {
+        let mut a = duel();
+        let n = (a.cards.len(), a.effects.len());
+        let mut b = a.clone();
+        assert!(a.cards.iter().zip(&b.cards).all(|(x, y)| Arc::ptr_eq(x, y)), "a copy deep-copied the cards");
+        let shared = |a: &Duel, b: &Duel| a.effects.iter().zip(&b.effects).all(|(x, y)| match (x, y) {
+            (Some(x), Some(y)) => Arc::ptr_eq(x, y),
+            _ => false,
+        });
+        assert!(shared(&a, &b), "a copy deep-copied the effects");
+
+        let (c, e) = (CardId(3), EffectId(5));
+        b.card_mut(c).data.attack = 1234;
+        b.effect_mut(e).label.push(7);
+        a.card_mut(CardId(4)).data.attack = 99;
+        assert_eq!(a.card(c).data.attack, 0);
+        assert!(a.effect(e).label.is_empty());
+        assert_eq!(b.card(c).data.attack, 1234);
+        assert_eq!(b.effect(e).label, vec![7]);
+        assert_eq!(b.card(CardId(4)).data.attack, 0);
+        // (only the written cards and effects were copied)
+        assert!(!Arc::ptr_eq(&a.cards[3], &b.cards[3]) && !Arc::ptr_eq(&a.cards[4], &b.cards[4]));
+        assert!(Arc::ptr_eq(&a.cards[5], &b.cards[5]));
+
+        // new cards and effects in one copy do not appear in the other
+        b.new_card(0);
+        b.new_effect();
+        assert_eq!((a.cards.len(), a.effects.len()), n);
+        drop(b);
+        assert_eq!(a.card(c).data.attack, 0);
+    }
 }

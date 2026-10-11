@@ -427,7 +427,7 @@ impl Duel {
                     self.returns.set_i32(0, 0);
                     return true;
                 }
-                for c in public_order(self, &arg.set_cards.clone()) {
+                for c in public_order(self, &arg.set_cards) {
                     let mut eset = Vec::new();
                     c.filter_effect(self, EFFECT_SSET_COST, &mut eset, true);
                     for pe in eset {
@@ -446,7 +446,7 @@ impl Duel {
                 false
             }
             1 => {
-                let t = public_order(self, &arg.set_cards.clone())[0];
+                let t = public_order(self, &arg.set_cards)[0];
                 if self.card(t).data.type_ & TYPE_FIELD != 0 {
                     self.returns.set_i8(2, 5);
                     return false;
@@ -467,7 +467,7 @@ impl Duel {
                 false
             }
             2 => {
-                let t = public_order(self, &arg.set_cards.clone())[0];
+                let t = public_order(self, &arg.set_cards)[0];
                 let seq = self.returns.at_i8(2) as u8;
                 let n = self.core.set_group_pre_set.len();
                 self.core.set_group_seq[n] = seq;
@@ -484,7 +484,7 @@ impl Duel {
                 false
             }
             3 => {
-                let t = public_order(self, &self.core.set_group_pre_set.clone())[0];
+                let t = public_order(self, &self.core.set_group_pre_set)[0];
                 self.core.set_group_cur = Some(t);
                 t.enable_field_effect(self, false);
                 let mut zone: u32 = 0;
@@ -533,7 +533,7 @@ impl Duel {
             }
             6 => {
                 self.core.operated_set.clear();
-                for c in public_order(self, &self.core.set_group_set.clone()) {
+                for c in public_order(self, &self.core.set_group_set) {
                     self.core.operated_set.insert(c);
                 }
                 let mut ct = self.core.operated_set.len() as u8;
@@ -547,7 +547,7 @@ impl Duel {
                 self.msg(m).u8(LOCATION_SZONE).u8(ct);
                 let mut ms = Vec::new();
                 let mut seqs = Vec::new();
-                for c in public_order(self, &self.core.operated_set.clone()) {
+                for c in public_order(self, &self.core.operated_set) {
                     let seq = self.core.set_group_seq_of.iter().find(|x| x.0 == c).map_or(0, |x| x.1);
                     if self.card(c).data.type_ & TYPE_FIELD != 0 {
                         continue;

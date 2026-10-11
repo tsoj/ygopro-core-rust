@@ -272,6 +272,32 @@ struct MixCtx<'a> {
     /// `check_mix_goal` results by selected set: the result depends only on the set, and
     /// `select_mix` reaches the same set in every order (n! times for n materials)
     goal_memo: std::cell::RefCell<HashMap<(Vec<CardId>, bool), bool>>,
+    /// `select_mix` results by selected set (with the new card): without material restrictions
+    /// ("Harmonizing Magician", `restrict`) the result depends only on the set, which `select_mix`
+    /// reaches in every order. `None` when a card of the material pool has a restriction.
+    select_memo: Option<std::cell::RefCell<HashMap<(CardSet, bool), bool>>>,
+    /// `exists_mix` results by (pool, cards given to the functions before, sub, functions left):
+    /// the result does not depend on which card went to which function before, and
+    /// `check_mix_goal` tries every such assignment (n! for n materials)
+    exists_memo: std::cell::RefCell<HashMap<(CardSet, CardSet, bool, usize), bool>>,
+}
+impl<'a> MixCtx<'a> {
+    #[allow(clippy::too_many_arguments)]
+    fn new(d: &mut Duel, funs: &'a [Fun], tp: u8, fc: CardId, k: &Chk, mg: &CardSet, mustg: &CardSet) -> Self {
+        let restricted = !k.contact && group::iter(d, &group::union(mg, mustg)).into_iter().any(|c| has(d, c, EFFECT_FUSION_MAT_RESTRICTION));
+        MixCtx {
+            funs,
+            tp,
+            fc,
+            sub2: k.sub,
+            contact: k.contact,
+            sumtype: k.sumtype,
+            chkf: k.chkf,
+            goal_memo: Default::default(),
+            select_memo: (!restricted).then(Default::default),
+            exists_memo: Default::default(),
+        }
+    }
 }
 /// `Fusion.CheckMix(c, mg, sg, fc, sub, sub2, contact, sumtype, tp, fun1, fun2, ...)`
 fn check_mix(d: &mut Duel, x: &MixCtx, c: CardId, mg: &CardSet, sg: &mut CardSet, sub: bool, funs: &[Fun]) -> bool {
@@ -298,12 +324,19 @@ fn check_mix(d: &mut Duel, x: &MixCtx, c: CardId, mg: &CardSet, sg: &mut CardSet
 }
 /// `mg:IsExists(Fusion.CheckMix, 1, sg, mg, sg, ...)`
 fn exists_mix(d: &mut Duel, x: &MixCtx, mg: &CardSet, sg: &mut CardSet, sub: bool, funs: &[Fun]) -> bool {
+    let key = (mg.clone(), sg.clone(), sub, funs.len());
+    if let Some(&v) = x.exists_memo.borrow().get(&key) {
+        return v;
+    }
+    let mut res = false;
     for c in group::iter(d, &group::difference(mg, sg)) {
         if crate::lua::protected(d, false, |d| check_mix(d, x, c, mg, sg, sub, funs)) {
-            return true;
+            res = true;
+            break;
         }
     }
-    false
+    x.exists_memo.borrow_mut().insert(key, res);
+    res
 }
 /// `Fusion.CheckMixGoal(tp, sg, fc, sub, sub2, contact, sumtype, chkf, ...)`
 fn check_mix_goal(d: &mut Duel, x: &MixCtx, sg: &CardSet, sub: bool) -> bool {
@@ -350,6 +383,13 @@ fn select_mix(d: &mut Duel, x: &MixCtx, c: CardId, mg: &CardSet, sg: &mut CardSe
     }
     let Some(mg2) = restrict(d, c, sg, mg, mustg, x.contact) else { return false };
     sg.insert(c);
+    let key = x.select_memo.as_ref().map(|_| (sg.clone(), sub));
+    if let (Some(m), Some(k)) = (&x.select_memo, &key) {
+        if let Some(&v) = m.borrow().get(k) {
+            sg.remove(c);
+            return v;
+        }
+    }
     let res = if (sg.len() as i64) < totalcount {
         let rest = group::difference(mustg, sg);
         let mut found = false;
@@ -364,6 +404,9 @@ fn select_mix(d: &mut Duel, x: &MixCtx, c: CardId, mg: &CardSet, sg: &mut CardSe
         let r = check_mix_goal(d, x, &sg.clone(), sub);
         r && group::includes(sg, mustg)
     };
+    if let (Some(m), Some(k)) = (&x.select_memo, key) {
+        m.borrow_mut().insert(k, res);
+    }
     sg.remove(c);
     res
 }
@@ -430,7 +473,7 @@ pub fn condition_mix(insf: bool, sub: bool, funs: Arc<[Fun]>) -> LuaFn {
             }
             let mut sg = CardSet::new();
             group::add_card(&mut mg, &mustg);
-            let x = MixCtx { funs: &funs, tp, fc: c, sub2: k.sub, contact: k.contact, sumtype: k.sumtype, chkf: k.chkf, goal_memo: Default::default() };
+            let x = MixCtx::new(d, &funs, tp, c, &k, &mg, &mustg);
             for c2 in group::iter(d, &mg) {
                 if crate::lua::protected(d, false, |d| select_mix(d, &x, c2, &mg, &mut sg, &mustg, k.sub)) {
                     return true;
@@ -484,7 +527,7 @@ pub fn operation_mix(sub: bool, funs: Arc<[Fun]>) -> LuaFn {
             }
         }
         let (p, sfhchk) = material_chooser(d, tp, &mg, k.contact);
-        let x = MixCtx { funs: &funs, tp, fc: c, sub2: k.sub, contact: k.contact, sumtype: k.sumtype, chkf: k.chkf, goal_memo: Default::default() };
+        let x = MixCtx::new(d, &funs, tp, c, &k, &mg, &mustg);
         while sg.len() < funs.len() {
             duel::hint(d, HINT_SELECTMSG as u8, p, HINTMSG_FMATERIAL as u64);
             let rest = group::difference(&mustg, &sg);

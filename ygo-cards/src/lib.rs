@@ -266,15 +266,18 @@ impl Default for ScriptInfo {
 }
 
 /// The declarations of the script of `code`.
-pub fn script_info(code: u32) -> ScriptInfo {
-    match cards::ALL.binary_search_by_key(&code, |x| x.0) {
-        Ok(i) => *cards::ALL[i].2,
-        Err(_) => ScriptInfo::DEFAULT,
+static DEFAULT_INFO: ScriptInfo = ScriptInfo::DEFAULT;
+/// The codes of `cards::ALL` (sorted), compact for the binary search of `script_info`.
+static CODES: std::sync::LazyLock<Vec<u32>> = std::sync::LazyLock::new(|| cards::ALL.iter().map(|x| x.0).collect());
+pub fn script_info(code: u32) -> &'static ScriptInfo {
+    match CODES.binary_search(&code) {
+        Ok(i) => cards::ALL[i].2,
+        Err(_) => &DEFAULT_INFO,
     }
 }
 
 /// The declarations of the script a card uses (its class table).
-pub fn card_info(d: &ygo_core::duel::Duel, c: ygo_core::types::CardId) -> ScriptInfo {
+pub fn card_info(d: &ygo_core::duel::Duel, c: ygo_core::types::CardId) -> &'static ScriptInfo {
     script_info(d.card(c).script_code)
 }
 

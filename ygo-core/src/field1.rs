@@ -30,7 +30,7 @@ impl Duel {
             for c in pl.list_mzone.iter().chain(pl.list_szone.iter()) {
                 match c {
                     Some(c) => {
-                        let card = &self.cards[c.0 as usize];
+                        let card = self.card(*c);
                         tmp.u8(1u8).u8(card.current.position).u32(card.xyz_materials.len());
                     }
                     None => {

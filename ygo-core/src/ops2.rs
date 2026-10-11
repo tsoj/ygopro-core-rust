@@ -607,7 +607,7 @@ impl Duel {
                     if self.card(c).equiping_target.is_some() {
                         c.unequip(self);
                     }
-                    for eq in public_order(self, &self.card(c).equiping_cards.clone()) {
+                    for eq in public_order(self, &self.card(c).equiping_cards) {
                         des.insert(eq);
                         eq.unequip(self);
                     }

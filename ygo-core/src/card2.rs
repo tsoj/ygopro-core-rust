@@ -359,7 +359,7 @@ impl CardId {
     }
     pub fn get_union_count(self, d: &mut Duel) -> i32 {
         let mut count = 0;
-        for pcard in public_order(d, &self.cc(d).equiping_cards.clone()) {
+        for pcard in public_order(d, &self.cc(d).equiping_cards) {
             if d.card(pcard).data.type_ & TYPE_UNION != 0 && pcard.is_affected_by_effect(d, EFFECT_UNION_STATUS).is_some() {
                 count += 1;
             }
@@ -368,7 +368,7 @@ impl CardId {
     }
     pub fn get_old_union_count(self, d: &mut Duel) -> i32 {
         let mut count = 0;
-        for pcard in public_order(d, &self.cc(d).equiping_cards.clone()) {
+        for pcard in public_order(d, &self.cc(d).equiping_cards) {
             if d.card(pcard).data.type_ & TYPE_UNION != 0 && pcard.is_affected_by_effect(d, EFFECT_OLDUNION_STATUS).is_some() {
                 count += 1;
             }
@@ -1251,7 +1251,7 @@ impl CardId {
     }
     pub fn set_material(self, d: &mut Duel, materials: CardSet) {
         d.card_mut(self).material_cards = materials;
-        for pc in public_order(d, &self.cc(d).material_cards.clone()) {
+        for pc in public_order(d, &self.cc(d).material_cards) {
             d.card_mut(pc).current.reason_card = Some(self);
         }
         let mut eset = Vec::new();
@@ -1288,7 +1288,7 @@ impl CardId {
         }
     }
     pub fn clear_card_target(self, d: &mut Duel) {
-        for pc in public_order(d, &self.cc(d).effect_target_owner.clone()) {
+        for pc in public_order(d, &self.cc(d).effect_target_owner) {
             d.card_mut(pc).effect_target_cards.remove(self);
             for e in d.card(pc).target_effect.all() {
                 if e.is_disable_related(d) {
@@ -1296,7 +1296,7 @@ impl CardId {
                 }
             }
         }
-        for pc in public_order(d, &self.cc(d).effect_target_cards.clone()) {
+        for pc in public_order(d, &self.cc(d).effect_target_cards) {
             d.card_mut(pc).effect_target_owner.remove(self);
             for e in self.cc(d).target_effect.all() {
                 if e.is_disable_related(d) {
@@ -1319,14 +1319,14 @@ impl CardId {
                 eset.push(pe);
             }
         }
-        for pc in public_order(d, &self.cc(d).equiping_cards.clone()) {
+        for pc in public_order(d, &self.cc(d).equiping_cards) {
             for pe in d.card(pc).equip_effect.range(code) {
                 if pe.is_available(d) && self.is_affect_by_effect(d, Some(pe)) {
                     eset.push(pe);
                 }
             }
         }
-        for pc in public_order(d, &self.cc(d).effect_target_owner.clone()) {
+        for pc in public_order(d, &self.cc(d).effect_target_owner) {
             for pe in d.card(pc).target_effect.range(code) {
                 if pe.is_available(d) && pe.is_target(d, self) && self.is_affect_by_effect(d, Some(pe)) {
                     eset.push(pe);
@@ -1364,10 +1364,10 @@ impl CardId {
     }
     pub fn filter_single_continuous_effect(self, d: &mut Duel, code: u32, eset: &mut Vec<EffectId>, sort: bool) {
         eset.extend(self.cc(d).single_effect.range(code));
-        for pc in public_order(d, &self.cc(d).equiping_cards.clone()) {
+        for pc in public_order(d, &self.cc(d).equiping_cards) {
             eset.extend(d.card(pc).equip_effect.range(code));
         }
-        for pc in public_order(d, &self.cc(d).effect_target_owner.clone()) {
+        for pc in public_order(d, &self.cc(d).effect_target_owner) {
             for pe in d.card(pc).target_effect.range(code) {
                 if pe.is_target(d, pc) {
                     eset.push(pe);
@@ -1393,11 +1393,11 @@ impl CardId {
         d.card_mut(self).immune_effect.clear();
         let single: Vec<_> = self.cc(d).single_effect.range(EFFECT_IMMUNE_EFFECT);
         d.card_mut(self).immune_effect.extend(single);
-        for pc in public_order(d, &self.cc(d).equiping_cards.clone()) {
+        for pc in public_order(d, &self.cc(d).equiping_cards) {
             let v: Vec<_> = d.card(pc).equip_effect.range(EFFECT_IMMUNE_EFFECT);
             d.card_mut(self).immune_effect.extend(v);
         }
-        for pc in public_order(d, &self.cc(d).effect_target_owner.clone()) {
+        for pc in public_order(d, &self.cc(d).effect_target_owner) {
             for pe in d.card(pc).target_effect.range(EFFECT_IMMUNE_EFFECT) {
                 if pe.is_target(d, self) {
                     d.card_mut(self).immune_effect.push(pe);
@@ -1433,7 +1433,7 @@ impl CardId {
                     let et = self.cc(d).equiping_target.unwrap();
                     d.add_to_disable_check_list(et);
                 } else if t & EFFECT_TYPE_TARGET != 0 && !self.cc(d).effect_target_cards.is_empty() {
-                    for tc in public_order(d, &self.cc(d).effect_target_cards.clone()) {
+                    for tc in public_order(d, &self.cc(d).effect_target_cards) {
                         d.add_to_disable_check_list(tc);
                     }
                 } else if t & EFFECT_TYPE_XMATERIAL != 0 && self.cc(d).overlay_target.is_some() {
@@ -1450,14 +1450,14 @@ impl CardId {
                 return Some(pe);
             }
         }
-        for pc in public_order(d, &self.cc(d).equiping_cards.clone()) {
+        for pc in public_order(d, &self.cc(d).equiping_cards) {
             for pe in d.card(pc).equip_effect.range(code) {
                 if pe.is_available(d) && self.is_affect_by_effect(d, Some(pe)) {
                     return Some(pe);
                 }
             }
         }
-        for pc in public_order(d, &self.cc(d).effect_target_owner.clone()) {
+        for pc in public_order(d, &self.cc(d).effect_target_owner) {
             for pe in d.card(pc).target_effect.range(code) {
                 if pe.is_available(d) && pe.is_target(d, self) && self.is_affect_by_effect(d, Some(pe)) {
                     return Some(pe);
@@ -1491,7 +1491,7 @@ impl CardId {
                 return Some(pe);
             }
         }
-        for pc in public_order(d, &self.cc(d).equiping_cards.clone()) {
+        for pc in public_order(d, &self.cc(d).equiping_cards) {
             for pe in d.card(pc).equip_effect.range(code) {
                 if pe.is_available(d) && self.is_affect_by_effect(d, Some(pe)) && pe.get_value_card(d, target, 0) != 0 {
                     return Some(pe);
@@ -1499,7 +1499,7 @@ impl CardId {
             }
         }
         // (the C++ goes through the equips twice, the second time skipping field effects)
-        for pc in public_order(d, &self.cc(d).equiping_cards.clone()) {
+        for pc in public_order(d, &self.cc(d).equiping_cards) {
             for pe in d.card(pc).equip_effect.range(code) {
                 if d.effect(pe).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                     continue;
@@ -1509,7 +1509,7 @@ impl CardId {
                 }
             }
         }
-        for pc in public_order(d, &self.cc(d).effect_target_owner.clone()) {
+        for pc in public_order(d, &self.cc(d).effect_target_owner) {
             for pe in d.card(pc).target_effect.range(code) {
                 if pe.is_available(d) && pe.is_target(d, self) && self.is_affect_by_effect(d, Some(pe)) && pe.get_value_card(d, target, 0) != 0 {
                     return Some(pe);
@@ -1552,14 +1552,14 @@ impl CardId {
                 eset.push(pe);
             }
         }
-        for pc in public_order(d, &self.cc(d).equiping_cards.clone()) {
+        for pc in public_order(d, &self.cc(d).equiping_cards) {
             for pe in d.card(pc).equip_effect.all() {
                 if (code == 0 || d.effect(pe).code == code) && pe.is_available(d) && self.is_affect_by_effect(d, Some(pe)) {
                     eset.push(pe);
                 }
             }
         }
-        for pc in public_order(d, &self.cc(d).effect_target_owner.clone()) {
+        for pc in public_order(d, &self.cc(d).effect_target_owner) {
             for pe in d.card(pc).target_effect.range(code) {
                 if (code == 0 || d.effect(pe).code == code) && pe.is_available(d) && pe.is_target(d, self) && self.is_affect_by_effect(d, Some(pe)) {
                     eset.push(pe);

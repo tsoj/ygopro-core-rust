@@ -791,7 +791,7 @@ impl Duel {
                 self.effect_mut(pe).active_type = 0;
                 self.effect_mut(pe).active_handler = None;
                 pcard.release_relation_chain(self, pe, cait.chain_id);
-                for c in public_order(self, &self.core.delayed_enable_set.clone()) {
+                for c in public_order(self, &self.core.delayed_enable_set) {
                     if self.card(c).current.location as u32 == LOCATION_MZONE {
                         c.enable_field_effect(self, true);
                     }
@@ -817,7 +817,7 @@ impl Duel {
                 false
             }
             11 => {
-                for c in public_order(self, &self.core.leave_confirmed.clone()) {
+                for c in public_order(self, &self.core.leave_confirmed) {
                     if !self.card(c).is_status(STATUS_LEAVE_CONFIRMED) {
                         self.core.leave_confirmed.remove(c);
                     }

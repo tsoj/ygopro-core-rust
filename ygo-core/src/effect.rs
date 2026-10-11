@@ -132,6 +132,9 @@ pub fn effect_sort_id(d: &Duel, e1: EffectId, e2: EffectId) -> bool {
 }
 
 pub fn sort_effects_by_id(d: &Duel, v: &mut [EffectId]) {
+    if v.len() < 2 || v.windows(2).all(|w| d.effect(w[0]).id <= d.effect(w[1]).id) {
+        return;
+    }
     v.sort_by_key(|&e| d.effect(e).id);
 }
 

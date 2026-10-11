@@ -78,6 +78,8 @@ struct Args {
     focus: Vec<u32>,
     /// `--no-shuffle`: the decks in .ydk order (the last card on top), e.g. hand-ordered test decks
     no_shuffle: bool,
+    /// `--rust-only`: no core, no comparison (to profile and benchmark the Rust engine)
+    rust_only: bool,
 }
 
 /// A recorded game (e.g. of the Python agents, converted by tools/record_to_replay.py): the duel
@@ -143,7 +145,7 @@ fn load_ydk(path: &str) -> Deck {
 }
 
 fn parse_args() -> Args {
-    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None, focus: vec![], no_shuffle: false };
+    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None, focus: vec![], no_shuffle: false, rust_only: false };
     let argv: Vec<String> = std::env::args().collect();
     let mut i = 1;
     while i < argv.len() {
@@ -182,6 +184,7 @@ fn parse_args() -> Args {
                 i += 1;
             }
             "--no-shuffle" => a.no_shuffle = true,
+            "--rust-only" => a.rust_only = true,
             "--focus" => {
                 a.focus = argv[i + 1].split(',').map(|x| x.parse().unwrap()).collect();
                 i += 1;
@@ -192,7 +195,7 @@ fn parse_args() -> Args {
                 i += 1;
             }
             "-h" | "--help" => {
-                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [--focus a,b] [--no-shuffle] [-v] [--bench-clone]");
+                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [--focus a,b] [--no-shuffle] [--rust-only] [-v] [--bench-clone]");
                 std::process::exit(0);
             }
             "-v" | "--verbose" => a.verbose = true,
@@ -423,7 +426,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
         (seed, flags, pl) = (rp.seed, rp.flags, rp.player);
     }
     let player = OcgPlayer { starting_lp: pl[0], starting_draw_count: pl[1], draw_count_per_turn: pl[2] };
-    let mut core = if cached.is_none() { Some(CoreDuel::new(seed, flags, player)) } else { None };
+    let mut core = if cached.is_none() && !args.rust_only { Some(CoreDuel::new(seed, flags, player)) } else { None };
     let po = PlayerOptions { starting_lp: pl[0], starting_draw_count: pl[1], draw_count_per_turn: pl[2] };
     let mut r = Duel::new(&DuelOptions { seed, flags, team1: po, team2: po }, db.clone(), scripts.clone());
     ygo_cards::load_global_scripts(&mut r);
@@ -527,6 +530,14 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
         let (mr, sr) = run_rust(&mut r);
         out.rust_time += t.elapsed();
         let Some(c) = core.as_mut() else {
+            if args.rust_only {
+                let (more, resp) = after_step(game, args, db, codes, &mut r, &mut rng, &mut out, &mr, sr)?;
+                if !more {
+                    return Ok(out);
+                }
+                r.ocg_set_response(&resp.unwrap());
+                continue;
+            }
             // cached: check the messages and the state against the record
             let step = cached.unwrap().steps.get(out.decisions).ok_or(None)?;
             if cache::hash_msgs(&mr) != step.0 || sr != step.1 || rust_state_hash(&mut r) != step.2 {

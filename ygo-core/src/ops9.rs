@@ -112,7 +112,7 @@ impl Duel {
                 }
                 if !must_chosen {
                     let must = arg.must_choose_one.as_ref().unwrap();
-                    for pcard in public_order(self, &self.core.operated_set.clone()) {
+                    for pcard in public_order(self, &self.core.operated_set) {
                         if must.contains(pcard) {
                             must_chosen = true;
                             break;

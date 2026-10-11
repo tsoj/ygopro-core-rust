@@ -32,9 +32,14 @@ impl Duel {
         self.params.insert(0, v);
     }
     /// Calls `f` with the collected parameters (all of them, as `interpreter::push_param`).
+    /// (as `interpreter::call_lua`: no actions during it, `no_action`; operations run through the
+    /// coroutine path, `protected_call` alone)
     pub fn call_function(&mut self, f: &LuaFn, _param_count: u32) -> Value {
         let args = std::mem::take(&mut self.params);
-        self.protected_call(f, &args).unwrap_or(Value::Nil)
+        self.no_action += 1;
+        let r = self.protected_call(f, &args).unwrap_or(Value::Nil);
+        self.no_action -= 1;
+        r
     }
     /// Runs a card function; `None` if it raised a Lua error (logged, as `lua_pcall` fails).
     pub fn protected_call(&mut self, f: &LuaFn, args: &[Value]) -> Option<Value> {
@@ -95,7 +100,10 @@ impl Duel {
     pub fn call_initial_effect(&mut self, code: u32, c: CardId) {
         self.params.clear();
         if let Some(f) = self.scripts.get(code) {
+            // (`call_card_function` goes through `call_lua`)
+            self.no_action += 1;
             f(self, c);
+            self.no_action -= 1;
         }
     }
 }

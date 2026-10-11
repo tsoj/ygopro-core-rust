@@ -53,7 +53,7 @@ fn spop(d: &mut Duel, a: &EffArgs) {
     }
     let tc = duel::first_target(d).nil();
     if card::is_relate_to_effect(d, tc, a.e) && card::is_faceup(d, tc) {
-        if !card::is_race_except(d, tc, RACE_SPELLCASTER, None, 0, None) {
+        if card::is_race_except(d, tc, RACE_SPELLCASTER, None, 0, None) {
             // That target becomes a Spellcaster monster
             let e1 = effect::create_effect(d, c);
             effect::set_type(d, e1, EFFECT_TYPE_SINGLE);
@@ -81,7 +81,7 @@ fn spop(d: &mut Duel, a: &EffArgs) {
     effect::set_property(d, e3, EFFECT_FLAG_PLAYER_TARGET | EFFECT_FLAG_CLIENT_HINT, 0);
     effect::set_code(d, e3, EFFECT_CANNOT_SPECIAL_SUMMON);
     effect::set_target_range(d, e3, 1, 0);
-    effect::set_target(d, e3, Some(effect_card_fn(|d, _e, c| card::is_location(d, c, LOCATION_EXTRA) && !card::is_race_except(d, c, RACE_SPELLCASTER, None, 0, None))));
+    effect::set_target(d, e3, Some(effect_card_fn(|d, _e, c| card::is_location(d, c, LOCATION_EXTRA) && card::is_race_except(d, c, RACE_SPELLCASTER, None, 0, None))));
     effect::set_reset(d, e3, RESET_PHASE | PHASE_END, 1);
     duel::register_effect(d, e3, a.tp);
 }

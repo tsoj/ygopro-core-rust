@@ -39,7 +39,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetValue(function(e,c) return 100*Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsRace,RACE_FAIRY),c:GetControler(),LOCATION_MZONE|LOCATION_GRAVE,0,nil) end)
     effect::set_value_fn(d, e2, effect_card_value(|d, _e, c| {
         let p = card::get_controler(d, c);
-        100 * duel::get_matching_group_count(d, Some(&|d, x| card::is_faceup(d, x) && card::is_race(d, x, RACE_FAIRY)), p, LOCATION_MZONE, LOCATION_GRAVE, NO_EX) as i64
+        100 * duel::get_matching_group_count(d, Some(&|d, x| card::is_faceup(d, x) && card::is_race(d, x, RACE_FAIRY)), p, LOCATION_MZONE | LOCATION_GRAVE, 0, NO_EX) as i64
     }));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);

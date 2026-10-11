@@ -68,7 +68,7 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     if let Some(chkc) = a.chkc() {
         return card::is_on_field(d, chkc) && card::is_controler(d, chkc, 1 - tp) && tgfilter(d, chkc, e, tp);
     }
-    let dg = duel::get_matching_group(d, Some(&|d, c| tgfilter(d, c, e, tp)), 0, LOCATION_ONFIELD, 0, NO_EX);
+    let dg = duel::get_matching_group(d, Some(&|d, c| tgfilter(d, c, e, tp)), tp, 0, LOCATION_ONFIELD, NO_EX);
     if a.chk == Some(0) {
         if effect::get_label(d, e) == 1 {
             effect::set_label(d, e, &[0]);

@@ -27,7 +27,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
 /// `s.stage2(mat,e,tp,eg,ep,ev,re,r,rp,tc)`
 fn stage2(d: &mut Duel, _mat: &CardSet, a: &EffArgs, _tc: CardId) {
     let tp = a.tp;
-    let g = duel::get_field_group(d, 0, 0, LOCATION_ONFIELD);
+    let g = duel::get_field_group(d, tp, 0, LOCATION_ONFIELD);
     if g.is_empty() {
         return;
     }

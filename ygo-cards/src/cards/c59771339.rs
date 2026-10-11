@@ -114,7 +114,7 @@ fn atktg(d: &mut Duel, a: &EffArgs) -> bool {
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATKDEF)
     duel::hint(d, HINT_SELECTMSG as u8, a.tp, HINTMSG_ATKDEF as u64);
     // Duel.SelectTarget(tp,Card.IsFaceup,tp,0,LOCATION_MZONE,1,1,nil)
-    let _ = duel::select_target(d, a.tp, Some(&|d, c| card::is_faceup(d, c)), 0, 0, LOCATION_MZONE, 1, 1, false, NO_EX);
+    let _ = duel::select_target(d, a.tp, Some(&|d, c| card::is_faceup(d, c)), a.tp, 0, LOCATION_MZONE, 1, 1, false, NO_EX);
     true
 }
 /// `s.atkop(e,tp,eg,ep,ev,re,r,rp)`

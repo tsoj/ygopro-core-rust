@@ -201,7 +201,7 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - `Duel.CheckReleaseGroupCost(tp, f, minc, maxc, use_hand, check, ex, ...)` /
   `SelectReleaseGroupCost` are `duel::check_release_group_cost(d, tp, f, minc, maxc, use_hand, check, ex)`. The
   old form without `maxc` (the 4th argument is a boolean: `(tp, f, minc, use_hand, check, ex, x, y)`) means
-  `maxc = minc`; the 5th argument is `check`, the 6th `ex`, and only the 7th and later go to the filter
+  `maxc = minc`; the 5th argument is `check`, the 6th `ex`, and the 7th and later go to the filter AND to the check (proc_workaround.lua passes them to both)
   (capture them in the closure). See `Duel.CheckReleaseGroupCost` in proc_workaround.lua.
 - `aux.TRUE` as the filter of `Duel.CheckReleaseGroup`/`SelectReleaseGroup` (and the `...Cost`/`...Ex`
   forms) is `Some(&|_, _| true)`, NOT `None`: with a filter function the core leaves out face-down

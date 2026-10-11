@@ -75,7 +75,7 @@ fn rmcon(d: &mut Duel, a: &EffArgs) -> bool {
 }
 fn filter(d: &mut Duel, c: CardId) -> bool {
     // return c:IsMonster() and c:IsAbleToRemove() and aux.SpElimFilter(c)
-    card::is_monster(d, c) && card::is_able_to_remove(d, c, None, None, None) && aux::sp_elim_filter(d, c, true, true)
+    card::is_monster(d, c) && card::is_able_to_remove(d, c, None, None, None) && aux::sp_elim_filter(d, c, false, false)
 }
 fn rmtg(d: &mut Duel, a: &EffArgs) -> bool {
     // if chkc then return chkc:IsLocation(LOCATION_MZONE|LOCATION_GRAVE) and s.filter(chkc) end

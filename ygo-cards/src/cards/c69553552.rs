@@ -84,7 +84,7 @@ fn rmcon(d: &mut Duel, a: &EffArgs) -> bool {
     // return a:IsControler(tp) and a:IsSetCard(SET_FA) and a:GetLevel()-a:GetOriginalLevel()>=5 and ep~=tp
     card::is_controler(d, at, a.tp)
         && card::is_set_card(d, at, &[SET_FA as u16])
-        && card::get_level(d, at) - card::get_original_level(d, at) >= 5
+        && card::get_level(d, at) as i64 - card::get_original_level(d, at) as i64 >= 5
         && a.ep != a.tp
 }
 /// `s.rmfilter(c)`

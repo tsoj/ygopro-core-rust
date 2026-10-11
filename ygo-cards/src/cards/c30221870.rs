@@ -133,7 +133,9 @@ fn spop(d: &mut Duel, a: &EffArgs) {
     // local c=e:GetHandler()
     let c = effect::get_handler(d, a.e).nil();
     // if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,0,tp,tp,true,false,POS_FACEUP)~0 then
-    if card::is_relate_to_effect(d, c, a.e) && duel::special_summon(d, c, 0, a.tp, a.tp, true, false, POS_FACEUP as u8, None) != 0 {
+    // (`~0` is Lua's binary xor with 0: the count itself, and 0 is truthy in Lua: always true)
+    if card::is_relate_to_effect(d, c, a.e) {
+        duel::special_summon(d, c, 0, a.tp, a.tp, true, false, POS_FACEUP as u8, None);
         // c:CompleteProcedure()
         card::complete_procedure(d, c);
     }

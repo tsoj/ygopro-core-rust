@@ -20,7 +20,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_type(d, e2, EFFECT_TYPE_IGNITION);
     effect::set_property(d, e2, EFFECT_FLAG_CARD_TARGET, 0);
     effect::set_range(d, e2, LOCATION_SZONE);
-    effect::set_count_limit(d, e2, 1, ID, 0, 0);
+    effect::set_count_limit(d, e2, 1, 0, 0, 0);
     effect::set_target(d, e2, Some(cost_target(efftg)));
     effect::set_operation(d, e2, Some(operation(effop)));
     card::register_effect(d, c, e2, false);

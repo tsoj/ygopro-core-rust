@@ -3,6 +3,11 @@ use super::prelude::*;
 
 pub const ID: u32 = 33506331;
 
+pub const INFO: ScriptInfo = ScriptInfo {
+    listed_names: &[CARD_CLEAR_WORLD],
+    ..ScriptInfo::DEFAULT
+};
+
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // local e1=Effect.CreateEffect(c)
     let e1 = effect::create_effect(d, c);

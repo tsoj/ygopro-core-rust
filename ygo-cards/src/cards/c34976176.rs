@@ -89,6 +89,6 @@ fn tgop(d: &mut Duel, a: &EffArgs) {
 fn quickconfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_faceup(d, c) && card::is_type(d, c, TYPE_SYNCHRO) && card::is_attribute(d, c, ATTRIBUTE_DARK)
 }
-fn quickcon(d: &mut Duel, _a: &EffArgs) -> bool {
-    duel::is_existing_matching_card(d, Some(&quickconfilter), 0, LOCATION_MZONE, 0, 1, NO_EX) && aux::stat_change_damage_step_condition(d)
+fn quickcon(d: &mut Duel, a: &EffArgs) -> bool {
+    duel::is_existing_matching_card(d, Some(&quickconfilter), a.tp, LOCATION_MZONE, 0, 1, NO_EX) && aux::stat_change_damage_step_condition(d)
 }

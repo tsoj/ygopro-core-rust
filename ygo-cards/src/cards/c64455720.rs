@@ -58,7 +58,7 @@ fn efftg(d: &mut Duel, a: &EffArgs) -> bool {
     //     and Duel.IsPlayerCanSpecialSummonMonster(tp,id,SET_ASHTRA,...)
     let b1 = mmz_chk && effect::is_has_type(d, e, EFFECT_TYPE_ACTIVATE) && duel::is_player_can_special_summon_monster(d, tp, ID, token_data(), None, None, 0);
     // local b2=mmz_chk and Duel.IsExistingTarget(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp)
-    let b2 = mmz_chk && duel::is_existing_target(d, Some(&|d, c| spfilter(d, c, e, tp)), tp, 0, LOCATION_GRAVE, 1, NO_EX);
+    let b2 = mmz_chk && duel::is_existing_target(d, Some(&|d, c| spfilter(d, c, e, tp)), tp, LOCATION_GRAVE, 0, 1, NO_EX);
     // if chk==0 then return b1 or b2 end
     if a.chk == Some(0) {
         return b1 || b2;

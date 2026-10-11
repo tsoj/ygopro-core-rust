@@ -26,7 +26,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
 }
 fn rmfilter(d: &mut Duel, c: CardId) -> bool {
     // return c:IsAbleToRemove() and aux.SpElimFilter(c)
-    card::is_able_to_remove(d, c, None, None, None) && aux::sp_elim_filter(d, c, true, true)
+    card::is_able_to_remove(d, c, None, None, None) && aux::sp_elim_filter(d, c, false, false)
 }
 fn rmtg(d: &mut Duel, a: &EffArgs) -> bool {
     // if chkc then return chkc:IsLocation(LOCATION_MZONE|LOCATION_GRAVE) and chkc:IsControler(1-tp) and s.rmfilter(chkc) end

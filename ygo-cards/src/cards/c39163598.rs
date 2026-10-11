@@ -222,6 +222,10 @@ fn reset_all(d: &mut Duel) {
             break;
         }
         let te = list[i].as_effect().nil();
+        // (te:GetOwnerPlayer() on an effect the engine already deleted is a Lua error)
+        if effect::is_deleted(d, te) {
+            crate::lua_error("attempt to use a deleted Effect object");
+        }
         // if Duel.GetTurnPlayer()~=te:GetOwnerPlayer() then
         let owner_p = effect::get_owner_player(d, te);
         if duel::get_turn_player(d) != owner_p {

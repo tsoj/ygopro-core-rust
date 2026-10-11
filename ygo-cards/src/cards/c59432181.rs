@@ -88,7 +88,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     // e1:SetValue(code1)
     effect::set_value(d, e1, code1 as i64);
     // e1:SetOperation(s.chngcon)
-    effect::set_operation(d, e1, Some(condition(chngcon)));
+    effect::set_operation(d, e1, Some(lua_fn(chngcon)));
     // tc:RegisterEffect(e1)
     card::register_effect(d, tc, e1, false);
     // if code2 then
@@ -101,11 +101,10 @@ fn activate(d: &mut Duel, a: &EffArgs) {
         card::register_effect(d, tc, e2, false);
     }
 }
-/// `s.chngcon(scard,sumtype,tp)`: the core never runs this operation (the effect is a value
-/// effect); the arguments are read by position as the Lua function would get them from the call.
-fn chngcon(d: &mut Duel, a: &EffArgs) -> bool {
-    let sumtype = a.tp as u64;
-    let _ = d;
+/// `s.chngcon(scard,sumtype,tp)`: the core calls this operation of the code-changing value
+/// effect with (scard, sumtype, tp) to decide whether it applies to a material check.
+fn chngcon(_d: &mut Duel, a: Args) -> bool {
+    let sumtype = a.int(1) as u64;
     // return (sumtype&MATERIAL_FUSION)~=0 or (sumtype&SUMMON_TYPE_FUSION)~=0
     (sumtype & MATERIAL_FUSION as u64) != 0 || (sumtype & SUMMON_TYPE_FUSION as u64) != 0
 }

@@ -1,0 +1,90 @@
+//! Brotherhood of the Fire Fist - Raven
+use super::prelude::*;
+
+pub const ID: u32 = 44860890;
+pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_FIRE_FORMATION], ..ScriptInfo::DEFAULT };
+
+pub fn initial_effect(d: &mut Duel, c: CardId) {
+    // set
+    // local e1=Effect.CreateEffect(c)
+    let e1 = effect::create_effect(d, c);
+    // e1:SetDescription(aux.Stringid(id,0))
+    effect::set_description(d, e1, aux::stringid(ID, 0));
+    // e1:SetCategory(CATEGORY_SET)
+    effect::set_category(d, e1, CATEGORY_SET);
+    // e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+    effect::set_type(d, e1, EFFECT_TYPE_SINGLE + EFFECT_TYPE_TRIGGER_O);
+    // e1:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_DAMAGE_STEP)
+    effect::set_property(d, e1, EFFECT_FLAG_DELAY + EFFECT_FLAG_DAMAGE_STEP, 0);
+    // e1:SetCode(EVENT_TO_GRAVE)
+    effect::set_code(d, e1, EVENT_TO_GRAVE);
+    // e1:SetCondition(s.setcon)
+    effect::set_condition(d, e1, Some(condition(setcon)));
+    // e1:SetTarget(s.settg)
+    effect::set_target(d, e1, Some(cost_target(settg)));
+    // e1:SetOperation(s.setop)
+    effect::set_operation(d, e1, Some(operation(setop)));
+    // c:RegisterEffect(e1)
+    card::register_effect(d, c, e1, false);
+    // protection
+    // local e2=Effect.CreateEffect(c)
+    let e2 = effect::create_effect(d, c);
+    // e2:SetType(EFFECT_TYPE_FIELD)
+    effect::set_type(d, e2, EFFECT_TYPE_FIELD);
+    // e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
+    effect::set_code(d, e2, EFFECT_INDESTRUCTABLE_EFFECT);
+    // e2:SetRange(LOCATION_MZONE)
+    effect::set_range(d, e2, LOCATION_MZONE);
+    // e2:SetTargetRange(LOCATION_ONFIELD,0)
+    effect::set_target_range(d, e2, LOCATION_ONFIELD, 0);
+    // e2:SetTarget(s.indtg)
+    effect::set_target(d, e2, Some(effect_card_fn(|d, _e, c| indtg(d, c))));
+    // e2:SetValue(s.indval)
+    effect::set_value_fn(d, e2, lua_fn(indval));
+    // c:RegisterEffect(e2)
+    card::register_effect(d, c, e2, false);
+}
+/// `s.setcon(e,tp,eg,ep,ev,re,r,rp)`
+fn setcon(d: &mut Duel, a: &EffArgs) -> bool {
+    // return e:GetHandler():IsPreviousLocation(LOCATION_ONFIELD)
+    let h = effect::get_handler(d, a.e).nil();
+    card::is_previous_location(d, h, LOCATION_ONFIELD)
+}
+/// `s.filter(c)`
+fn filter(d: &mut Duel, c: CardId) -> bool {
+    // return c:IsSetCard(SET_FIRE_FORMATION) and c:IsSpell() and c:IsSSetable()
+    card::is_set_card(d, c, &[SET_FIRE_FORMATION as u16]) && card::is_spell(d, c) && card::is_s_setable(d, c, false, None)
+}
+/// `s.settg(e,tp,eg,ep,ev,re,r,rp,chk)`
+fn settg(d: &mut Duel, a: &EffArgs) -> bool {
+    // if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil) end
+    if a.chk == Some(0) {
+        return duel::is_existing_matching_card(d, Some(&filter), a.tp, LOCATION_DECK, 0, 1, NO_EX);
+    }
+    true
+}
+/// `s.setop(e,tp,eg,ep,ev,re,r,rp)`
+fn setop(d: &mut Duel, a: &EffArgs) {
+    let tp = a.tp;
+    // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
+    duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_SET as u64);
+    // local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil)
+    let g = duel::select_matching_card(d, tp, Some(&filter), tp, LOCATION_DECK, 0, 1, 1, false, NO_EX).nil();
+    // if #g>0 then
+    if !g.is_empty() {
+        // Duel.SSet(tp,g:GetFirst())
+        let sc = group::get_first(d, &g).nil();
+        duel::s_set(d, tp, sc, None, true);
+    }
+}
+/// `s.indtg(e,c)`
+fn indtg(d: &mut Duel, c: CardId) -> bool {
+    // return c:IsFaceup() and c:IsSetCard(SET_FIRE_FORMATION) and c:IsSpellTrap()
+    card::is_faceup(d, c) && card::is_set_card(d, c, &[SET_FIRE_FORMATION as u16]) && card::is_spell_trap(d, c)
+}
+/// `s.indval(e,re,tp)`
+fn indval(d: &mut Duel, a: Args) -> bool {
+    // return e:GetHandler():GetControler()~=tp
+    let h = effect::get_handler(d, a.e(0)).nil();
+    card::get_controler(d, h) != a.p(2)
+}

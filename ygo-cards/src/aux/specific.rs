@@ -234,9 +234,10 @@ fn reincarnation_check_value(d: &mut Duel, _e: EffectId, c: CardId) {
     }
 }
 
-/// `aux.MaleficUniqueFilter(cc)`: the unique-on-field filter of "Malefic" monsters (the
-/// `has_malefic_unique` table it also fills is never read)
-pub fn malefic_unique_filter() -> LuaFn {
+/// `aux.MaleficUniqueFilter(cc)`: the unique-on-field filter of "Malefic" monsters; marks `cc` in
+/// `mt.has_malefic_unique` ("Malefic Territory" reads it)
+pub fn malefic_unique_filter(d: &mut Duel, cc: CardId) -> LuaFn {
+    crate::card_var::set(d, cc, crate::card_var::HAS_MALEFIC_UNIQUE, Value::Bool(true));
     lua_fn(|d, a| {
         let c = a.c(0);
         let p = card::get_controler(d, c);

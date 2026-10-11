@@ -7,7 +7,8 @@ pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_REDEYES_B_DRAGON]
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::enable_revive_limit(d, c);
-    card::set_unique_on_field(d, c, 1, 1, card::UniqueCode::Function(aux::malefic_unique_filter()), Some(LOCATION_MZONE));
+    let uf = aux::malefic_unique_filter(d, c);
+    card::set_unique_on_field(d, c, 1, 1, card::UniqueCode::Function(uf), Some(LOCATION_MZONE));
     aux::add_malefic_summon_procedure(d, c, Some(CARD_REDEYES_B_DRAGON), LOCATION_DECK, None);
     // selfdes
     let e7 = effect::create_effect(d, c);

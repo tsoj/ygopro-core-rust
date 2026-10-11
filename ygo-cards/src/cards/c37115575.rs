@@ -10,7 +10,8 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::enable_revive_limit(d, c);
     // There can only be 1 "Malefic" monster on the field
     // c:SetUniqueOnField(1,1,aux.MaleficUniqueFilter(c),LOCATION_MZONE)
-    card::set_unique_on_field(d, c, 1, 1, card::UniqueCode::Function(aux::malefic_unique_filter()), Some(LOCATION_MZONE));
+    let uf = aux::malefic_unique_filter(d, c);
+    card::set_unique_on_field(d, c, 1, 1, card::UniqueCode::Function(uf), Some(LOCATION_MZONE));
     // Special Summon condition
     // local e0=Effect.CreateEffect(c)
     let e0 = effect::create_effect(d, c);

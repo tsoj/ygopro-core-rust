@@ -69,6 +69,8 @@ pub mod card_var {
     use ygo_core::types::{CardId, Value};
     /// `ritual_matching_function[c]` (`Ritual.CreateProc`)
     pub const RITUAL_MATCHING_FUNCTION: u64 = 1;
+    /// `mt.has_malefic_unique[c]` (`aux.MaleficUniqueFilter(c)`; read by "Malefic Territory")
+    pub const HAS_MALEFIC_UNIQUE: u64 = 2;
     pub fn get(d: &Duel, c: CardId, field: u64) -> Value {
         d.script_var((CARD_VARS, ((c.0 as u64) << 8) | field))
     }

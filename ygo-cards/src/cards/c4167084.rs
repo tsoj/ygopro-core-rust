@@ -84,7 +84,7 @@ fn desop(d: &mut Duel, a: &EffArgs) {
     }
 }
 fn spcon(d: &mut Duel, a: &EffArgs) -> bool {
-    duel::is_main_phase(d, Some(a.tp))
+    duel::is_main_phase(d, None)
 }
 fn spfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
     card::is_race(d, c, RACE_FAIRY) && card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, Some(POS_FACEUP_DEFENSE as u8), None, None)

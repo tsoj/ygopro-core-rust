@@ -77,7 +77,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     // if not c:IsLocation(LOCATION_SZONE) or not c:IsRelateToEffect(e) or c:IsStatus(STATUS_LEAVE_CONFIRMED) then return end
     if !card::is_location(d, c, LOCATION_SZONE)
         || !card::is_relate_to_effect(d, c, a.e)
-        || !card::is_status(d, c, STATUS_LEAVE_CONFIRMED)
+        || card::is_status(d, c, STATUS_LEAVE_CONFIRMED)
     {
         return;
     }

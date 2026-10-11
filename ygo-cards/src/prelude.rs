@@ -69,6 +69,11 @@ pub fn operation(f: impl Fn(&mut Duel, &EffArgs) + Send + Sync + 'static) -> Lua
         Value::Nil
     })
 }
+/// An operation that returns a number the core reads (e.g. EFFECT_OVERLAY_REMOVE_REPLACE: the
+/// count of materials it replaced).
+pub fn operation_count(f: impl Fn(&mut Duel, &EffArgs) -> i64 + Send + Sync + 'static) -> LuaFn {
+    LuaFn::new(move |d, a| Value::Int(f(d, &EffArgs::new(a))))
+}
 /// A condition (`function(e,tp,eg,ep,ev,re,r,rp)` returning a boolean).
 pub fn condition(f: impl Fn(&mut Duel, &EffArgs) -> bool + Send + Sync + 'static) -> LuaFn {
     LuaFn::new(move |d, a| Value::Bool(f(d, &EffArgs::new(a))))

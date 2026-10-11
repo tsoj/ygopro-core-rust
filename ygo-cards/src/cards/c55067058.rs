@@ -27,7 +27,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCondition(s.rcon)
     effect::set_condition(d, e1, Some(condition(rcon)));
     // e1:SetOperation(s.rop)
-    effect::set_operation(d, e1, Some(condition(rop)));
+    effect::set_operation(d, e1, Some(operation_count(rop)));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
 }
@@ -52,10 +52,8 @@ fn rcon(d: &mut Duel, a: &EffArgs) -> bool {
     card::get_overlay_count(d, rc) as i64 >= a.ev as i64 - 1
 }
 // function s.rop(e,tp,eg,ep,ev,re,r,rp)
-fn rop(d: &mut Duel, a: &EffArgs) -> bool {
+fn rop(d: &mut Duel, a: &EffArgs) -> i64 {
     // return e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_EFFECT)
-    // (a Lua number is truthy, so the replacement always happens)
     let c = effect::get_handler(d, a.e).nil();
-    card::remove_overlay_card(d, c, a.tp, 1, 1, REASON_EFFECT);
-    true
+    card::remove_overlay_card(d, c, a.tp, 1, 1, REASON_EFFECT) as i64
 }

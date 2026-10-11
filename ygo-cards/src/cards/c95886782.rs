@@ -84,7 +84,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetCondition(s.rcon)
     effect::set_condition(d, e3, Some(condition(rcon)));
     // e3:SetOperation(s.rop)
-    effect::set_operation(d, e3, Some(condition(rop)));
+    effect::set_operation(d, e3, Some(operation_count(rop)));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
 }
@@ -216,8 +216,7 @@ fn rcon(d: &mut Duel, a: &EffArgs) -> bool {
 }
 /// `s.rop(e,tp,eg,ep,ev,re,r,rp)`: `return Duel.SendtoGrave(e:GetHandler(),REASON_COST)`
 /// (a number, which is always true in Lua)
-fn rop(d: &mut Duel, a: &EffArgs) -> bool {
+fn rop(d: &mut Duel, a: &EffArgs) -> i64 {
     let h = effect::get_handler(d, a.e).nil();
-    duel::send_to_grave(d, h, REASON_COST, None, None);
-    true
+    duel::send_to_grave(d, h, REASON_COST, None, None) as i64
 }

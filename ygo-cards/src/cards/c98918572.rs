@@ -30,7 +30,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(s.rcon)
     effect::set_condition(d, e2, Some(condition(rcon)));
     // e2:SetOperation(s.rop)
-    effect::set_operation(d, e2, Some(condition(rop)));
+    effect::set_operation(d, e2, Some(operation_count(rop)));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Attach 1 "Zoodiac" Xyz monster to another
@@ -77,7 +77,7 @@ fn rcon(d: &mut Duel, a: &EffArgs) -> bool {
         && duel::is_existing_matching_card(d, Some(&|d, x| rfilter(d, x, tp, a.ev)), tp, LOCATION_MZONE, 0, 1, rc.into())
 }
 /// `s.rop(e,tp,eg,ep,ev,re,r,rp)`: returns the count, which is a true value in Lua
-fn rop(d: &mut Duel, a: &EffArgs) -> bool {
+fn rop(d: &mut Duel, a: &EffArgs) -> i64 {
     let tp = a.tp;
     // local ct=(ev&0xffff)
     let ct = (a.ev & 0xffff) as u16;
@@ -91,7 +91,7 @@ fn rop(d: &mut Duel, a: &EffArgs) -> bool {
     let first = group::get_first(d, &tg).nil();
     card::remove_overlay_card(d, first, tp, ct, ct, REASON_COST);
     // return ct
-    true
+    ct as i64
 }
 /// `s.xyzfilter(c)`
 fn xyzfilter(d: &mut Duel, c: CardId) -> bool {

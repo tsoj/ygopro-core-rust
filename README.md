@@ -30,9 +30,11 @@ Shueisha, Konami, edo9300 or Project Ignis.
 ## Status
 
 - **Cards:** all 13,541 official card scripts are translated.
-- **Agreement with the original:** the port is tested differentially against the original C++ core
-  (`libocgcore`). Both engines play the same duels (same seed, decks and responses), and every
-  message and every query result is compared byte for byte. The tests include random games over
+- **Agreement with the original:** the port is tested differentially against the C++ core
+  (`libocgcore`), built with the patch described under
+  [Differences from upstream ygopro-core](#differences-from-upstream-ygopro-core). Both engines play
+  the same duels (same seed, decks and responses), and every message and every query result is
+  compared byte for byte. The tests include random games over
   every card, games with decks built around rarely used cards, and about 57,000 recorded games of
   search and policy agents. 13,540 of the 13,542 translated cards have been activated or summoned in
   such games with both engines agreeing. Known differences that come from bugs in the C++ core are
@@ -99,8 +101,49 @@ loop {
 }
 ```
 
-Messages, responses and queries use the same binary formats as ygopro-core, so code written against
-`libocgcore` carries over.
+Messages, responses and queries use ygopro-core's binary formats, with the few changes listed below,
+so most code written against `libocgcore` carries over.
+
+## Differences from upstream ygopro-core
+
+The port reproduces ygopro-core **with a patch** from the project it was written for, not unmodified
+upstream. The patch was made for an AI arbiter that must not leak hidden information and for
+reconstructing duels from one player's observations. That needs games that are deterministic and
+whose visible behavior never depends on hidden cards or on the order cards were created in. So the
+Rust engine differs from upstream ygopro-core in these ways:
+
+**Message formats**
+- `MSG_SHUFFLE_HAND` and `MSG_SHUFFLE_EXTRA`: the top bit of each card code marks a face-up card (a
+  revealed card stays visible). `MSG_SHUFFLE_HAND` also lists, for each card, its position before
+  the shuffle, which only its owner should be shown.
+- `MSG_SHUFFLE_SET_CARD` ends with the zone each card went to, which only its owner should be shown.
+- A hand card that becomes public or private again is announced like any other position change.
+- A card Set from the Deck by an effect with a requirement is shown to the other player.
+
+**Order of iteration**
+- Wherever a player can see the order in which cards or effects are handled, they are handled in
+  *public order*: by location and sequence, then card id, never by memory address or creation order.
+  This covers script groups, events handled one card at a time, random selections, effect option
+  lists (ordered by description) and equip cards leaving together.
+
+**Rules and timing**
+- An effect gets a new timestamp when its condition becomes true again only at fixed points of the
+  game (each adjustment, checked in effect id order), not whenever something happens to evaluate the
+  condition. Errors in such checks are muted.
+- A card's effect that negates the card itself keeps applying (upstream it would stop, so the card's
+  status would flip at every refresh).
+- A card entering the Deck, hand or Extra Deck forgets its position and activation history, since it
+  is a new object.
+- Pending shuffles inside a cost, target or operation are done when it ends.
+- Properties a script assumes for cards (`Card.AssumeProperty`) last until its top-level call ends.
+
+**Robustness**
+- A step that runs too many script callbacks raises a script error instead of running practically
+  forever. The limit is counted differently from the patched C++ core, which counts Lua
+  instructions, so `ygo-diff` skips games where either engine hits its limit.
+- The sum checks of material selections are memoized, so they no longer take exponential time.
+
+The C++ side of the patch is not part of this repository.
 
 ## Differential testing
 

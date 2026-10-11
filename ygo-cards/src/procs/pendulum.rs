@@ -340,8 +340,8 @@ pub fn create_additional_pendulum_summon_effect(d: &mut Duel, handler: CardId, p
         if !sg.is_empty() {
             duel::register_flag_effect(d, tp, CARD_ZEFRAATH, RESET_PHASE | PHASE_END, 0, 1, 0);
             duel::hint(d, HINT_CARD as u8, 0, owner_card_id as u64);
-            duel::hint_selection(d, c, false);
-            duel::hint_selection(d, rsc, false);
+            duel::hint_selection(d, c, true);
+            duel::hint_selection(d, rsc, true);
         }
     });
     // This turn, you can conduct 1 Pendulum Summon of a monster(s) in addition to your Pendulum Summon
@@ -417,8 +417,8 @@ pub fn create_harmonic_oscillation_effect(d: &mut Duel, handler: CardId, pendulu
                 duel::hint(d, HINT_CARD as u8, 0, owner_card_id as u64);
             }
             duel::hint(d, HINT_CARD as u8, 0, CARD_HARMONIC_OSCILLATION as u64);
-            duel::hint_selection(d, c, false);
-            duel::hint_selection(d, rsc, false);
+            duel::hint_selection(d, c, true);
+            duel::hint_selection(d, rsc, true);
         }
     });
     let e1 = effect::create_effect(d, handler);

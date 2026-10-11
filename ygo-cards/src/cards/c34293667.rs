@@ -35,7 +35,7 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
         return card::is_faceup(d, bc)
             && (card::is_attack_above(d, bc, 1)
                 || card::is_negatable_monster(d, bc)
-                || !card::is_has_effect(d, bc, EFFECT_CANNOT_CHANGE_POSITION, None).is_empty());
+                || card::is_has_effect(d, bc, EFFECT_CANNOT_CHANGE_POSITION, None).is_empty());
     }
     let bc = bc.nil();
     duel::set_target_card(d, bc);

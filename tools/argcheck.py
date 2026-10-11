@@ -95,6 +95,12 @@ def check(code):
         lc = calls(lua, lname, False)
         rc = calls(rs, rname, True)
         if len(lc) != len(rc):
+            # the calls do not pair up: still flag a literal player the Lua never uses for it
+            lit = {norm(a[lp]) for a in lc if len(a) > lp}
+            for i, ra in enumerate(rc):
+                ra = ra[1:]
+                if len(ra) > rp and norm(ra[rp]) in ("0", "1") and norm(ra[rp]) not in lit:
+                    bad.append(f"{code} {lname}#{i}: rust player {ra[rp]}, lua players {sorted(lit)}")
             continue
         for i, (la, ra) in enumerate(zip(lc, rc)):
             ra = ra[1:]  # drop `d`

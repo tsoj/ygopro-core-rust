@@ -1,0 +1,15 @@
+//! Elemental HERO Bladedge
+use super::prelude::*;
+
+pub const ID: u32 = 59793705;
+
+pub fn initial_effect(d: &mut Duel, c: CardId) {
+    // local e1=Effect.CreateEffect(c)
+    let e1 = effect::create_effect(d, c);
+    // e1:SetType(EFFECT_TYPE_SINGLE)
+    effect::set_type(d, e1, EFFECT_TYPE_SINGLE);
+    // e1:SetCode(EFFECT_PIERCE)
+    effect::set_code(d, e1, EFFECT_PIERCE);
+    // c:RegisterEffect(e1)
+    card::register_effect(d, c, e1, false);
+}

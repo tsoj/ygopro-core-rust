@@ -228,6 +228,9 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
   `function(e,tp,eg,ep,ev,re,r,rp,c)` (no `chk` parameter) gets the NUMBER 1 as its `c`: passing it on
   to a C function that wants a card gives nil there (`a.card(8)` → `None`), and indexing it
   (`c:GetControler()`) is a Lua error (`a.c(8)` raises it).
+- `Duel.RegisterFlagEffect(...)` and `c:RegisterFlagEffect(...)` RETURN the new flag effect (truthy;
+  nil only for an invalid player). `return Duel.RegisterFlagEffect(...)` (e.g. an Xyz `xyzop`, whose
+  falsy result cancels the summon) is therefore a truthy value, never `false` or nil.
 - **Lua `/` is float division.** `c:GetAttack()/2` is `3.5` for an odd 7. Where it reaches the core
   (`SetValue`, a value function's result, `Duel.Damage`, ...), the core rounds half away from zero:
   `lua_int(atk as f64 / 2.0)`. Keep comparisons in `f64` (`atk as f64 / 2.0 > x as f64`).

@@ -88,6 +88,7 @@ struct Api {
     query: unsafe extern "C" fn(*mut c_void, *mut u32, *const OcgQueryInfo) -> *const u8,
     query_location: unsafe extern "C" fn(*mut c_void, *mut u32, *const OcgQueryInfo) -> *const u8,
     query_field: unsafe extern "C" fn(*mut c_void, *mut u32) -> *const u8,
+    set_location_order_by_id: unsafe extern "C" fn(*mut c_void, u8, u32, *const u32, u32) -> c_int,
 }
 
 static API: OnceLock<Api> = OnceLock::new();
@@ -124,6 +125,7 @@ pub fn init(lib_path: &Path, root: &Path, db: Arc<CardDb>) {
             query: sym!(b"OCG_DuelQuery"),
             query_location: sym!(b"OCG_DuelQueryLocation"),
             query_field: sym!(b"OCG_DuelQueryField"),
+            set_location_order_by_id: sym!(b"OCG_ExtSetLocationOrderById"),
             _lib: lib,
         };
         let _ = API.set(api);
@@ -266,6 +268,10 @@ impl CoreDuel {
     }
     pub fn start(&mut self) {
         unsafe { (api().start)(self.handle) }
+    }
+    /// `OCG_ExtSetLocationOrderById` (core_ext)
+    pub fn set_location_order_by_id(&mut self, playerid: u8, location: u32, ids: &[u32]) -> bool {
+        unsafe { (api().set_location_order_by_id)(self.handle, playerid, location, ids.as_ptr(), ids.len() as u32) != 0 }
     }
     pub fn process(&mut self) -> i32 {
         unsafe { (api().process)(self.handle) }

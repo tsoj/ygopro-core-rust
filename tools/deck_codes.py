@@ -8,7 +8,15 @@ import deck_plan  # noqa: E402
 
 alias = deck_plan.load_alias()
 codes = set()
-for p in sys.argv[1:]:
+args = sys.argv[1:]
+if args and args[0] == "--replay":  # a ygo-diff --replay file
+    for l in open(args[1]):
+        if l.startswith("card "):
+            c = int(l.split()[3])
+            codes.add(c)
+            codes.add(deck_plan.script_code(c, alias))
+    args = []
+for p in args:
     for l in open(p):
         if l.strip().isdigit():
             c = int(l)

@@ -72,6 +72,43 @@ struct Args {
     decks: Option<Vec<Deck>>,
     /// Directory of recorded core games (`--cache DIR`): see `cache`
     cache: Option<PathBuf>,
+    /// A game to replay (`--replay FILE`): see `Replay`
+    replay: Option<Replay>,
+}
+
+/// A recorded game (e.g. of the Python agents, converted by tools/record_to_replay.py): the duel
+/// setup and the responses, which both engines get instead of random ones. Text lines:
+/// `seed a b c d`, `config flags start_lp start_hand draw_per_turn`, `card player location code`
+/// (in creation order: card ids follow it), `order player location id...` (then the pile is put
+/// in that order of card ids), `resp HEX` (one per decision).
+#[derive(Clone, Default)]
+struct Replay {
+    seed: [u64; 4],
+    flags: u64,
+    player: [u32; 3],
+    cards: Vec<(u8, u32, u32)>,
+    orders: Vec<(u8, u32, Vec<u32>)>,
+    responses: Vec<Vec<u8>>,
+}
+fn load_replay(path: &str) -> Replay {
+    let text = std::fs::read_to_string(path).unwrap_or_else(|e| panic!("{path}: {e}"));
+    let mut r = Replay::default();
+    for line in text.lines() {
+        let w: Vec<&str> = line.split_whitespace().collect();
+        let num = |i: usize| -> u64 { w[i].parse().unwrap_or_else(|_| panic!("{path}: bad line {line}")) };
+        match w.first().copied() {
+            Some("seed") => r.seed = [num(1), num(2), num(3), num(4)],
+            Some("config") => {
+                r.flags = num(1);
+                r.player = [num(2) as u32, num(3) as u32, num(4) as u32];
+            }
+            Some("card") => r.cards.push((num(1) as u8, num(2) as u32, num(3) as u32)),
+            Some("order") => r.orders.push((num(1) as u8, num(2) as u32, (3..w.len()).map(|i| num(i) as u32).collect())),
+            Some("resp") => r.responses.push((0..w.get(1).map_or(0, |x| x.len()) / 2).map(|i| u8::from_str_radix(&w[1][2 * i..2 * i + 2], 16).unwrap()).collect()),
+            _ => {}
+        }
+    }
+    r
 }
 
 /// A deck from a .ydk file.
@@ -102,7 +139,7 @@ fn load_ydk(path: &str) -> Deck {
 }
 
 fn parse_args() -> Args {
-    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None };
+    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None };
     let argv: Vec<String> = std::env::args().collect();
     let mut i = 1;
     while i < argv.len() {
@@ -140,8 +177,13 @@ fn parse_args() -> Args {
                 a.cache = Some(PathBuf::from(&argv[i + 1]));
                 i += 1;
             }
+            "--replay" => {
+                a.replay = Some(load_replay(&argv[i + 1]));
+                a.games = 1;
+                i += 1;
+            }
             "-h" | "--help" => {
-                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [-v] [--bench-clone]");
+                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [-v] [--bench-clone]");
                 std::process::exit(0);
             }
             "-v" | "--verbose" => a.verbose = true,
@@ -365,13 +407,32 @@ fn compare_state(c: &mut CoreDuel, r: &mut Duel) -> Result<u64, String> {
 /// means it disagreed (or the record ended early): rerun with the core.
 fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: &[u32], scripted: &[u32], scripted_extra: &[u32], codes: &[u32], cached: Option<&cache::Record>) -> Result<Outcome, Option<String>> {
     let mut rng = Rng(args.seed.wrapping_mul(1_000_003).wrapping_add(game));
-    let seed = [rng.next(), rng.next(), rng.next(), rng.next()];
-    let flags = DUEL_MODE_MR5;
-    let player = OcgPlayer { starting_lp: 8000, starting_draw_count: 5, draw_count_per_turn: 1 };
+    let mut seed = [rng.next(), rng.next(), rng.next(), rng.next()];
+    let mut flags = DUEL_MODE_MR5;
+    let mut pl = [8000, 5, 1];
+    if let Some(rp) = &args.replay {
+        (seed, flags, pl) = (rp.seed, rp.flags, rp.player);
+    }
+    let player = OcgPlayer { starting_lp: pl[0], starting_draw_count: pl[1], draw_count_per_turn: pl[2] };
     let mut core = if cached.is_none() { Some(CoreDuel::new(seed, flags, player)) } else { None };
-    let po = PlayerOptions { starting_lp: 8000, starting_draw_count: 5, draw_count_per_turn: 1 };
+    let po = PlayerOptions { starting_lp: pl[0], starting_draw_count: pl[1], draw_count_per_turn: pl[2] };
     let mut r = Duel::new(&DuelOptions { seed, flags, team1: po, team2: po }, db.clone(), scripts.clone());
     ygo_cards::load_global_scripts(&mut r);
+    if let Some(rp) = &args.replay {
+        for &(p, loc, code) in &rp.cards {
+            let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc, seq: 0, pos: POS_FACEDOWN_DEFENSE };
+            if let Some(c) = core.as_mut() {
+                c.new_card(&info);
+            }
+            r.ocg_new_card(&info);
+        }
+        for (p, loc, ids) in &rp.orders {
+            if let Some(c) = core.as_mut() {
+                assert!(c.set_location_order_by_id(*p, *loc, ids), "core: order {p} {loc:#x}");
+            }
+            assert!(r.ext_set_location_order_by_id(*p, *loc, ids), "rust: order {p} {loc:#x}");
+        }
+    }
     if let Some(decks) = &args.decks {
         // (the decks change seats every game)
         for p in 0..2u8 {
@@ -393,7 +454,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
         }
     }
     for p in 0..2u8 {
-        if args.decks.is_some() {
+        if args.decks.is_some() || args.replay.is_some() {
             break;
         }
         for _ in 0..40 {
@@ -571,7 +632,13 @@ fn after_step(game: u64, args: &Args, db: &Arc<CardDb>, codes: &[u32], r: &mut D
             });
         }
         let q = mc.last().ok_or_else(|| Some(format!("game {game}: awaiting without a question")))?;
-        let resp = random_response(q, rng, db, codes).ok_or_else(|| Some(format!("game {game}: not a question: {}", hex(q))))?;
+        let resp = if let Some(rp) = &args.replay {
+            // the recorded response (the record ends: so does the game)
+            let Some(x) = rp.responses.get(out.decisions) else { return Ok((false, None)) };
+            x.clone()
+        } else {
+            random_response(q, rng, db, codes).ok_or_else(|| Some(format!("game {game}: not a question: {}", hex(q))))?
+        };
         if args.verbose {
             eprintln!("  decision {}: msg {} -> {}", out.decisions, q[0], hex(&resp));
         }

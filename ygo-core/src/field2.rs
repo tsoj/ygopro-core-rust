@@ -95,7 +95,7 @@ impl Duel {
             }
         }
     }
-    fn pile_mut(&mut self, playerid: u8, location: u8) -> &mut Vec<CardId> {
+    pub(crate) fn pile_mut(&mut self, playerid: u8, location: u8) -> &mut Vec<CardId> {
         let p = playerid as usize;
         match location as u32 {
             LOCATION_HAND => &mut self.player[p].list_hand,

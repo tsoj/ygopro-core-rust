@@ -153,6 +153,8 @@ pub struct ScriptInfo {
     pub listed_card_types: &'static [u32],
     /// `s.listed_series`
     pub listed_series: &'static [u32],
+    /// `s.listed_cards`
+    pub listed_cards: &'static [u32],
     /// `s.material`
     pub material: &'static [u32],
     /// `s.material_setcode`
@@ -210,6 +212,7 @@ impl ScriptInfo {
         fit_monster: &[],
         listed_card_types: &[],
         listed_series: &[],
+        listed_cards: &[],
         material: &[],
         material_setcode: &[],
         tribute_req: None,

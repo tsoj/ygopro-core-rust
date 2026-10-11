@@ -105,7 +105,13 @@ always `d: &mut Duel` (or `&Duel`):
 | `Duel.ChangePosition(c, au, 0, du, 0)`  | `duel::change_position(d, c, au, Some(0), Some(du), Some(0), false)`: an omitted `ad`/`du`/`dd` is `None` (= `au`), an explicit `0` is `Some(0)` |
 | `Cost.DetachFromSelf(n)` / `(n, m)`      | `cost::detach_from_self(cost::Count::N(n), None, None)` / `(Count::N(n), Some(Count::N(m)), None)` |
 | `Duel.IsMainPhase()` / `Duel.IsBattlePhase()` | `duel::is_main_phase(d, None)` / `duel::is_battle_phase(d, None)` |
-| `Duel.SSet(tp, g)`                      | `duel::s_set(d, tp, g, None, true)` (toplayer = tp, confirm = true) |
+| `Duel.SSet(tp, g)`                      | `duel::s_set(d, tp, g, None, true)` (toplayer None = the setting player, confirm = true) |
+| `c:IsSSetable()`                        | `card::is_s_setable(d, c, false, None)` (ign, toplayer) |
+| `Duel.Remove(g, pos, r)`                | `duel::remove(d, g, pos, r, None, None)` (playerid, reason player) |
+| `Duel.Release(g, r)`                    | `duel::release(d, g, r, None)`; the C++ takes (group, reason, reason player) |
+| `Duel.GetCurrentChain()`                | `duel::get_current_chain(d, false)` |
+| `Duel.IsPhase(PHASE_X)`                 | `duel::is_phase(d, PHASE_X)` |
+| `g:Match(f, ...)`                       | `group::match_(d, &mut g, ...)` (keeps the matching cards in place) |
 | `c:GetMaterial()`                       | `card::get_material(d, c)` (the material group; `c.material` is something else: see below) |
 | `e:SetLabelObject(tc)` / `e:GetLabelObject()` (a card) | `effect::set_label_object(d, e, Value::Card(tc))` / `effect::get_label_object(d, e).as_card()` |
 | `g:AddCard(c)` / `g:RemoveCard(c)`     | `group::add_card(&mut g, &CardSet::from_card(c))` / `group::remove_card(...)` |

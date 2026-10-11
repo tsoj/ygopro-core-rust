@@ -261,6 +261,16 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - Lua `g1==g2` on groups compares only their sizes (libgroup.cpp `__eq`).
 - `Duel.GetMZoneCount(tp, c)` / `GetLocationCount(tp, loc)` with the player left out: pass `None` (the core's
   default is the reason player, not `tp`).
+- `aux.GetMustBeMaterialGroup(tp, nil, ...)` (nil group): `aux::get_must_be_material_group_opt(.., None, ..)`.
+  `Group.FromCards(nil)` is an empty group.
+- `POS_*` constants are `u32`; positions are `u8` in most calls: `POS_FACEUP as u8`.
+- `duel::set_operation_info`'s count is `u8` (`g.len() as u8`), its param `i32`.
+- Effect predicates (`e:IsHasType`, `re:IsMonsterEffect`, `IsSpellEffect`, `IsActiveType`) are in `effect::`.
+- A value function that returns a Lua boolean (`EFFECT_CANNOT_SELECT_BATTLE_TARGET`, `EQUIP_LIMIT`, ...):
+  `effect_card_fn(|d, e, c| ...)` returning `bool`.
+- `aux.CheckSummonGate(tp)` as a number is `aux::check_summon_gate_limit(d, tp)` (`Option<i64>`).
+- Cards whose functions are used as a value elsewhere: `IsCode` and similar C functions take extra arguments as more
+  codes (`Card.IsCode(c, a, b)` checks a or b).
 
 ## Effect functions
 

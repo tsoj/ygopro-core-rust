@@ -52,8 +52,8 @@ fn distg(d: &mut Duel, a: &EffArgs) -> bool {
 fn negop(d: &mut Duel, a: &EffArgs) {
     duel::negate_effect(d, a.ev as u8);
 }
-fn spcond(d: &mut Duel, _a: &EffArgs) -> bool {
-    duel::is_existing_matching_card(d, Some(&|d, c| card::is_faceup(d, c) && card::is_set_card(d, c, &[SET_KI_SIKIL as u16])), 0, LOCATION_MZONE, 0, 1, NO_EX)
+fn spcond(d: &mut Duel, a: &EffArgs) -> bool {
+    duel::is_existing_matching_card(d, Some(&|d, c| card::is_faceup(d, c) && card::is_set_card(d, c, &[SET_KI_SIKIL as u16])), a.tp, LOCATION_MZONE, 0, 1, NO_EX)
 }
 fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
     let c = effect::get_handler(d, a.e).nil();

@@ -254,7 +254,7 @@ fn tdtg(d: &mut Duel, a: &EffArgs) -> bool {
 /// `s.setfilter(c)`
 fn setfilter(d: &mut Duel, c: CardId) -> bool {
     // return c:IsCode(9409625) and c:IsSSetable()
-    card::is_code(d, c, &[9409625]) && card::is_s_setable(d, c, false, None)
+    card::is_code(d, c, &[72883039]) && card::is_s_setable(d, c, false, None)
 }
 /// `s.tdop(e,tp,eg,ep,ev,re,r,rp)`
 fn tdop(d: &mut Duel, a: &EffArgs) {

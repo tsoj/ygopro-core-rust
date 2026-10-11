@@ -109,4 +109,5 @@ def main():
             name = open(lua, errors="ignore").read().split("\n")[1].lstrip("-").strip()
             print(f"  {c} {name}" + (f"   MISSING {' '.join(sorted(miss))}" if miss else ""))
 
-main()
+if __name__ == "__main__":
+    main()

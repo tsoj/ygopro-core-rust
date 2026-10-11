@@ -13,7 +13,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_code(d, e1, EVENT_CHAINING);
     effect::set_count_limit(d, e1, 1, ID, 0, EFFECT_COUNT_CODE_OATH as u8);
     effect::set_condition(d, e1, Some(condition(cond)));
-    effect::set_target(d, e1, Some(condition(target)));
+    effect::set_target(d, e1, Some(cost_target(target)));
     effect::set_operation(d, e1, Some(operation(activate)));
     card::register_effect(d, c, e1, false);
 }

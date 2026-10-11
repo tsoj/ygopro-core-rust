@@ -18,7 +18,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCondition(s.condition)
     effect::set_condition(d, e1, Some(condition(cond)));
     // e1:SetTarget(s.target)
-    effect::set_target(d, e1, Some(condition(target)));
+    effect::set_target(d, e1, Some(cost_target(target)));
     // e1:SetOperation(s.activate)
     effect::set_operation(d, e1, Some(operation(activate)));
     // c:RegisterEffect(e1)

@@ -17,7 +17,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EFFECT_SPSUMMON_CONDITION)
     effect::set_code(d, e1, EFFECT_SPSUMMON_CONDITION);
     // e1:SetValue(aux.FALSE)
-    effect::set_value_fn(d, e1, effect_card_fn(|_d, _e, _c| false));
+    effect::set_value_fn(d, e1, aux_false());
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // special summon

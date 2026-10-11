@@ -59,13 +59,13 @@ fn spcon(d: &mut Duel, a: Args) -> bool {
 fn sptg(d: &mut Duel, a: Args) -> bool {
     let e = a.e(0);
     let tp = a.p(1);
-    let c = a.c(8);
+    // The Lua target has no chk parameter: its `c` is the number 1, so no card (to_check nil).
     // local g=Duel.SelectReleaseGroup(tp,s.spfilter,1,1,false,true,true,c,nil,nil,false,nil)
     let ra = duel::ReleaseArgs {
         use_hand: Some(false),
         cancelable: true,
         check_field: true,
-        to_check: Some(c),
+        to_check: None,
         ..Default::default()
     };
     let g = duel::select_release_group(d, tp, Some(&spfilter), 1, 1, ra, NO_EX, false);

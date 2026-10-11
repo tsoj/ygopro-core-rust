@@ -70,13 +70,13 @@ fn hspcon(d: &mut Duel, a: Args) -> bool {
 fn hsptg(d: &mut Duel, a: Args) -> bool {
     let e = a.e(0);
     let tp = a.p(1);
-    let c = a.c(8);
+    // the Lua `c` is the number chk (no chk parameter): to_check is nil
     // local g=Duel.SelectReleaseGroup(tp,s.rfilter,1,1,false,true,true,c,nil,nil,true,nil,tp)
     let ra = duel::ReleaseArgs {
         use_hand: Some(false),
         max: None,
         check_field: true,
-        to_check: Some(c),
+        to_check: None,
         toplayer: None,
         zone: None,
         use_oppo: true,

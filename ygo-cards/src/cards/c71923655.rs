@@ -55,7 +55,7 @@ fn sptg(d: &mut Duel, a: Args) -> bool {
         max: None,
         cancelable: true,
         check_field: true,
-        to_check: a.card(8),
+        to_check: None,
         toplayer: None,
         zone: None,
         use_oppo: false,

@@ -65,7 +65,7 @@ fn sptg(d: &mut Duel, a: Args) -> bool {
         Some(&|d, x| card::is_code(d, x, &[73879377])),
         1,
         1,
-        duel::ReleaseArgs { use_hand: Some(false), cancelable: true, check_field: true, to_check: a.card(8), ..Default::default() },
+        duel::ReleaseArgs { use_hand: Some(false), cancelable: true, check_field: true, to_check: None, ..Default::default() },
         NO_EX,
         false,
     );

@@ -55,7 +55,6 @@ fn spcon(d: &mut Duel, a: Args) -> bool {
 fn sptg(d: &mut Duel, a: Args) -> bool {
     let e = a.e(0);
     let tp = a.p(1);
-    let c = a.card(8);
     // local g=Duel.SelectReleaseGroup(tp,aux.FaceupFilter(Card.IsCode,66073051),1,1,false,true,true,c,nil,nil,false,nil)
     let g = duel::select_release_group(
         d,
@@ -63,7 +62,7 @@ fn sptg(d: &mut Duel, a: Args) -> bool {
         Some(&|d, c| card::is_faceup(d, c) && card::is_code(d, c, &[66073051])),
         1,
         1,
-        duel::ReleaseArgs { use_hand: Some(false), cancelable: true, check_field: true, to_check: c, ..Default::default() },
+        duel::ReleaseArgs { use_hand: Some(false), cancelable: true, check_field: true, to_check: None, ..Default::default() },
         NO_EX,
         false,
     );

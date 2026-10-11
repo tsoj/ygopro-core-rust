@@ -138,9 +138,8 @@ fn spcon(d: &mut Duel, a: Args) -> bool {
 fn sptg(d: &mut Duel, a: Args) -> bool {
     let e = a.e(0);
     let tp = a.p(1);
-    let c = a.card(8);
     // local g=Duel.SelectReleaseGroup(tp,Card.IsSetCard,1,1,false,true,true,c,nil,nil,false,nil,SET_FORBIDDEN_ONE)
-    let ra = duel::ReleaseArgs { use_hand: Some(false), max: None, cancelable: true, check_field: true, to_check: c, toplayer: Some(tp), zone: None, use_oppo: false };
+    let ra = duel::ReleaseArgs { use_hand: Some(false), max: None, cancelable: true, check_field: true, to_check: None, toplayer: Some(tp), zone: None, use_oppo: false };
     let g = duel::select_release_group(d, tp, Some(&|d, x| card::is_set_card(d, x, &[SET_FORBIDDEN_ONE as u16])), 1, 1, ra, NO_EX, false);
     // if g then
     if let Some(g) = g {

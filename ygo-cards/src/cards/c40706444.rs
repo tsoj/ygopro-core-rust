@@ -89,7 +89,8 @@ fn xyzop(d: &mut Duel, a: Args) -> Value {
     }
     // return Duel.RegisterFlagEffect(tp,id,RESET_PHASE|PHASE_END,EFFECT_FLAG_OATH,1)
     duel::register_flag_effect(d, tp, ID, RESET_PHASE | PHASE_END, EFFECT_FLAG_OATH, 1, 0);
-    Value::Nil
+    // RegisterFlagEffect returns the (truthy) flag effect
+    Value::Bool(true)
 }
 // function s.thfilter(c)
 fn thfilter(d: &mut Duel, c: CardId) -> bool {

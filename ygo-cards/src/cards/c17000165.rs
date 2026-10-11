@@ -206,8 +206,9 @@ fn ctlop(d: &mut Duel, a: &EffArgs) {
     }
     // if Duel.GetControl(tc,tp) and Duel.GetLocationCount(1-tp,LOCATION_MZONE)>0
     //     and Duel.IsPlayerCanSpecialSummonMonster(tp,TOKEN_REPTILIANNE,0,TYPES_TOKEN,0,0,1,RACE_REPTILE,ATTRIBUTE_EARTH,POS_FACEUP,1-tp) then
-    if duel::get_control(d, tc, tp, 0, 0, None, None) != 0
-        && duel::get_location_count(d, 1 - tp, LOCATION_MZONE as u8, None, None, None).0 > 0
+    // (GetControl returns a number: always true in Lua)
+    duel::get_control(d, tc, tp, 0, 0, None, None);
+    if duel::get_location_count(d, 1 - tp, LOCATION_MZONE as u8, None, None, None).0 > 0
         && can_summon_token(d, tp)
     {
         // Duel.BreakEffect()

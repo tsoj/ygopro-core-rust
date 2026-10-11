@@ -248,6 +248,14 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
   `ipairs` over a list (`{a, b, c}`, `table.insert`) is just the list order.
 - **Keep every call**, even when the Lua stores the result in a variable it never uses
   (`local ph=Duel.GetCurrentPhase()` becomes `let _ph = duel::get_current_phase(d);`).
+- `Duel.IsMainPhase()` / `Duel.IsBattlePhase()` without an argument is `None`, not `Some(tp)`:
+  with a player the call also checks that it is that player's turn.
+- `Duel.SpecialSummonStep(...)` returns a boolean in Lua, so `Duel.SpecialSummonStep(...)~=0` is always
+  true (a boolean is never equal to 0). Translate the condition as written: always true.
+- `Duel.CheckReleaseGroup` / `Duel.SelectReleaseGroup` (not `...Ex`) default `use_hand` to false.
+- Summon-type constants are `u32` and `is_type_ctx` takes a `u64` sumtype: `SUMMON_TYPE_SYNCHRO as u64 | MATERIAL_SYNCHRO as u64`.
+- A single card as the `ExtraCard` of `get_location_count_from_ex` is `duel::ExtraCard::Card(c)`.
+- `g:GetNext()` after `g:GetFirst()`: `let order = group::iter(d, &g);` then `order.get(1)`.
 
 ## Effect functions
 

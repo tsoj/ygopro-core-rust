@@ -137,9 +137,9 @@ fn operation_fn(d: &mut Duel, a: &EffArgs) {
         duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_SPSUMMON as u64);
         // local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND,0,1,1,nil,e,tp)
         let g = duel::select_matching_card(d, tp, Some(&|d, c| spfilter(d, c, a.e, tp)), tp, LOCATION_HAND, 0, 1, 1, false, NO_EX).nil();
-        // if #g>0 then Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP) end
+        // if #g>0 then Duel.SpecialSummon(g,0,tp,tp,true,false,POS_FACEUP) end
         if !g.is_empty() {
-            duel::special_summon(d, g, 0, tp, tp, false, false, POS_FACEUP as u8, None);
+            duel::special_summon(d, g, 0, tp, tp, true, false, POS_FACEUP as u8, None);
         }
     }
 }

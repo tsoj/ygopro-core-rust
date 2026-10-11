@@ -62,7 +62,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
 fn rmcon(d: &mut Duel, a: &EffArgs) -> bool {
     // return Duel.IsTurnPlayer(tp) and e:GetHandler():GetBattledGroup():GetCount()>0
     let h = effect::get_handler(d, a.e).nil();
-    duel::is_turn_player(d, a.tp) && card::get_battled_group_count(d, h) > 0
+    duel::is_turn_player(d, a.tp) && card::get_battled_group(d, h).len() > 0
 }
 /// `s.rmtg(e,tp,...,chk)`
 fn rmtg(d: &mut Duel, a: &EffArgs) -> bool {

@@ -112,7 +112,7 @@ fn lizfilter(d: &mut Duel, _e: EffectId, c: CardId) -> bool {
 }
 /// `s.spfilter(c,e,tp)`
 fn spfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
-    card::is_faceup(d, c) && card::is_code(d, c, &[77312273]) && card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, None, None, None)
+    card::is_faceup(d, c) && card::is_code(d, c, &[3806388]) && card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, None, None, None)
 }
 /// `s.sptg(e,tp,...,chk,chkc)`
 fn sptg(d: &mut Duel, a: &EffArgs) -> bool {

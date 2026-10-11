@@ -18,14 +18,14 @@ pub fn add_procedure(d: &mut Duel, c: CardId, events: &[u32]) -> Vec<EffectId> {
     effect::set_type(d, e1, EFFECT_TYPE_FIELD + EFFECT_TYPE_TRIGGER_F);
     effect::set_code(d, e1, EVENT_PHASE + PHASE_END);
     effect::set_range(d, e1, LOCATION_MZONE);
-    effect::set_condition(d, e1, Some(condition(|d, a| common(d, a.e) && !maynot(d, a.e))));
+    effect::set_condition(d, e1, Some(condition(|d, a| common_condition(d, a.e) && !maynot(d, a.e))));
     effect::set_target(d, e1, Some(cost_target(mandatory_return_target)));
     effect::set_operation(d, e1, Some(return_operation()));
     card::register_effect(d, c, e1, false);
     // Optional return in case of "SPIRIT_MAYNOT_RETURN" effects
     let e2 = effect::clone(d, e1);
     effect::set_type(d, e2, EFFECT_TYPE_FIELD + EFFECT_TYPE_TRIGGER_O);
-    effect::set_condition(d, e2, Some(condition(|d, a| common(d, a.e) && maynot(d, a.e))));
+    effect::set_condition(d, e2, Some(condition(|d, a| common_condition(d, a.e) && maynot(d, a.e))));
     effect::set_target(d, e2, Some(cost_target(optional_return_target)));
     card::register_effect(d, c, e2, false);
     let mut out = vec![e1, e2];
@@ -49,7 +49,7 @@ pub fn add_procedure(d: &mut Duel, c: CardId, events: &[u32]) -> Vec<EffectId> {
     out
 }
 /// `Spirit.CommonCondition(e)`
-fn common(d: &mut Duel, e: EffectId) -> bool {
+pub fn common_condition(d: &mut Duel, e: EffectId) -> bool {
     let c = effect::get_handler(d, e).nil();
     card::has_flag_effect(d, c, FLAG_SPIRIT_RETURN, None) && card::is_has_effect(d, c, EFFECT_SPIRIT_DONOT_RETURN, None).is_empty()
 }
@@ -59,11 +59,11 @@ fn maynot(d: &mut Duel, e: EffectId) -> bool {
 }
 /// `Spirit.MandatoryReturnCondition`
 pub fn mandatory_return_condition() -> LuaFn {
-    condition(|d, a| common(d, a.e) && !maynot(d, a.e))
+    condition(|d, a| common_condition(d, a.e) && !maynot(d, a.e))
 }
 /// `Spirit.OptionalReturnCondition`
 pub fn optional_return_condition() -> LuaFn {
-    condition(|d, a| common(d, a.e) && maynot(d, a.e))
+    condition(|d, a| common_condition(d, a.e) && maynot(d, a.e))
 }
 fn mandatory_return_target(d: &mut Duel, a: &EffArgs) -> bool {
     if a.chk == Some(0) {

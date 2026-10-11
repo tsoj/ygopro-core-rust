@@ -55,9 +55,12 @@ def entry(cov, c):
 
 
 def book_decks(alias, done):
-    """The book's distinct decks whose cards all have a translated script (or need none)."""
+    """The book's distinct decks (and the generated ones of build/gen_decks.jsonl) whose cards all
+    have a translated script (or need none)."""
     decks = {}
-    for line in open(deck_plan.BOOK):
+    gen = os.path.join(ROOT, "build", "gen_decks.jsonl")  # tools/gen_decks.py
+    lines = list(open(deck_plan.BOOK)) + (list(open(gen)) if os.path.exists(gen) else [])
+    for line in lines:
         for d in json.loads(line)["decks"]:
             if d["name"] in decks:
                 continue

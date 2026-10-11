@@ -269,6 +269,9 @@ struct MixCtx<'a> {
     contact: bool,
     sumtype: u64,
     chkf: u8,
+    /// `check_mix_goal` results by selected set: the result depends only on the set, and
+    /// `select_mix` reaches the same set in every order (n! times for n materials)
+    goal_memo: std::cell::RefCell<HashMap<(Vec<CardId>, bool), bool>>,
 }
 /// `Fusion.CheckMix(c, mg, sg, fc, sub, sub2, contact, sumtype, tp, fun1, fun2, ...)`
 fn check_mix(d: &mut Duel, x: &MixCtx, c: CardId, mg: &CardSet, sg: &mut CardSet, sub: bool, funs: &[Fun]) -> bool {
@@ -304,6 +307,15 @@ fn exists_mix(d: &mut Duel, x: &MixCtx, mg: &CardSet, sg: &mut CardSet, sub: boo
 }
 /// `Fusion.CheckMixGoal(tp, sg, fc, sub, sub2, contact, sumtype, chkf, ...)`
 fn check_mix_goal(d: &mut Duel, x: &MixCtx, sg: &CardSet, sub: bool) -> bool {
+    let key = (sg.to_vec(), sub);
+    if let Some(&v) = x.goal_memo.borrow().get(&key) {
+        return v;
+    }
+    let v = check_mix_goal_uncached(d, x, sg, sub);
+    x.goal_memo.borrow_mut().insert(key, v);
+    v
+}
+fn check_mix_goal_uncached(d: &mut Duel, x: &MixCtx, sg: &CardSet, sub: bool) -> bool {
     let mut g = CardSet::new();
     let mut ok = false;
     for c in group::iter(d, sg) {
@@ -418,7 +430,7 @@ pub fn condition_mix(insf: bool, sub: bool, funs: Arc<[Fun]>) -> LuaFn {
             }
             let mut sg = CardSet::new();
             group::add_card(&mut mg, &mustg);
-            let x = MixCtx { funs: &funs, tp, fc: c, sub2: k.sub, contact: k.contact, sumtype: k.sumtype, chkf: k.chkf };
+            let x = MixCtx { funs: &funs, tp, fc: c, sub2: k.sub, contact: k.contact, sumtype: k.sumtype, chkf: k.chkf, goal_memo: Default::default() };
             for c2 in group::iter(d, &mg) {
                 if crate::lua::protected(d, false, |d| select_mix(d, &x, c2, &mg, &mut sg, &mustg, k.sub)) {
                     return true;
@@ -472,7 +484,7 @@ pub fn operation_mix(sub: bool, funs: Arc<[Fun]>) -> LuaFn {
             }
         }
         let (p, sfhchk) = material_chooser(d, tp, &mg, k.contact);
-        let x = MixCtx { funs: &funs, tp, fc: c, sub2: k.sub, contact: k.contact, sumtype: k.sumtype, chkf: k.chkf };
+        let x = MixCtx { funs: &funs, tp, fc: c, sub2: k.sub, contact: k.contact, sumtype: k.sumtype, chkf: k.chkf, goal_memo: Default::default() };
         while sg.len() < funs.len() {
             duel::hint(d, HINT_SELECTMSG as u8, p, HINTMSG_FMATERIAL as u64);
             let rest = group::difference(&mustg, &sg);

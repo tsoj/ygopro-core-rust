@@ -231,7 +231,8 @@ def focus(args):
     done = set(int(x) for x in subprocess.run([BIN, "--list-cards"], capture_output=True, text=True, check=True).stdout.split())
     pairs = []
     for f in sorted(os.listdir(FOCUS)):
-        m = re.fullmatch(r"(\d+)_a\.ydk", f)
+        # <CODE>_a.ydk (or _c, _d, ...: other variants) against <CODE>_b.ydk
+        m = re.fullmatch(r"(\d+)_([ac-z])\.ydk", f)
         if m and os.path.exists(os.path.join(FOCUS, f"{m[1]}_b.ydk")):
             pa, pb = os.path.join(FOCUS, f), os.path.join(FOCUS, f"{m[1]}_b.ydk")
             cards = set()

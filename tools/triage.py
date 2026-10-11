@@ -38,11 +38,16 @@ def suspects(path):
     m = re.search(r"--decks (\S+),(\S+)", lines[0])
     deck = deck_codes(m[1]) | deck_codes(m[2])
     found = set()
+    last = set()
     for l in lines:
         mm = re.match(r"\s*(core|rust)(?:\[\d+\.\.\])?:\s+([0-9a-f ]+)$", l)
         if mm:
             found |= codes_in(mm[2], deck)
-    return found
+        mm = re.match(r"\s*(before|same):\s+([0-9a-f ]+)$", l)
+        if mm and codes_in(mm[2], deck):
+            last = codes_in(mm[2], deck)
+    # no card in the differing messages: the cards of the last message before them that names one
+    return found or last
 
 
 def main():

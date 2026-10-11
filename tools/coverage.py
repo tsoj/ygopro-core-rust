@@ -7,6 +7,7 @@ both engines agree adds its cards' activations (MSG_CHAINING) and summons to bui
 a mismatch is saved to build/coverage_fails/ with its decks and seed (to reproduce it with ygo-diff).
 
   tools/coverage.py run [--jobs 30] [--games N] [--timeout 120]
+  tools/coverage.py focus [--games N]    # the deck pairs of build/focus_decks, with --focus
   tools/coverage.py status [--list N]   # coverage of the translated cards (--list: N least played)
   tools/coverage.py import              # add the pair tests' coverage (build/pair_results)
 """
@@ -106,8 +107,8 @@ def parse_cov(text, alias):
     return out
 
 
-def play(pa, pb, seed, timeout):
-    cmd = [BIN, "--decks", f"{pa},{pb}", "--games", "1", "--seed", str(seed)]
+def play(pa, pb, seed, timeout, extra=()):
+    cmd = [BIN, "--decks", f"{pa},{pb}", "--games", "1", "--seed", str(seed), *extra]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         return cmd, r.returncode, r.stdout + r.stderr
@@ -213,6 +214,73 @@ def run(args):
     save_cov(cov)
 
 
+FOCUS = os.path.join(ROOT, "build", "focus_decks")
+
+
+def focus(args):
+    """The deck pairs of build/focus_decks (<CODE>_a.ydk, <CODE>_b.ydk; written by the focus agents,
+    see rust/ygo-cards/FOCUS.md), each played with `--focus CODE` (the player uses that card whenever
+    it can): cards random play never reaches."""
+    jobs = int(args[args.index("--jobs") + 1]) if "--jobs" in args else 24
+    per = int(args[args.index("--games") + 1]) if "--games" in args else 10
+    timeout = int(args[args.index("--timeout") + 1]) if "--timeout" in args else 120
+    os.makedirs(FAILS, exist_ok=True)
+    os.makedirs(os.path.dirname(BIN), exist_ok=True)
+    shutil.copy2(os.path.join(ROOT, "rust", "target", "release", "ygo-diff"), BIN)
+    alias = deck_plan.load_alias()
+    done = set(int(x) for x in subprocess.run([BIN, "--list-cards"], capture_output=True, text=True, check=True).stdout.split())
+    pairs = []
+    for f in sorted(os.listdir(FOCUS)):
+        m = re.fullmatch(r"(\d+)_a\.ydk", f)
+        if m and os.path.exists(os.path.join(FOCUS, f"{m[1]}_b.ydk")):
+            pa, pb = os.path.join(FOCUS, f), os.path.join(FOCUS, f"{m[1]}_b.ydk")
+            cards = set()
+            ok = True
+            for p in (pa, pb):
+                for l in open(p):
+                    if l.strip().isdigit():
+                        c = deck_plan.script_code(int(l), alias)
+                        if translatable.script_path(c):
+                            if c not in done:
+                                ok = False
+                            cards.add(c)
+            if ok:
+                pairs.append((int(m[1]), pa, pb, cards))
+    print(f"{len(pairs)} focus deck pairs, {per} games each", flush=True)
+    cov = load_cov()
+    rng = random.Random()
+    stats = {"ok": 0, "mismatch": 0, "timeout": 0, "crash": 0, "budget": 0}
+    todo = [(code, pa, pb, cards, rng.getrandbits(63)) for code, pa, pb, cards in pairs for _ in range(per)]
+    with concurrent.futures.ThreadPoolExecutor(jobs) as ex:
+        futs = {ex.submit(play, pa, pb, seed, timeout, ("--focus", str(code))): (code, cards, seed) for code, pa, pb, cards, seed in todo}
+        for f in concurrent.futures.as_completed(futs):
+            code, cards, seed = futs[f]
+            cmd, rc, out = f.result()
+            if rc is None:
+                kind = "timeout"
+            elif "MISMATCH" in out:
+                kind = "mismatch"
+            elif "1/1 games identical" in out:
+                kind = "ok"
+                for c in cards:
+                    entry(cov, c)[0] += 1
+                for c, (act, summ) in parse_cov(out, alias).items():
+                    e = entry(cov, c)
+                    e[1] += act
+                    e[2] += summ
+            elif "skipped at the core's script budget" in out and "0/1" in out:
+                kind = "budget"
+            else:
+                kind = "crash"
+            stats[kind] += 1
+            if kind in ("mismatch", "timeout", "crash"):
+                with open(os.path.join(FAILS, f"{kind}_focus{code}_{seed}.txt"), "w") as fo:
+                    fo.write(" ".join(cmd) + "\n" + out[-20000:])
+    save_cov(cov)
+    used = sum(1 for code, *_ in pairs if sum(cov.get(code, [0, 0, 0, 0])[1:3]) > 0)
+    print(f"{sum(stats.values())} games: {stats}; {used}/{len(pairs)} focus cards activated or summoned", flush=True)
+
+
 def status(args):
     cov = load_cov()
     done = translated()
@@ -252,4 +320,4 @@ def import_pairs(args):
 
 
 if __name__ == "__main__":
-    {"run": run, "status": status, "import": import_pairs}[sys.argv[1]](sys.argv[2:])
+    {"run": run, "focus": focus, "status": status, "import": import_pairs}[sys.argv[1]](sys.argv[2:])

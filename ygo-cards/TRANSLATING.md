@@ -111,6 +111,7 @@ always `d: &mut Duel` (or `&Duel`):
 | `Duel.Release(g, r)`                    | `duel::release(d, g, r, None)`; the C++ takes (group, reason, reason player) |
 | `Duel.GetCurrentChain()`                | `duel::get_current_chain(d, false)` |
 | `Duel.IsPhase(PHASE_X)`                 | `duel::is_phase(d, PHASE_X)` |
+| `c:IsNouvellesSummoned()` (and the other `Card.*` of cards_specific_functions.lua) | `card::is_nouvelles_summoned(d, c)`, `card::is_reincarnation_summoned`, `card::is_rikka_releasable` |
 | `g:Match(f, ...)`                       | `group::match_(d, &mut g, ...)` (keeps the matching cards in place) |
 | `c:GetMaterial()`                       | `card::get_material(d, c)` (the material group; `c.material` is something else: see below) |
 | `e:SetLabelObject(tc)` / `e:GetLabelObject()` (a card) | `effect::set_label_object(d, e, Value::Card(tc))` / `effect::get_label_object(d, e).as_card()` |

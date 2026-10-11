@@ -889,6 +889,12 @@ pub fn is_reincarnation_summoned(d: &mut Duel, c: CardId) -> bool {
     let label = raw::get_flag_effect_label(d, c, CARD_SALAMANGREAT_SANCTUARY).into_iter().fold(0, |l, x| l | x);
     label & (raw::get_summon_player(d, c) as i64 + 1) != 0
 }
+/// `c:IsNouvellesSummoned()` (cards_specific_functions.lua): Special Summoned by the effect of a
+/// "Nouvelles" monster (a flag with the card's original code)
+pub fn is_nouvelles_summoned(d: &mut Duel, c: CardId) -> bool {
+    let code = get_original_code(d, c);
+    has_flag_effect(d, c, code, None)
+}
 /// `c:IsRikkaReleasable(tp)` (cards_specific_functions.lua)
 pub use crate::aux::is_rikka_releasable;
 /// `Card.IsGeminiStatus`/`Card.EnableGeminiStatus` (proc_gemini.lua aliases)

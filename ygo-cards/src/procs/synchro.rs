@@ -940,6 +940,285 @@ fn operation_fn() -> LuaFn {
     })
 }
 
+/// The parameters of `Synchro.AddMajesticProcedure(c, f1, cbt1, f2, cbt2, f3, cbt3, ...)`
+/// (`...` are the `reqm` checks).
+#[derive(Clone)]
+struct Majestic {
+    f: [MatFilter; 3],
+    cbt: [bool; 3],
+    reqm: Vec<ReqFn>,
+}
+/// What the Majestic checks share (`lv, sc, tp, pg`).
+struct MajCtx<'a> {
+    m: &'a Majestic,
+    lv: u32,
+    sc: CardId,
+    tp: u8,
+    pg: &'a CardSet,
+}
+
+/// `Synchro.AddMajesticProcedure(c, f1, cbt1, f2, cbt2, f3, cbt3, ...)`: three materials, each
+/// matching its own filter `f` (`cbt`: that one may be the Tuner), one of them a Tuner; `reqm` are
+/// the checks of all the materials (`function(g, sc, tp)`).
+/// (The Lua also sets `synchro_type` and `synchro_parameters` on the card table; nothing reads them.)
+#[allow(clippy::too_many_arguments)]
+pub fn add_majestic_procedure(d: &mut Duel, c: CardId, f1: MatFilter, cbt1: bool, f2: MatFilter, cbt2: bool, f3: MatFilter, cbt3: bool, reqm: Vec<ReqFn>) -> EffectId {
+    let m = Majestic { f: [f1, f2, f3], cbt: [cbt1, cbt2, cbt3], reqm };
+    let e1 = effect::create_effect(d, c);
+    effect::set_type(d, e1, EFFECT_TYPE_FIELD);
+    effect::set_description(d, e1, 1172);
+    effect::set_code(d, e1, EFFECT_SPSUMMON_PROC);
+    effect::set_property(d, e1, EFFECT_FLAG_UNCOPYABLE + EFFECT_FLAG_IGNORE_IMMUNE, 0);
+    effect::set_range(d, e1, LOCATION_EXTRA);
+    effect::set_condition(d, e1, Some(majestic_condition(m.clone())));
+    effect::set_target(d, e1, Some(majestic_target(m)));
+    effect::set_operation(d, e1, Some(operation_fn()));
+    effect::set_value(d, e1, SUMMON_TYPE_SYNCHRO as i64);
+    card::register_effect(d, c, e1, false);
+    e1
+}
+/// `Synchro.MajesticCheck1(c, g, sg, card1, card2, card3, lv, sc, tp, pg, ...)`: adding `c`
+#[allow(clippy::too_many_arguments)]
+fn majestic_check1(d: &mut Duel, x: &MajCtx, c: CardId, g: &mut CardSet, sg: &mut CardSet, cards: [Option<CardId>; 3]) -> bool {
+    let mut rg = CardSet::new();
+    for te in card::get_card_effect(d, c, EFFECT_SYNCHRO_CHECK) {
+        // (`local tg=g:Filter(function(mc) return val(te,mc) end,nil)`: only the calls matter)
+        group::filter(d, g, &|d, mc| call_value(d, te, &[Value::Effect(te), Value::Card(mc)]).truthy(), NO_EX);
+    }
+    // c has the synchro limit / a card in the selected group has the synchro limit
+    let Some(r) = restrictions(d, c, sg, &[g]) else { return false };
+    group::add_card(&mut rg, &r[0]);
+    let Some((trg, _)) = hand_checks(d, c, sg, &g.clone(), &g.clone(), &sg.clone(), &sg.clone()) else { return false };
+    if let Some(trg) = trg {
+        group::add_card(&mut rg, &group_of(&trg));
+    }
+    group::remove_card(g, &rg);
+    sg.insert(c);
+    let mut cards = cards;
+    if cards[0].is_none() {
+        cards[0] = Some(c);
+    } else if cards[1].is_none() {
+        cards[1] = Some(c);
+    } else {
+        cards[2] = Some(c);
+    }
+    let res = if sg.len() < 3 {
+        majestic_exists(d, x, g, sg, cards)
+    } else {
+        group::includes(sg, x.pg) && majestic_check2(d, x, sg, cards)
+    };
+    group::add_card(g, &rg);
+    sg.remove(c);
+    reset_check_assume(d, sg);
+    res
+}
+/// `g:IsExists(Synchro.MajesticCheck1, 1, sg, g, sg, card1, card2, card3, ...)`
+fn majestic_exists(d: &mut Duel, x: &MajCtx, g: &mut CardSet, sg: &mut CardSet, cards: [Option<CardId>; 3]) -> bool {
+    let cands = group::iter(d, &group::difference(g, sg));
+    for c in cands {
+        if crate::lua::protected(d, false, |d| majestic_check1(d, x, c, g, sg, cards)) {
+            return true;
+        }
+    }
+    false
+}
+/// `g:Filter(Synchro.MajesticCheck1, sg, g, sg, card1, card2, card3, ...)`
+fn majestic_filter(d: &mut Duel, x: &MajCtx, g: &mut CardSet, sg: &mut CardSet, cards: [Option<CardId>; 3]) -> CardSet {
+    let mut out = CardSet::new();
+    for c in group::iter(d, &group::difference(g, sg)) {
+        if crate::lua::protected(d, false, |d| majestic_check1(d, x, c, g, sg, cards)) {
+            out.insert(c);
+        }
+    }
+    out
+}
+/// `Synchro.MajesticCheck2(sg, card1, card2, card3, lv, sc, tp, ...)`: the three materials work
+fn majestic_check2(d: &mut Duel, x: &MajCtx, sg: &CardSet, cards: [Option<CardId>; 3]) -> bool {
+    let (sc, tp, lv) = (x.sc, x.tp, x.lv);
+    if group::is_exists(d, sg, &|d, c| check_hand(d, c, sg), 1, NO_EX) {
+        return false;
+    }
+    let mut tunechk = false;
+    for i in 0..3 {
+        let card = cards[i].nil();
+        if !(x.m.f[i])(d, card, Some(sc), ST, tp) {
+            return false;
+        }
+    }
+    for i in 0..3 {
+        let card = cards[i].nil();
+        if x.m.cbt[i] && card::is_type_ctx(d, card, TYPE_TUNER, Some(sc), ST, Some(tp)) {
+            tunechk = true;
+        }
+    }
+    if !tunechk {
+        return false;
+    }
+    let mut lvchk = false;
+    for reqmat in &x.m.reqm {
+        if !reqmat(d, sg, sc, tp) {
+            return false;
+        }
+    }
+    for tc in group::iter(d, sg) {
+        for te in card::get_card_effect(d, tc, EFFECT_SYNCHRO_MATERIAL_CUSTOM) {
+            let Some(op) = effect::get_operation(d, te) else { crate::lua_error("attempt to call a nil value (local 'op')") };
+            let r = op.call(d, &[Value::Effect(te), Value::Group(CardSet::new()), Value::Group(CardSet::new()), Value::Group(sg.clone()), Value::Int(lv as i64), Value::Card(sc), Value::Int(tp as i64)]);
+            if !multi(&r, 0).truthy() {
+                return false;
+            }
+            lvchk = lvchk || multi(&r, 1).truthy();
+        }
+    }
+    let n = sg.len() as i32;
+    if (!lvchk && !group::check_with_sum_equal(d, sg, &|d, x| card::get_synchro_level(d, x, sc) as i64, lv, n, n).0) || !check_additional(d, tp, sg, sc) {
+        return false;
+    }
+    if card::is_location(d, sc, LOCATION_EXTRA) {
+        duel::get_location_count_from_ex(d, tp, Some(tp), sg.into(), duel::ExtraCard::Card(sc), None).0 > 0
+    } else {
+        duel::get_location_count(d, tp, LOCATION_MZONE as u8, None, None, None).0 > 0 || duel::get_m_zone_count(d, tp, sg.into(), Some(tp), None, None).0 > 0
+    }
+}
+/// The materials both the Majestic condition and target start with: (dg, g, mgchk, pg).
+/// (`smat` is only merged in by the callers.)
+fn majestic_materials(d: &mut Duel, c: CardId, tp: u8, mg: Option<&CardSet>) -> (CardSet, CardSet, bool) {
+    let (dg, mut g, mgchk) = match mg {
+        Some(mg) => {
+            let g = group::filter(d, mg, &|d, x| card::is_can_be_synchro_material(d, x, Some(c), None, None), c.into());
+            (mg.clone(), g, true)
+        }
+        None => {
+            let f = |d: &mut Duel, mc: CardId| card::is_faceup(d, mc) && (card::is_controler(d, mc, tp) || card::is_can_be_synchro_material(d, mc, Some(c), None, None));
+            let dg = duel::get_matching_group(d, Some(&f), tp, LOCATION_MZONE, LOCATION_MZONE, c.into());
+            let g = group::filter(d, &dg, &|d, x| card::is_can_be_synchro_material(d, x, Some(c), None, None), NO_EX);
+            (dg, g, false)
+        }
+    };
+    group::remove(d, &mut g, &|d, x| card::get_synchro_level(d, x, c) < 1, NO_EX);
+    (dg, g, mgchk)
+}
+/// The hand-Synchro materials (`EFFECT_HAND_SYNCHRO`) the monsters in `g` allow, added to `g`.
+fn majestic_hand_materials(d: &mut Duel, c: CardId, tp: u8, g: &mut CardSet) {
+    let hg = duel::get_matching_group(d, Some(&|d, x| card::is_can_be_synchro_material(d, x, Some(c), None, None)), tp, LOCATION_HAND + LOCATION_GRAVE, 0, c.into());
+    let mut thg = CardSet::new();
+    for thc in group::iter(d, g) {
+        if let Some(&te) = card::get_card_effect(d, thc, EFFECT_HAND_SYNCHRO).first() {
+            let ag = group::filter(d, &hg, &|d, mc| call_value(d, te, &[Value::Effect(te), Value::Card(mc), Value::Card(c)]).truthy(), NO_EX);
+            group::add_card(&mut thg, &ag);
+        }
+    }
+    group::add_card(g, &thg);
+}
+/// `Synchro.MajesticCondition(...)`: `function(e, c, smat, mg, min, max)`
+fn majestic_condition(m: Majestic) -> LuaFn {
+    lua_fn(move |d, a| {
+        let Some(c) = a.card(1) else { return true };
+        let smat = a.v(2).as_group().cloned();
+        let mg = a.v(3).as_group().cloned();
+        let (min, max) = (opt_count(a.v(4)), opt_count(a.v(5)));
+        if min.is_some_and(|n| n > 3) || max.is_some_and(|n| n < 3) {
+            return false;
+        }
+        let tp = card::get_controler(d, c);
+        let lv = card::get_level(d, c);
+        let (dg, mut g, mgchk) = majestic_materials(d, c, tp, mg.as_ref());
+        let mut pg = aux::get_must_be_material_group(d, tp, &dg, tp, Some(c), &g, REASON_SYNCHRO);
+        if !group::includes(&g, &pg) || group::is_exists(d, &pg, &|d, x| !card::is_can_be_synchro_material(d, x, Some(c), None, None), 1, NO_EX) {
+            return false;
+        }
+        if let Some(smat) = &smat {
+            if group::is_exists(d, smat, &|d, x| !card::is_can_be_synchro_material(d, x, Some(c), None, None), 1, NO_EX) {
+                return false;
+            }
+            group::add_card(&mut pg, smat);
+            group::add_card(&mut g, smat);
+        }
+        if !mgchk {
+            majestic_hand_materials(d, c, tp, &mut g);
+        }
+        let x = MajCtx { m: &m, lv, sc: c, tp, pg: &pg };
+        let cands = group::iter(d, &g);
+        let mut res = false;
+        for tc in cands {
+            if crate::lua::protected(d, false, |d| majestic_check1(d, &x, tc, &mut g, &mut CardSet::new(), [None; 3])) {
+                res = true;
+                break;
+            }
+        }
+        reset_hand_synchro(d, tp);
+        duel::assume_reset(d);
+        res
+    })
+}
+/// `Synchro.MajesticTarget(...)`: `function(e,tp,eg,ep,ev,re,r,rp,chk,c,smat,mg,min,max)`
+fn majestic_target(m: Majestic) -> LuaFn {
+    lua_fn(move |d, a| {
+        let (e, tp) = (a.e(0), a.p(1));
+        let c = a.c(9);
+        let smat = a.v(10).as_group().cloned();
+        let mg = a.v(11).as_group().cloned();
+        let (min, max) = (opt_count(a.v(12)), opt_count(a.v(13)));
+        if min.is_some_and(|n| n > 3) || max.is_some_and(|n| n < 3) {
+            return false;
+        }
+        let mut sg = CardSet::new();
+        let lv = card::get_level(d, c);
+        let (dg, mut g, mgchk) = majestic_materials(d, c, tp, mg.as_ref());
+        let mut pg = aux::get_must_be_material_group(d, tp, &dg, tp, Some(c), &g, REASON_SYNCHRO);
+        if let Some(smat) = &smat {
+            group::add_card(&mut pg, smat);
+            group::add_card(&mut g, smat);
+        }
+        if !mgchk {
+            majestic_hand_materials(d, c, tp, &mut g);
+        }
+        let x = MajCtx { m: &m, lv, sc: c, tp, pg: &pg };
+        let mut cards: [Option<CardId>; 3] = [None; 3];
+        let cancel = !mgchk && duel::is_summon_cancelable(d);
+        while sg.len() < 3 {
+            let g2 = majestic_filter(d, &x, &mut g, &mut sg, cards);
+            duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_SMATERIAL as u64);
+            let Some(tc) = group::select_unselect(d, &g2, Some(&sg), tp, false, cancel, None, None) else { return false };
+            if !sg.contains(tc) {
+                sg.insert(tc);
+                for te in card::get_card_effect(d, tc, EFFECT_SYNCHRO_CHECK) {
+                    for mc in group::iter(d, &g) {
+                        call_value(d, te, &[Value::Effect(te), Value::Card(mc)]);
+                    }
+                }
+                if cards[0].is_none() {
+                    cards[0] = Some(tc);
+                } else if cards[1].is_none() {
+                    cards[1] = Some(tc);
+                } else {
+                    cards[2] = Some(tc);
+                }
+            } else {
+                let mut rem = false;
+                if cards[2].is_some() && Some(tc) == cards[2] {
+                    cards[2] = None;
+                    rem = true;
+                } else if cards[2].is_none() && cards[1].is_some() && Some(tc) == cards[1] {
+                    cards[1] = None;
+                    rem = true;
+                } else if cards[2].is_none() && cards[1].is_none() && cards[0].is_some() && Some(tc) == cards[0] {
+                    cards[0] = None;
+                    rem = true;
+                }
+                if rem {
+                    sg.remove(tc);
+                    reset_check_assume(d, &sg);
+                }
+            }
+        }
+        duel::assume_reset(d);
+        reset_hand_synchro(d, tp);
+        effect::set_label_object(d, e, Value::Group(sg));
+        true
+    })
+}
+
 /// `Synchro.CreateHandMaterialEffect(c, id, material_filter, synchro_filter, banish_mats, rc)`: this
 /// card lets a monster in the hand be a Synchro Material (with `id`'s checks)
 pub fn create_hand_material_effect(d: &mut Duel, c: CardId, id: u32, material_filter: Option<CardFilter>, synchro_filter: Option<CardFilter>, banish_mats: bool, rc: Option<CardId>) -> EffectId {

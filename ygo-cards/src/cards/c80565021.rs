@@ -96,7 +96,7 @@ fn plop(d: &mut Duel, a: &EffArgs) {
         0,
         1,
         1,
-        true,
+        false,
         NO_EX,
     )
     .nil();

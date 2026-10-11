@@ -183,7 +183,7 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - `c.material` (of any card) is `crate::class::material(d, c)`: procedures such as `Fusion.AddProcMix` set it at
   run time, so `card_info(d, c).material` (the static declaration only) is wrong.
 - `c:Race(v)` / `c:Attribute(v)` / `c:Level()` ... (the printed data, `CARD_INFO_FUNC` in libcard.cpp) are
-  `card::info_race(d, c, Some(v))` / `card::info_level(d, c, None)` and so on (`info_` + snake name).
+  `card::info_race(d, c, Some(v))` / `card::info_level(d, c, None)` and so on (`info_` + snake name). Only these bare names: `c:GetLevel()`, `c:GetAttack()`, ... are the current values (`card::get_level`, ...).
 - `Duel.GetMetatable(code)` (another card's script table) is `crate::script_info(code)` for its declarations
   (`.lv`, `.listed_names`, ...); runtime fields of a card go through `crate::class::get(d, c, ...)`.
 - `Duel.LoadCardScript("c980973.lua")` does nothing in Rust (all scripts are compiled in): leave it out and

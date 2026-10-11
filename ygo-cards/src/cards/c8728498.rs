@@ -58,9 +58,9 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e2, false);
 }
 /// `s.lcheck(g,lc,sumtype,tp)`
-fn lcheck(d: &mut Duel, g: &CardSet, _lc: CardId, _sumtype: u64, _tp: u8) -> bool {
+fn lcheck(d: &mut Duel, g: &CardSet, lc: CardId, sumtype: u64, tp: u8) -> bool {
     // return g:CheckDifferentPropertyBinary(Card.GetRace,lc,sumtype,tp)
-    group::check_different_property_binary(d, g, &|d, c| card::get_race(d, c))
+    group::check_different_property_binary(d, g, &|d, c| card::get_race_ctx(d, c, Some(lc), sumtype, Some(tp)))
 }
 /// `s.desfilter(c,e,tp)`
 fn desfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {

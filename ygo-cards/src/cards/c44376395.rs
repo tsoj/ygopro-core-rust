@@ -72,10 +72,10 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.spcheck(g,lc,sumtype,tp)`
-fn spcheck(d: &mut Duel, g: &CardSet, _lc: CardId, _sumtype: u64, _tp: u8) -> bool {
+fn spcheck(d: &mut Duel, g: &CardSet, lc: CardId, sumtype: u64, tp: u8) -> bool {
     // return g:CheckDifferentPropertyBinary(Card.GetRace,lc,sumtype,tp) and g:CheckDifferentPropertyBinary(Card.GetAttribute,lc,sumtype,tp)
-    group::check_different_property_binary(d, g, &|d, c| card::get_race(d, c))
-        && group::check_different_property_binary(d, g, &|d, c| card::get_attribute(d, c) as u64)
+    group::check_different_property_binary(d, g, &|d, c| card::get_race_ctx(d, c, Some(lc), sumtype, Some(tp)))
+        && group::check_different_property_binary(d, g, &|d, c| card::get_attribute_ctx(d, c, Some(lc), sumtype, Some(tp)) as u64)
 }
 /// `function(e,c) return c:IsRitualMonster() and e:GetHandler():GetLinkedGroup():IsContains(c) end`
 fn pierce_target(d: &mut Duel, e: EffectId, c: CardId) -> bool {

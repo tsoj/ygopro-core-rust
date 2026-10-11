@@ -91,7 +91,7 @@ fn effop(d: &mut Duel, a: &EffArgs) {
     if card::is_relate_to_effect(d, c, a.e) && card::is_has_effect(d, c, EFFECT_EXTRA_ATTACK_MONSTER, None).is_empty() {
         // This card can make up to 2 attacks on monsters this turn
         let e1 = effect::create_effect(d, c);
-        effect::set_description(d, e1, aux::stringid(3202, 0));
+        effect::set_description(d, e1, 3202);
         effect::set_type(d, e1, EFFECT_TYPE_SINGLE);
         effect::set_property(d, e1, EFFECT_FLAG_CANNOT_DISABLE + EFFECT_FLAG_CLIENT_HINT, 0);
         effect::set_code(d, e1, EFFECT_EXTRA_ATTACK_MONSTER);

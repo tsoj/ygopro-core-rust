@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import deck_plan  # noqa: E402
 
 ROOT = deck_plan.ROOT
-FAILS = os.path.join(ROOT, "build", "coverage_fails")
+FAILS = os.environ.get("TRIAGE_DIR") or os.path.join(ROOT, "build", "coverage_fails")
 
 
 def deck_codes(path):
@@ -36,7 +36,11 @@ def codes_in(hexline, deck):
 def suspects(path):
     lines = open(path, errors="ignore").read().splitlines()
     m = re.search(r"--decks (\S+),(\S+)", lines[0])
-    deck = deck_codes(m[1]) | deck_codes(m[2])
+    if m:
+        deck = deck_codes(m[1]) | deck_codes(m[2])
+    else:  # a --replay file: its `card player location code` lines
+        m = re.search(r"--replay (\S+)", lines[0])
+        deck = set(int(l.split()[3]) for l in open(m[1]) if l.startswith("card "))
     found = set()
     last = set()
     for l in lines:

@@ -136,8 +136,9 @@ fn aclimit(d: &mut Duel, a: Args) -> bool {
     let e = a.e(0);
     let re = a.e(1);
     let rc = effect::get_handler(d, re).nil();
-    let label = effect::get_label(d, e) as u32;
-    card::is_code(d, rc, &[label])
+    // (GetLabel returns all labels, IsCode takes them all)
+    let labels: Vec<u32> = effect::get_labels(d, e).iter().map(|&x| x as u32).collect();
+    card::is_code(d, rc, &labels)
 }
 /// `s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)`
 fn atktg(d: &mut Duel, a: &EffArgs) -> bool {

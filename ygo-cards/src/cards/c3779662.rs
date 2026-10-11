@@ -204,14 +204,15 @@ fn spop(d: &mut Duel, a: &EffArgs) {
         // local sg=g:Select(tp,2,2,nil)
         let sg = group::select(d, &g, tp, 2, 2, false, NO_EX).nil();
         // local tc=sg:GetFirst()
-        let tc = group::get_first(d, &sg).nil();
+        let order = group::iter(d, &sg);
+        let tc = order.first().copied().nil();
         // Duel.SpecialSummonStep(tc,123,tp,tp,false,false,POS_FACEUP)
         duel::special_summon_step(d, tc, 123, tp, tp, false, false, POS_FACEUP as u8, None);
         // tc:RegisterFlagEffect(tc:GetOriginalCode(),RESET_EVENT|RESETS_STANDARD_DISABLE,0,0)
         let code = card::get_original_code(d, tc);
         card::register_flag_effect(d, tc, code, RESET_EVENT | RESETS_STANDARD_DISABLE, 0, 0, 0, 0);
         // tc=sg:GetNext()
-        let tc = group::iter(d, &sg).get(1).copied().nil();
+        let tc = order.get(1).copied().nil();
         // Duel.SpecialSummonStep(tc,123,tp,tp,false,false,POS_FACEUP)
         duel::special_summon_step(d, tc, 123, tp, tp, false, false, POS_FACEUP as u8, None);
         // tc:RegisterFlagEffect(tc:GetOriginalCode(),RESET_EVENT|RESETS_STANDARD_DISABLE,0,0)

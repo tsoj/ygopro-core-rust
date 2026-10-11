@@ -175,7 +175,7 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - `local e2=e1:Clone()` is `let e2 = effect::clone(d, e1);`.
 - `aux.SelectUnselectGroup`: a `rescon` returns `(valid, stop)`; a Lua rescon with one return value is
   `(res, false)`. With `chk == 0` the result is `matches!(.., Err(true))`, with `chk == 1` `.unwrap_or_default()`.
-- `Duel.GetTargetCards(e)` is `duel::get_target_cards(d, e)` (an `Option`): `.nil()` where the Lua indexes it.
+- `Duel.GetTargetCards(e)` is `duel::get_target_cards(d, e)` (an `Option`): `.nil()` where the Lua indexes it. It is nil, not an empty group, when the chain link never set targets (the core pushes the missing target group as nil, and utility.lua returns `tg and ... or nil`); do not use `.unwrap_or_default()`.
 - Calling a library `LuaFn` from Rust (`aux.bdocon(e,tp,...)`, `Gemini.EffectStatusCondition(e)`):
   `f.call(d, &[Value::Effect(e), ...]).truthy()`.
 - `c.rum_limit` (of an Extra Deck monster, read by Rank-Up-Magic cards) is

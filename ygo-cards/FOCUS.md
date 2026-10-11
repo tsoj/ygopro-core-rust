@@ -25,7 +25,9 @@ if MAIN/rust/ygo-cards/src/cards/c<CODE>.rs exists or the card has no script (va
    `--focus` makes the random player use your card whenever a question offers it (summon, activate,
    chain, attack, yes to its effect). The output ends with per-card coverage lines `CODE: N activations,
    M summons` and `k/30 games identical`. Change the decks / seeds until your card has activations or
-   summons in identical games. (`--decks` alternates the seats per game, so both decks play first.)
+   summons in identical games. (`--decks` alternates the seats per game, so both decks play first. Decks are shuffled per game;
+   `--no-shuffle` keeps the .ydk order, the last card on top, which `coverage.py focus` uses for your
+   decks: you may order a deck so the needed cards are drawn early.)
 5. If a game mismatches (the output shows the first differing message), find the cause like
    rust/ygo-cards/FIXCOV.md describes (`-v` prints the decisions); fix it if it is a card file
    (rust/ygo-cards/src/cards/c*.rs, do not commit); if it is in the library or core, stop on that

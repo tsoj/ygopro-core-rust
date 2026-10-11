@@ -76,6 +76,8 @@ struct Args {
     replay: Option<Replay>,
     /// Cards to prefer (`--focus a,b`): when a question offers to use one, it is used (85%)
     focus: Vec<u32>,
+    /// `--no-shuffle`: the decks in .ydk order (the last card on top), e.g. hand-ordered test decks
+    no_shuffle: bool,
 }
 
 /// A recorded game (e.g. of the Python agents, converted by tools/record_to_replay.py): the duel
@@ -141,7 +143,7 @@ fn load_ydk(path: &str) -> Deck {
 }
 
 fn parse_args() -> Args {
-    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None, focus: vec![] };
+    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None, focus: vec![], no_shuffle: false };
     let argv: Vec<String> = std::env::args().collect();
     let mut i = 1;
     while i < argv.len() {
@@ -179,6 +181,7 @@ fn parse_args() -> Args {
                 a.cache = Some(PathBuf::from(&argv[i + 1]));
                 i += 1;
             }
+            "--no-shuffle" => a.no_shuffle = true,
             "--focus" => {
                 a.focus = argv[i + 1].split(',').map(|x| x.parse().unwrap()).collect();
                 i += 1;
@@ -189,7 +192,7 @@ fn parse_args() -> Args {
                 i += 1;
             }
             "-h" | "--help" => {
-                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [--focus a,b] [-v] [--bench-clone]");
+                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [--focus a,b] [--no-shuffle] [-v] [--bench-clone]");
                 std::process::exit(0);
             }
             "-v" | "--verbose" => a.verbose = true,
@@ -446,7 +449,9 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
             // (the core does not shuffle at the start: the caller orders the Deck, as a server
             // shuffles it; unshuffled, every game would draw the same cards of a .ydk)
             let mut main = deck.main.clone();
-            rng.shuffle(&mut main);
+            if !args.no_shuffle {
+                rng.shuffle(&mut main);
+            }
             for &code in &main {
                 let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc: LOCATION_DECK, seq: 0, pos: POS_FACEDOWN_DEFENSE };
                 if let Some(c) = core.as_mut() {

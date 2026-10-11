@@ -253,7 +253,7 @@ def focus(args):
     stats = {"ok": 0, "mismatch": 0, "timeout": 0, "crash": 0, "budget": 0}
     todo = [(code, pa, pb, cards, rng.getrandbits(63)) for code, pa, pb, cards in pairs for _ in range(per)]
     with concurrent.futures.ThreadPoolExecutor(jobs) as ex:
-        futs = {ex.submit(play, pa, pb, seed, timeout, ("--focus", str(code))): (code, cards, seed) for code, pa, pb, cards, seed in todo}
+        futs = {ex.submit(play, pa, pb, seed, timeout, ("--focus", str(code), "--no-shuffle")): (code, cards, seed) for code, pa, pb, cards, seed in todo}
         for f in concurrent.futures.as_completed(futs):
             code, cards, seed = futs[f]
             cmd, rc, out = f.result()

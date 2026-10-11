@@ -1,0 +1,8 @@
+# Deck pairs (build/deck_pairs) whose failure is in libocgcore.so itself, not in the Rust port.
+# pair  reason
+444  result depends on Lua GC/allocation (Preparation of Rites)
+471  core segfault in field::process(BattleCommand) (null card)
+712  core reads a freed reason_effect (Time Magic Hammer), undefined behaviour
+907  core segfault in field::process(BattleCommand) (null card)
+912  core segfault in field::process(BattleCommand) (null card)
+1125 core segfault in field::process(BattleCommand) after game 80, all 80 games identical

@@ -122,8 +122,8 @@ fn dspcon(d: &mut Duel, a: &EffArgs) -> bool {
 }
 // function s.dspfilter(c,e,tp)
 fn dspfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
-    // return c:IsCode(75888208) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-    card::is_code(d, c, &[75888208]) && card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, None, None, None)
+    // return c:IsCode(49389190) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+    card::is_code(d, c, &[49389190]) && card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, None, None, None)
 }
 // function s.dsptg(e,tp,eg,ep,ev,re,r,rp,chk)
 fn dsptg(d: &mut Duel, a: &EffArgs) -> bool {

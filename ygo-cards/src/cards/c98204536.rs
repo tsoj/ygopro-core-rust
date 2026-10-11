@@ -32,7 +32,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_count_limit(d, e2, 1, ID, 1, 0);
     effect::set_range(d, e2, LOCATION_SZONE);
     effect::set_condition(d, e2, Some(condition(rcon)));
-    effect::set_operation(d, e2, Some(condition(rop)));
+    effect::set_operation(d, e2, Some(operation_count(rop)));
     card::register_effect(d, c, e2, false);
 }
 fn nscon(d: &mut Duel, a: &EffArgs) -> bool {
@@ -73,8 +73,7 @@ fn rcon(d: &mut Duel, a: &EffArgs) -> bool {
         && card::get_overlay_count(d, rc) as i64 >= a.ev as i64 - 1
 }
 /// `return Duel.SendtoGrave(e:GetHandler(), REASON_COST)`: a number is always true in Lua.
-fn rop(d: &mut Duel, a: &EffArgs) -> bool {
+fn rop(d: &mut Duel, a: &EffArgs) -> i64 {
     let h = effect::get_handler(d, a.e).nil();
-    duel::send_to_grave(d, h, REASON_COST, None, None);
-    true
+    duel::send_to_grave(d, h, REASON_COST, None, None) as i64
 }

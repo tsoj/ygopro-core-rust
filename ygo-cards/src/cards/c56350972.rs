@@ -127,10 +127,10 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
         opval.push(3);
     }
     // local op=Duel.SelectOption(tp,table.unpack(ops))
-    // (the API returns the 0-based index, Lua's op is 1-based)
-    let op = duel::select_option(d, tp, true, &ops) as usize + 1;
+    // (Duel.SelectOption returns the 0-based index, which is how opval is indexed)
+    let op = duel::select_option(d, tp, true, &ops) as usize;
     // local sel=opval[op]
-    // (a missing entry is nil in Lua; SetLabel(nil) reads as 0)
+    // (a missing entry would be nil in Lua; SetLabel(nil) reads as 0)
     let sel = opval.get(op).copied().unwrap_or(0);
     // e:SetLabel(sel)
     effect::set_label(d, a.e, &[sel]);

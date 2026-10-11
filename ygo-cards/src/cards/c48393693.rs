@@ -171,7 +171,7 @@ fn spop(d: &mut Duel, a: &EffArgs) {
         // if xyz then
         if let Some(xyz) = xyz {
             // Duel.XyzSummon(tp,xyz,mg,nil,2,2)
-            duel::xyz_summon(d, tp, xyz, None, Some(mg), 2, 2);
+            duel::xyz_summon(d, tp, xyz, Some(mg), None, 2, 2);
         } else {
             // if e1 then e1:Reset() end
             effect::reset(d, e1);

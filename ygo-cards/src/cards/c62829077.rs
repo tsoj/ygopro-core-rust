@@ -173,6 +173,6 @@ fn activate(d: &mut Duel, a: &EffArgs) {
         // xyz:RegisterFlagEffect(id,RESETS_STANDARD_PHASE_END,0,1)
         card::register_flag_effect(d, xyz, ID, RESETS_STANDARD_PHASE_END, 0, 1, 0, 0);
         // Duel.XyzSummon(tp,xyz,g,nil,3,3)
-        duel::xyz_summon(d, tp, xyz, None, Some(g), 3, 3);
+        duel::xyz_summon(d, tp, xyz, Some(g), None, 3, 3);
     }
 }

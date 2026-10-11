@@ -83,7 +83,7 @@ fn desop(d: &mut Duel, a: &EffArgs) {
         duel::destroy(d, g, REASON_EFFECT, None, None);
     }
 }
-fn spcon(d: &mut Duel, a: &EffArgs) -> bool {
+fn spcon(d: &mut Duel, _a: &EffArgs) -> bool {
     duel::is_main_phase(d, None)
 }
 fn spfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {

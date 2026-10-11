@@ -194,7 +194,7 @@ fn damcon(d: &mut Duel, a: &EffArgs) -> bool {
     }
     let Some(eqc) = eqc else { return false };
     let Some(bc) = bc else { return false };
-    card::is_reason_card(d, bc, eqc) && card::is_location(d, bc, LOCATION_GRAVE) && card::is_monster(d, bc)
+    card::is_reason_card(d, eqc, bc) && card::is_location(d, bc, LOCATION_GRAVE) && card::is_monster(d, bc)
 }
 /// `s.damtg(e,tp,eg,ep,ev,re,r,rp,chk)`
 fn damtg(d: &mut Duel, a: &EffArgs) -> bool {

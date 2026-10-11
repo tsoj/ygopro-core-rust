@@ -75,7 +75,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
         duel::send_to_grave(d, CardSet::from_card(tc), REASON_RULE, None, Some(PLAYER_NONE as u8));
     // elseif Duel.MoveToField(tc,tp,tc:GetOwner(),LOCATION_SZONE,POS_FACEUP,tc:IsMonsterCard()) then
     } else {
-        let is_monster = card::is_monster(d, tc);
+        let is_monster = card::is_monster_card(d, tc);
         if duel::move_to_field(d, tc, a.tp, owner, LOCATION_SZONE as u16, POS_FACEUP as u8, is_monster, None) {
             // local e1=Effect.CreateEffect(e:GetHandler())
             let h = effect::get_handler(d, a.e).nil();

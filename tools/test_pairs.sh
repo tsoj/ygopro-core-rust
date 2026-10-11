@@ -16,5 +16,6 @@ for a in $P/pair*_a.ydk; do
   [ "$((10#$i))" -lt "$FIRST" ] && continue
   [ "$((10#$i))" -gt "$LAST" ] && continue
   r=$(grep -v "games identical$" $R/pair$i.txt | grep -E "identical|MISMATCH|panicked|without a translated" | head -2 | sed 's/(seed \[[0-9, ]*\])//; s/ ([0-9]* ended, 0 skipped[^)]*)//; s/ ([0-9]* ended, \([0-9]*\) skipped[^)]*)/ (\1 skipped: core script budget)/; s/; core.*//' | paste -sd' ')
+  grep -q "games identical (" $R/pair$i.txt || r="$r CRASH (no summary: the process died, e.g. a core segfault) after $(grep -c "games identical$" $R/pair$i.txt)0 games"
   echo "pair$i: $r"
 done

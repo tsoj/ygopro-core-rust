@@ -87,13 +87,13 @@ fn varop(d: &mut Duel, a: &EffArgs) {
         duel::hint(d, HINT_SELECTMSG as u8, 1 - a.tp, HINTMSG_CONFIRM as u64);
         let sel = group::select(d, &g, 1 - a.tp, 1, 1, false, NO_EX).nil();
         let sc = group::get_first(d, &sel).nil();
-        duel::confirm_cards(d, 1 - a.tp, sc);
+        duel::confirm_cards(d, a.tp, sc);
         if card::get_text_attack(d, sc) < vc {
             duel::shuffle_deck(d, 1 - a.tp);
             duel::special_summon(d, tc, 0, a.tp, a.tp, false, false, POS_FACEUP as u8, None);
         } else {
             duel::send_to_hand(d, sc, None, REASON_EFFECT, None);
-            duel::confirm_cards(d, 1 - a.tp, sc);
+            duel::confirm_cards(d, a.tp, sc);
             duel::shuffle_hand(d, 1 - a.tp);
         }
     } else {

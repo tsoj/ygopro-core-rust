@@ -76,7 +76,7 @@ fn thop(d: &mut Duel, a: &EffArgs) {
     effect::set_property(d, e1, EFFECT_FLAG_PLAYER_TARGET + EFFECT_FLAG_CLIENT_HINT, 0);
     effect::set_code(d, e1, EFFECT_CANNOT_SPECIAL_SUMMON);
     effect::set_target_range(d, e1, 1, 0);
-    effect::set_target(d, e1, Some(effect_card_fn(|d, _e, c| !card::is_attribute_except(d, c, ATTRIBUTE_FIRE, None, 0, None))));
+    effect::set_target(d, e1, Some(effect_card_fn(|d, _e, c| card::is_attribute_except(d, c, ATTRIBUTE_FIRE, None, 0, None))));
     effect::set_reset(d, e1, RESET_PHASE | PHASE_END, 1);
     duel::register_effect(d, e1, tp);
 }

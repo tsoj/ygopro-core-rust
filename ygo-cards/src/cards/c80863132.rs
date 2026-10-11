@@ -33,7 +33,7 @@ fn cond(d: &mut Duel, a: &EffArgs) -> bool {
     // return ex and cv>0
     match duel::get_operation_info(d, a.ev, CATEGORY_DRAW) {
         None => false,
-        Some(info) => info.op_count > 0,
+        Some(info) => info.op_param > 0,
     }
 }
 /// `s.activate(e,tp,eg,ep,ev,re,r,rp)`
@@ -51,6 +51,6 @@ fn repop(d: &mut Duel, a: &EffArgs) {
     // if cp<2 then
     if info.op_player < 2 {
         // Duel.DiscardDeck(cp,cv,REASON_EFFECT)
-        duel::discard_deck(d, info.op_player, info.op_count as u16, REASON_EFFECT);
+        duel::discard_deck(d, info.op_player, info.op_param as u16, REASON_EFFECT);
     }
 }

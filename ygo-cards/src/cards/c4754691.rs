@@ -40,7 +40,7 @@ fn not_umicon(d: &mut Duel, a: &EffArgs) -> bool {
     !umicon(d, a)
 }
 fn non_water_faceup(d: &mut Duel, c: CardId) -> bool {
-    card::is_faceup(d, c) && !card::is_attribute_except(d, c, ATTRIBUTE_WATER, None, 0, None)
+    card::is_faceup(d, c) && card::is_attribute_except(d, c, ATTRIBUTE_WATER, None, 0, None)
 }
 fn destg(d: &mut Duel, a: &EffArgs) -> bool {
     if let Some(chkc) = a.chkc() {

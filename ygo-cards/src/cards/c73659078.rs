@@ -54,7 +54,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTargetRange(LOCATION_MZONE,LOCATION_MZONE)
     effect::set_target_range(d, e2, LOCATION_MZONE, LOCATION_MZONE);
     // e2:SetTarget(function(_,c) return c:IsAttributeExcept(ATTRIBUTE_WATER) end)
-    effect::set_target(d, e2, Some(effect_card_fn(|d, _e, c| !card::is_attribute_except(d, c, ATTRIBUTE_WATER, None, 0, None))));
+    effect::set_target(d, e2, Some(effect_card_fn(|d, _e, c| card::is_attribute_except(d, c, ATTRIBUTE_WATER, None, 0, None))));
     // e2:SetValue(function() return Duel.GetCounter(0,1,1,0x1015)*-200 end)
     effect::set_value_fn(d, e2, lua_fn(counter_value));
     // c:RegisterEffect(e2)

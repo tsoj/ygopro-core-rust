@@ -76,7 +76,7 @@ fn cannot_activate_value(d: &mut Duel, a: Args) -> bool {
         return false;
     }
     let rc = effect::get_handler(d, re).nil();
-    !card::is_attribute_except(d, rc, ATTRIBUTE_LIGHT, None, 0, None)
+    card::is_attribute_except(d, rc, ATTRIBUTE_LIGHT, None, 0, None)
 }
 /// `s.thfilter(c)`
 fn thfilter(d: &mut Duel, c: CardId) -> bool {

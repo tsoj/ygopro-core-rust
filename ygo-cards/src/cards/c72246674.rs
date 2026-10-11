@@ -79,7 +79,7 @@ fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
     // if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
     //     and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_HAND|LOCATION_GRAVE|LOCATION_DECK,0,1,nil,e,tp,Duel.GetFieldGroupCount(tp,0,LOCATION_MZONE)>0) end
     if a.chk == Some(0) {
-        let opp = duel::get_field_group_count(d, 0, 0, LOCATION_MZONE) > 0;
+        let opp = duel::get_field_group_count(d, a.tp, 0, LOCATION_MZONE) > 0;
         return duel::get_location_count(d, a.tp, LOCATION_MZONE as u8, None, None, None).0 > 0
             && duel::is_existing_matching_card(
                 d,
@@ -102,7 +102,7 @@ fn spop(d: &mut Duel, a: &EffArgs) {
         // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
         duel::hint(d, HINT_SELECTMSG as u8, a.tp, HINTMSG_SPSUMMON as u64);
         // local sc=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.spfilter),tp,LOCATION_HAND|LOCATION_GRAVE|LOCATION_DECK,0,1,1,nil,e,tp,Duel.GetFieldGroupCount(tp,0,LOCATION_MZONE)>0):GetFirst()
-        let opp = duel::get_field_group_count(d, 0, 0, LOCATION_MZONE) > 0;
+        let opp = duel::get_field_group_count(d, a.tp, 0, LOCATION_MZONE) > 0;
         let g = duel::select_matching_card(
             d,
             a.tp,

@@ -385,6 +385,9 @@ Groups are `CardSet` values. Lua groups are references, Rust groups are values:
 - `#g` is `g.len()`. `#g>0` is `!g.is_empty()`.
 - `Duel.Remove(g, nil, reason)` / `Duel.Remove(g, 0, reason)`: position `0`, which keeps the card's
   current position (face-up Attack stays face-up Attack). Only an explicit `POS_FACEUP` is `POS_FACEUP`.
+- `Duel.SelectDisableField(...)` returns `nil` when there is no zone to choose; the Rust
+  `duel::select_disable_field` returns `0` then. Handle it like the Lua does with `nil` (`if seq then`
+  is false, `math.log(nil,2)` is a Lua error).
 - Defaults that often get guessed wrong: `Duel.Overlay(xyz, mats)` does not send to the GY
   (`send_to_grave` false); `Duel.DisableShuffleCheck()` is `true`; `g:Select` is not cancelable.
   A `CHAININFO_*` value beyond the chain is `Value::Nil`: compare it as `None`, not as 0.

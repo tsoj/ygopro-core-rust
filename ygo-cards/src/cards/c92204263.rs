@@ -111,5 +111,9 @@ fn seqop(d: &mut Duel, a: &EffArgs) {
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_TOZONE as u64);
     // Duel.MoveSequence(tc,math.log(Duel.SelectDisableField(tp,1,LOCATION_MZONE,0,0),2))
     let zone = duel::select_disable_field(d, tp, 1, LOCATION_MZONE, 0, Some(0), false);
+    if zone == 0 {
+        // SelectDisableField returned nil (no free zone): math.log(nil,2) is a Lua error
+        crate::lua_error("bad argument #1 to 'log' (number expected, got nil)");
+    }
     duel::move_sequence(d, tc, (zone as f64).log2() as u8, None);
 }

@@ -150,6 +150,10 @@ fn mvop(d: &mut Duel, a: &EffArgs) {
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_TOZONE as u64);
     // local s=Duel.SelectDisableField(tp,1,LOCATION_MZONE,0,0)
     let s = duel::select_disable_field(d, tp, 1, LOCATION_MZONE, 0, Some(0), false);
+    if s == 0 {
+        // SelectDisableField returned nil (no free zone): math.log(nil,2) is a Lua error
+        crate::lua_error("bad argument #1 to 'log' (number expected, got nil)");
+    }
     // local nseq=math.log(s,2)
     let nseq = (s as f64).log2();
     // Duel.MoveSequence(tc,nseq)

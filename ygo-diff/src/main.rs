@@ -853,14 +853,23 @@ fn main() {
                 v.dedup();
                 v
             }
-            None => scripted.iter().chain(scripted_extra.iter()).copied().collect(),
+            None => match &args.replay {
+                // (the cards of the replay)
+                Some(rp) => {
+                    let mut v: Vec<u32> = rp.cards.iter().map(|x| x.2).collect();
+                    v.sort();
+                    v.dedup();
+                    v
+                }
+                None => scripted.iter().chain(scripted_extra.iter()).copied().collect(),
+            },
         };
         let mut v: Vec<String> = deck_cards.iter().map(|c| {
             let (a, s) = cov.get(c).copied().unwrap_or_default();
             format!("{c}: {a} activations, {s} summons")
         }).collect();
         v.sort();
-        if !v.is_empty() && (v.len() <= 50 || args.decks.is_some()) {
+        if !v.is_empty() && (v.len() <= 50 || args.decks.is_some() || args.replay.is_some()) {
             println!("coverage of the scripted cards:\n  {}", v.join("\n  "));
         }
     });

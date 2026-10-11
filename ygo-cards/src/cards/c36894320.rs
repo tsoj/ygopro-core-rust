@@ -100,7 +100,7 @@ fn reptg(d: &mut Duel, a: &EffArgs) -> bool {
 /// `s.acfilter(c)`
 fn acfilter(d: &mut Duel, c: CardId) -> bool {
     // return c:IsFaceup() and c:IsCode(36894320) and c:IsAbleToGraveAsCost()
-    card::is_faceup(d, c) && card::is_code(d, c, &[ID]) && card::is_able_to_grave_as_cost(d, c)
+    card::is_faceup(d, c) && card::is_code(d, c, &[9409625]) && card::is_able_to_grave_as_cost(d, c)
 }
 /// `s.actcost(e,tp,eg,ep,ev,re,r,rp,chk)`
 fn actcost(d: &mut Duel, a: &EffArgs) -> bool {

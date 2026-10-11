@@ -110,6 +110,7 @@ always `d: &mut Duel` (or `&Duel`):
 | `Duel.Remove(g, pos, r)`                | `duel::remove(d, g, pos, r, None, None)` (playerid, reason player) |
 | `Duel.Release(g, r)`                    | `duel::release(d, g, r, None)`; the C++ takes (group, reason, reason player) |
 | `Duel.GetCurrentChain()`                | `duel::get_current_chain(d, false)` |
+| operation of EFFECT_OVERLAY_REMOVE_REPLACE (`return Duel.SendtoGrave(...)`, `return ct`) | `operation_count(f)` with `f` returning the count as i64: the core reads it as the number of replaced materials (NOT `true`) |
 | `Duel.IsPhase(PHASE_X)`                 | `duel::is_phase(d, PHASE_X)` |
 | `c:IsNouvellesSummoned()` (and the other `Card.*` of cards_specific_functions.lua) | `card::is_nouvelles_summoned(d, c)`, `card::is_reincarnation_summoned`, `card::is_rikka_releasable` |
 | `g:Match(f, ...)`                       | `group::match_(d, &mut g, ...)` (keeps the matching cards in place) |

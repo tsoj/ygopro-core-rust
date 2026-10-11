@@ -49,7 +49,8 @@ start of a game and let focus play take over afterwards:
 
 1. Play focus games with `--games 1 --seed S --dump-replay FILE` (one game; add `-v` to see each
    decision: `decision N: msg TYPE -> RESPONSE`). FILE is a `--replay` file: `seed`, `config`, one
-   `card PLAYER LOCATION CODE` line per card (in the order added: for the Deck, the last is drawn
+   `card PLAYER LOCATION CODE [SEQUENCE POSITION]` line per card (e.g. `card 0 4 CODE 2 1`: a face-up
+   attack monster in Main Monster Zone 2, already on the field when the duel starts) (in the order added: for the Deck, the last is drawn
    first), then one `resp HEX` line per decision.
 2. Find a game that gets close; keep its header and its `resp` lines up to the decision that went
    wrong, and change that response (and the following ones) to what you want. Responses are the bytes

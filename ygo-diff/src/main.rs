@@ -96,7 +96,8 @@ struct Replay {
     seed: [u64; 4],
     flags: u64,
     player: [u32; 3],
-    cards: Vec<(u8, u32, u32)>,
+    /// (player, location, code, sequence, position)
+    cards: Vec<(u8, u32, u32, u32, u32)>,
     orders: Vec<(u8, u32, Vec<u32>)>,
     responses: Vec<Vec<u8>>,
 }
@@ -112,7 +113,11 @@ fn load_replay(path: &str) -> Replay {
                 r.flags = num(1);
                 r.player = [num(2) as u32, num(3) as u32, num(4) as u32];
             }
-            Some("card") => r.cards.push((num(1) as u8, num(2) as u32, num(3) as u32)),
+            Some("card") => {
+                // (optional: sequence and position, for cards placed on the field)
+                let (seq, pos) = if w.len() >= 6 { (num(4) as u32, num(5) as u32) } else { (0, POS_FACEDOWN_DEFENSE as u32) };
+                r.cards.push((num(1) as u8, num(2) as u32, num(3) as u32, seq, pos))
+            }
             Some("order") => r.orders.push((num(1) as u8, num(2) as u32, (3..w.len()).map(|i| num(i) as u32).collect())),
             Some("resp") => r.responses.push((0..w.get(1).map_or(0, |x| x.len()) / 2).map(|i| u8::from_str_radix(&w[1][2 * i..2 * i + 2], 16).unwrap()).collect()),
             _ => {}
@@ -448,15 +453,15 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
         w
     });
     if let Some(rp) = &args.replay {
-        for &(p, loc, code) in &rp.cards {
-            let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc, seq: 0, pos: POS_FACEDOWN_DEFENSE };
+        for &(p, loc, code, seq, pos) in &rp.cards {
+            let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc, seq, pos };
             if let Some(c) = core.as_mut() {
                 c.new_card(&info);
             }
             r.ocg_new_card(&info);
                 if let Some(w) = dump.as_mut() {
                     use std::io::Write;
-                    writeln!(w, "card {} {} {}", info.con, info.loc, info.code).unwrap();
+                    writeln!(w, "card {} {} {} {} {}", info.con, info.loc, info.code, info.seq, info.pos).unwrap();
                 }
         }
         for (p, loc, ids) in &rp.orders {
@@ -488,7 +493,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
                 r.ocg_new_card(&info);
                 if let Some(w) = dump.as_mut() {
                     use std::io::Write;
-                    writeln!(w, "card {} {} {}", info.con, info.loc, info.code).unwrap();
+                    writeln!(w, "card {} {} {} {} {}", info.con, info.loc, info.code, info.seq, info.pos).unwrap();
                 }
             }
             for &code in &deck.extra {
@@ -499,7 +504,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
                 r.ocg_new_card(&info);
                 if let Some(w) = dump.as_mut() {
                     use std::io::Write;
-                    writeln!(w, "card {} {} {}", info.con, info.loc, info.code).unwrap();
+                    writeln!(w, "card {} {} {} {} {}", info.con, info.loc, info.code, info.seq, info.pos).unwrap();
                 }
             }
         }
@@ -521,7 +526,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
             r.ocg_new_card(&info);
                 if let Some(w) = dump.as_mut() {
                     use std::io::Write;
-                    writeln!(w, "card {} {} {}", info.con, info.loc, info.code).unwrap();
+                    writeln!(w, "card {} {} {} {} {}", info.con, info.loc, info.code, info.seq, info.pos).unwrap();
                 }
         }
         if !scripted_extra.is_empty() {
@@ -534,7 +539,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
                 r.ocg_new_card(&info);
                 if let Some(w) = dump.as_mut() {
                     use std::io::Write;
-                    writeln!(w, "card {} {} {}", info.con, info.loc, info.code).unwrap();
+                    writeln!(w, "card {} {} {} {} {}", info.con, info.loc, info.code, info.seq, info.pos).unwrap();
                 }
             }
         }

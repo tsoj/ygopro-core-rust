@@ -15,6 +15,6 @@ for a in $P/pair*_a.ydk; do
   i=$(basename $a _a.ydk | sed 's/pair//')
   [ "$((10#$i))" -lt "$FIRST" ] && continue
   [ "$((10#$i))" -gt "$LAST" ] && continue
-  r=$(grep -v "games identical$" $R/pair$i.txt | grep -E "identical|MISMATCH|panicked|without a translated" | head -2 | sed 's/(seed \[[0-9, ]*\])//; s/ (\([0-9]*\) ended, the others reached --max-decisions)//; s/; core.*//' | paste -sd' ')
+  r=$(grep -v "games identical$" $R/pair$i.txt | grep -E "identical|MISMATCH|panicked|without a translated" | head -2 | sed 's/(seed \[[0-9, ]*\])//; s/ ([0-9]* ended, 0 skipped[^)]*)//; s/ ([0-9]* ended, \([0-9]*\) skipped[^)]*)/ (\1 skipped: core script budget)/; s/; core.*//' | paste -sd' ')
   echo "pair$i: $r"
 done

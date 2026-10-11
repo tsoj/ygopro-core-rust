@@ -169,6 +169,9 @@ mod cache {
         pub steps: Vec<(u64, i32, u64)>,
         /// The game ended (else it stopped at --max-decisions)
         pub complete: bool,
+        /// The core ran out of its script instruction budget at the decision after the last step
+        /// (stored as `complete` byte 2): the game is skipped from there on
+        pub budget: bool,
     }
 
     /// A fast 64-bit hash step (8 bytes at a time; not FNV for the full words, the name stays).
@@ -221,10 +224,10 @@ mod cache {
                     (u64::from_le_bytes(b[p..p + 8].try_into().unwrap()), i32::from_le_bytes(b[p + 8..p + 12].try_into().unwrap()), u64::from_le_bytes(b[p + 12..p + 20].try_into().unwrap()))
                 })
                 .collect();
-            Some(Record { steps, complete: b[0] != 0 })
+            Some(Record { steps, complete: b[0] != 0, budget: b[0] == 2 })
         }
         pub fn store(&self, game: u64, r: &Record) {
-            let mut b = vec![r.complete as u8];
+            let mut b = vec![if r.budget { 2 } else { r.complete as u8 }];
             b.extend((r.steps.len() as u32).to_le_bytes());
             for &(m, s, q) in &r.steps {
                 b.extend(m.to_le_bytes());
@@ -268,6 +271,8 @@ struct Outcome {
     rust_time: Duration,
     ended: bool,
     turns: usize,
+    /// Skipped at the core's script budget (see `core_ffi::SCRIPT_BUDGET_EXCEEDED`)
+    budget: bool,
 }
 
 fn run_core(d: &mut CoreDuel) -> (Vec<Vec<u8>>, i32) {
@@ -418,9 +423,30 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
         c.start();
     }
     r.ocg_start_duel();
-    let mut out = Outcome { record: cache::Record::default(), cov: Default::default(), decisions: 0, core_time: Duration::ZERO, rust_time: Duration::ZERO, ended: false, turns: 0 };
+    let mut out = Outcome { record: cache::Record::default(), cov: Default::default(), decisions: 0, core_time: Duration::ZERO, rust_time: Duration::ZERO, ended: false, turns: 0, budget: false };
+    core_ffi::SCRIPT_BUDGET_EXCEEDED.store(false, std::sync::atomic::Ordering::Relaxed);
     let mut history: Vec<Vec<u8>> = vec![];
     loop {
+        if let Some(rec) = cached {
+            if rec.budget && out.decisions == rec.steps.len() {
+                out.budget = true;
+                return Ok(out);
+            }
+        }
+        // the core first: when it runs out of its script budget, the Rust engine's step (often the
+        // same exponential search, without a budget) is not run
+        let core_step = core.as_mut().map(|c| {
+            let t = Instant::now();
+            let x = run_core(c);
+            out.core_time += t.elapsed();
+            x
+        });
+        if core_ffi::SCRIPT_BUDGET_EXCEEDED.load(std::sync::atomic::Ordering::Relaxed) {
+            out.budget = true;
+            out.record.budget = true;
+            out.record.complete = true;
+            return Ok(out);
+        }
         let t = Instant::now();
         let (mr, sr) = run_rust(&mut r);
         out.rust_time += t.elapsed();
@@ -437,9 +463,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
             r.ocg_set_response(&resp.unwrap());
             continue;
         };
-        let t = Instant::now();
-        let (mc, sc) = run_core(c);
-        out.core_time += t.elapsed();
+        let (mc, sc) = core_step.unwrap();
         let n = mc.len().max(mr.len());
         for i in 0..n {
             let (a, b) = (mc.get(i), mr.get(i));
@@ -594,7 +618,7 @@ fn main() {
     let mut codes: Vec<u32> = db.cards.keys().copied().collect();
     codes.sort();
     eprintln!("{} vanilla monsters, {} scripted cards, {} scripted Extra Deck monsters", pool.len(), scripted.len(), scripted_extra.len());
-    let (mut ok, mut decisions, mut ended) = (0, 0, 0);
+    let (mut ok, mut decisions, mut ended, mut budget) = (0, 0, 0, 0);
     let (mut tc, mut tr) = (Duration::ZERO, Duration::ZERO);
     let cache = args.cache.as_ref().map(|dir| {
         let mut key = format!("seed {} ", args.seed);
@@ -635,7 +659,12 @@ fn main() {
                         e.1 += v.1;
                     }
                 });
-                ok += 1;
+                if o.budget {
+                    budget += 1;
+                    println!("game {g}: skipped at decision {}: the core ran out of its script instruction budget", o.decisions);
+                } else {
+                    ok += 1;
+                }
                 decisions += o.decisions;
                 ended += o.ended as u64;
                 if (g + 1) % 10 == 0 {
@@ -682,5 +711,5 @@ fn main() {
     if cache.is_some() {
         println!("cache: {cached_games} games replayed from the cache, {stale} stale records replaced");
     }
-    println!("{ok}/{} games identical ({ended} ended, the others reached --max-decisions), {decisions} decisions; core {:.3}s, rust {:.3}s", args.games, tc.as_secs_f64(), tr.as_secs_f64());
+    println!("{ok}/{} games identical ({ended} ended, {budget} skipped at the core's script budget, the others reached --max-decisions), {decisions} decisions; core {:.3}s, rust {:.3}s", args.games, tc.as_secs_f64(), tr.as_secs_f64());
 }

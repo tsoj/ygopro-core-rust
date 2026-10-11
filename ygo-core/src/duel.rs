@@ -601,6 +601,8 @@ pub struct Duel {
     pub random: Xoshiro256,
     pub querying: bool,
     pub mute_errors: bool,
+    /// Script callbacks run in the current `ocg_process` call (see `api::SCRIPT_STEP_BUDGET`)
+    pub script_steps: u64,
     pub muted_error: bool,
     // field
     pub player: [PlayerInfo; 2],
@@ -842,6 +844,7 @@ impl Duel {
             random: Xoshiro256::new(options.seed),
             querying: false,
             mute_errors: false,
+            script_steps: 0,
             muted_error: false,
             player: [PlayerInfo::new(&options.team1), PlayerInfo::new(&options.team2)],
             temp_card: CardId(0),

@@ -83,6 +83,7 @@ impl Duel {
     /// `OCG_DuelProcess`: runs until there are messages, a question or the end.
     pub fn ocg_process(&mut self) -> Status {
         self.buff.clear();
+        self.script_steps = 0;
         loop {
             let flag = self.process();
             self.generate_buffer();

@@ -179,7 +179,17 @@ extern "C" fn card_reader(_payload: *mut c_void, code: u32, out: *mut OcgCardDat
 
 extern "C" fn card_reader_done(_payload: *mut c_void, _data: *mut OcgCardData) {}
 
-extern "C" fn log_handler(_payload: *mut c_void, _text: *const c_char, _typ: c_int) {}
+/// Set when the core logs that a script ran out of its instruction budget (build/ocgcore-src
+/// interpreter.cpp `LUA_STEP_BUDGET`): the core then treats the script as failed, which the Rust
+/// engine (no budget) does not reproduce, so the game is skipped from there on.
+pub static SCRIPT_BUDGET_EXCEEDED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+extern "C" fn log_handler(_payload: *mut c_void, text: *const c_char, _typ: c_int) {
+    if std::env::var_os("YGO_DIFF_LOG").is_some() && !text.is_null() { eprintln!("core log: {}", unsafe { CStr::from_ptr(text) }.to_string_lossy()); }
+    if !text.is_null() && unsafe { CStr::from_ptr(text) }.to_string_lossy().contains("instruction budget exceeded") {
+        SCRIPT_BUDGET_EXCEEDED.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+}
 
 /// `_find_script` of ygoai/core.py (source, not bytecode).
 pub fn find_script(name: &str) -> Option<Vec<u8>> {

@@ -78,10 +78,30 @@ impl Exclude<'_> {
     }
 }
 
+/// The core (build/ocgcore-src interpreter.cpp) stops a process call that runs more than 1e9 Lua
+/// instructions with a script error (scripts can take exponential time). Lua instructions are not
+/// counted here; the guarded script callbacks are, against a limit that is reached later than the
+/// core's (a callback takes well over the 33 Lua instructions per callback this allows for), so
+/// that a step the core finishes is never cut short, and a step it does not finish ends too.
+pub const SCRIPT_STEP_BUDGET: u64 = 30_000_000;
+
+/// Counts a script callback against `SCRIPT_STEP_BUDGET`; past it, every callback is a Lua error
+/// until the next `ocg_process` (as the core's budget hook).
+#[inline]
+pub fn script_step(d: &mut Duel) {
+    d.script_steps += 1;
+    if d.script_steps > SCRIPT_STEP_BUDGET {
+        crate::lua::lua_error("script instruction budget exceeded");
+    }
+}
+
 /// Runs a script callback; a Lua error in it is logged and gives `default` (as the core's
 /// `check_matching`/`get_operation_value`).
 pub fn protected<T>(d: &mut Duel, default: T, f: impl FnOnce(&mut Duel) -> T) -> T {
-    match catch_unwind(AssertUnwindSafe(|| f(d))) {
+    match catch_unwind(AssertUnwindSafe(|| {
+        script_step(d);
+        f(d)
+    })) {
         Ok(v) => v,
         Err(payload) => match payload.downcast::<LuaError>() {
             Ok(e) => {

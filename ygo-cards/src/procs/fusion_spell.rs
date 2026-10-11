@@ -446,19 +446,14 @@ fn summon_eff_tg_body(d: &mut Duel, p: &SummonEff, cell: u64, a: &EffArgs) -> bo
         // (without the extra materials of a once-per-turn effect already used)
         extra_mat_opt_check(d, &mut mg1, e, tp, &p.extrafil, &mut efmg);
         let ff = fusfilter_of(p);
-        let mut res = false;
-        let fg = duel::get_field_group(d, tp, location, 0);
-        for c in group::iter(d, &fg) {
-            if crate::lua::protected(d, false, |d| summon_eff_filter(d, c, &ff, e, tp, &mut mg1, gc.as_ref(), chkf, value & 0xffffffff, sumlimit, p.nosummoncheck, sumpos, Some(&efmg))) {
-                res = true;
-                break;
-            }
-        }
+        // (in the field order of Duel.IsExistingMatchingCard, which stops at the first match)
+        let mgc = std::cell::RefCell::new(mg1);
+        let mut res = duel::is_existing_matching_card(d, Some(&|d, c| summon_eff_filter(d, c, &ff, e, tp, &mut mgc.borrow_mut(), gc.as_ref(), chkf, value & 0xffffffff, sumlimit, p.nosummoncheck, sumpos, Some(&efmg))), tp, location, 0, 1, NO_EX);
         set_check_additional(d, None);
         set_extra_group(d, None);
         if !res && !notfusion {
             for ce in duel::get_player_effect(d, tp, EFFECT_CHAIN_MATERIAL) {
-                let mut mg = chain_material_target(d, ce, e, tp, value);
+                let mg = chain_material_target(d, ce, e, tp, value);
                 let exact = d.script_var(super::fusion::vars::CHECK_EXACT);
                 let min = d.script_var(super::fusion::vars::CHECK_MIN);
                 if !mg.is_empty() && (exact.is_nil() || mg.len() as i64 == exact.int()) && (min.is_nil() || mg.len() as i64 >= min.int()) {
@@ -466,14 +461,8 @@ fn summon_eff_tg_body(d: &mut Duel, p: &SummonEff, cell: u64, a: &EffArgs) -> bo
                     let ca = chain_material_fcheck(d, ce, &check_addition);
                     set_check_additional(d, ca);
                     set_extra_group(d, Some(mg.clone()));
-                    let mut found = false;
-                    let fg = duel::get_field_group(d, tp, location, 0);
-        for c in group::iter(d, &fg) {
-                        if crate::lua::protected(d, false, |d| summon_eff_filter(d, c, &f, e, tp, &mut mg, gc.as_ref(), chkf, value, sumlimit, p.nosummoncheck, sumpos, None)) {
-                            found = true;
-                            break;
-                        }
-                    }
+                    let mgc = std::cell::RefCell::new(mg);
+                    let found = duel::is_existing_matching_card(d, Some(&|d, c| summon_eff_filter(d, c, &f, e, tp, &mut mgc.borrow_mut(), gc.as_ref(), chkf, value, sumlimit, p.nosummoncheck, sumpos, None)), tp, location, 0, 1, NO_EX);
                     set_check_additional(d, None);
                     set_extra_group(d, None);
                     if found {
@@ -618,13 +607,10 @@ fn summon_eff_op_body(d: &mut Duel, p: &SummonEff, cell: u64, a: &EffArgs) {
     let mut effswithgroup: Vec<(EffectId, CardSet)> = Vec::new();
     extra_mat_opt_check(d, &mut mg1, e, tp, &p.extrafil, &mut efmg);
     let ff = fusfilter_of(p);
-    let mut sg1 = CardSet::new();
-    let fg = duel::get_field_group(d, tp, location, 0);
-        for c in group::iter(d, &fg) {
-        if crate::lua::protected(d, false, |d| summon_eff_filter(d, c, &ff, e, tp, &mut mg1, gc.as_ref(), chkf, value & 0xffffffff, sumlimit, p.nosummoncheck, sumpos, Some(&efmg))) {
-            sg1.insert(c);
-        }
-    }
+    // (in the field order of Duel.GetMatchingGroup: the filter adds to mg1 as it goes)
+    let mgc = std::cell::RefCell::new(mg1);
+    let mut sg1 = duel::get_matching_group(d, Some(&|d, c| summon_eff_filter(d, c, &ff, e, tp, &mut mgc.borrow_mut(), gc.as_ref(), chkf, value & 0xffffffff, sumlimit, p.nosummoncheck, sumpos, Some(&efmg))), tp, location, 0, NO_EX);
+    let mg1 = mgc.into_inner();
     if !sg1.is_empty() {
         effswithgroup.push((e, sg1.clone()));
     }
@@ -632,7 +618,7 @@ fn summon_eff_op_body(d: &mut Duel, p: &SummonEff, cell: u64, a: &EffArgs) {
     set_check_additional(d, None);
     if !notfusion {
         for ce in duel::get_player_effect(d, tp, EFFECT_CHAIN_MATERIAL) {
-            let mut mg2 = chain_material_target(d, ce, e, tp, value);
+            let mg2 = chain_material_target(d, ce, e, tp, value);
             let exact = d.script_var(super::fusion::vars::CHECK_EXACT);
             let min = d.script_var(super::fusion::vars::CHECK_MIN);
             if !mg2.is_empty() && (exact.is_nil() || mg2.len() as i64 == exact.int()) && (min.is_nil() || mg2.len() as i64 >= min.int()) {
@@ -640,13 +626,8 @@ fn summon_eff_op_body(d: &mut Duel, p: &SummonEff, cell: u64, a: &EffArgs) {
                 let ca = chain_material_fcheck(d, ce, &check_addition);
                 set_check_additional(d, ca);
                 set_extra_group(d, Some(mg2.clone()));
-                let mut sg2 = CardSet::new();
-                let fg = duel::get_field_group(d, tp, location, 0);
-        for c in group::iter(d, &fg) {
-                    if crate::lua::protected(d, false, |d| summon_eff_filter(d, c, &f, e, tp, &mut mg2, gc.as_ref(), chkf, value, sumlimit, p.nosummoncheck, sumpos, None)) {
-                        sg2.insert(c);
-                    }
-                }
+                let mgc = std::cell::RefCell::new(mg2);
+                let sg2 = duel::get_matching_group(d, Some(&|d, c| summon_eff_filter(d, c, &f, e, tp, &mut mgc.borrow_mut(), gc.as_ref(), chkf, value, sumlimit, p.nosummoncheck, sumpos, None)), tp, location, 0, NO_EX);
                 if !sg2.is_empty() {
                     effswithgroup.push((ce, sg2.clone()));
                     group::add_card(&mut sg1, &sg2);

@@ -41,6 +41,25 @@ pub fn get_disable_reason(d: &Duel, ch: u8) -> Value {
 pub fn get_disable_player(d: &Duel, ch: u8) -> Value {
     chain_info(d, ch, CHAININFO_DISABLE_PLAYER)
 }
+/// `Chain.GetTriggeringPlayer(ch)`
+pub fn get_triggering_player(d: &Duel, ch: u8) -> Value {
+    chain_info(d, ch, CHAININFO_TRIGGERING_PLAYER)
+}
+/// `return_equals(fn)(ch, val)` of chain.lua: nil when `fn(ch)` is nil, else whether it equals `val`
+fn return_equals(res: Value, val: i64) -> Value {
+    match res {
+        Value::Nil => Value::Nil,
+        r => Value::Bool(r.int() == val),
+    }
+}
+/// `Chain.IsTriggeringPlayer(ch, p)` (nil when the chain link does not exist)
+pub fn is_triggering_player(d: &Duel, ch: u8, p: u8) -> Value {
+    return_equals(get_triggering_player(d, ch), p as i64)
+}
+/// `Chain.IsDisablePlayer(ch, p)` (nil when the chain link does not exist)
+pub fn is_disable_player(d: &Duel, ch: u8, p: u8) -> Value {
+    return_equals(get_disable_player(d, ch), p as i64)
+}
 /// `Chain.GetID(ch)`
 pub fn get_id(d: &Duel, ch: u8) -> i64 {
     duel::get_chain_info(d, ch, &[CHAININFO_CHAIN_ID]).first().map_or(0, |v| v.int())

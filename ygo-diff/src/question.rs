@@ -254,7 +254,12 @@ pub fn random_response(msg: &[u8], rng: &mut Rng, db: &CardDb, codes: &[u32]) ->
             // "at least" mode: once the sum minus its smallest part reaches acc, adding cards only grows it
             let dead = |sel: &[usize]| {
                 if mode == 0 {
-                    return false;
+                    // exact mode: parts are positive, so a selection whose smallest sum exceeds acc (or that has too many cards) cannot grow into a valid one
+                    let total: i32 = must.iter().chain(sel.iter().map(|&i| &params[i])).map(|&op| {
+                        let (o1, o2) = ((op & 0xffff) as i32, (op >> 16) as i32);
+                        if o2 != 0 && o2 < o1 { o2 } else { o1 }
+                    }).sum();
+                    return total > acc || sel.len() >= max;
                 }
                 let (mut total, mut mn) = (0i32, i32::MAX);
                 for &op in must.iter().chain(sel.iter().map(|&i| &params[i])) {

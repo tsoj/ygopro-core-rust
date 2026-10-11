@@ -28,7 +28,7 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     if a.chk == Some(0) {
         return !duel::is_player_affected_by_effect(d, tp, 30459350).is_some()
             && duel::get_field_group_count(d, tp, LOCATION_EXTRA, 0) > 0
-            && duel::get_field_group_count(d, 1 - tp, 0, LOCATION_EXTRA) > 0;
+            && duel::get_field_group_count(d, tp, 0, LOCATION_EXTRA) > 0;
     }
     duel::set_operation_info(d, 0, CATEGORY_REMOVE, None, 1, 1 - tp, LOCATION_EXTRA as i32);
     true

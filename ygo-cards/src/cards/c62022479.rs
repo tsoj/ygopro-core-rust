@@ -3,6 +3,8 @@ use super::prelude::*;
 
 pub const ID: u32 = 62022479;
 
+pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_ALBAZ], ..ScriptInfo::DEFAULT };
+
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // Special Summon 1 "Fallen of Albaz" from your hand, GY, or banishment
     // local e1=Effect.CreateEffect(c)

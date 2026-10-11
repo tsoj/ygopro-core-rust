@@ -179,8 +179,8 @@ fn desreptg(d: &mut Duel, a: &EffArgs) -> bool {
         // return not c:IsReason(REASON_REPLACE) and Duel.IsExistingMatchingCard(s.repfilter,tp,LOCATION_MZONE|LOCATION_GRAVE,0,1,c)
         return !card::is_reason(d, c, REASON_REPLACE) && duel::is_existing_matching_card(d, Some(&repfilter), tp, LOCATION_MZONE | LOCATION_GRAVE, 0, 1, c.into());
     }
-    // if Duel.SelectEffectYesNo(tp,c,96) then
-    if duel::select_effect_yes_no(d, tp, c, Some(96)) {
+    // if Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+    if duel::select_yes_no(d, tp, aux::stringid(ID, 2)) {
         // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESREPLACE)
         duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_DESREPLACE as u64);
         // local g=Duel.SelectMatchingCard(tp,s.repfilter,tp,LOCATION_MZONE|LOCATION_GRAVE,0,1,1,c)

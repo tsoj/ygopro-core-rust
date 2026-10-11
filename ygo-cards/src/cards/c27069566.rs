@@ -10,7 +10,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // c:EnableReviveLimit()
     card::enable_revive_limit(d, c);
     // Xyz.AddProcedure(c,nil,6,2,nil,nil,Xyz.InfiniteMats)
-    xyz::add_procedure(d, c, None, None, 6, None, None, Some(xyz::INFINITE_MATS), None, false, None);
+    xyz::add_procedure(d, c, None, Some(6), 2, None, None, Some(xyz::INFINITE_MATS), None, false, None);
     // Banish 2 targets
     // local e1=Effect.CreateEffect(c)
     let e1 = effect::create_effect(d, c);

@@ -78,11 +78,13 @@ pub fn condition(f: impl Fn(&mut Duel, &EffArgs) -> bool + Send + Sync + 'static
 pub fn cost_target(f: impl Fn(&mut Duel, &EffArgs) -> bool + Send + Sync + 'static) -> LuaFn {
     LuaFn::new(move |d, a| Value::Bool(f(d, &EffArgs::with_chk(a))))
 }
-/// A function of a card (`function(e, c)`, e.g. the target of a field effect).
+/// A function of a card (`function(e, c)`, e.g. the target of a field effect). A nil `c` (the
+/// core passes none, e.g. to the value of EFFECT_CANNOT_BE_SYNCHRO_MATERIAL) gives false, as the
+/// scripts' `c and ...` / `if not c then return false end` guards do.
 pub fn effect_card_fn(f: impl Fn(&mut Duel, EffectId, CardId) -> bool + Send + Sync + 'static) -> LuaFn {
     LuaFn::new(move |d, a| {
         let e = a.first().and_then(|v| v.as_effect()).unwrap();
-        let c = a.get(1).and_then(|v| v.as_card()).unwrap();
+        let Some(c) = a.get(1).and_then(|v| v.as_card()) else { return Value::Bool(false) };
         Value::Bool(f(d, e, c))
     })
 }

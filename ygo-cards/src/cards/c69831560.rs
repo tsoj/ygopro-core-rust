@@ -2,7 +2,7 @@
 use super::prelude::*;
 
 pub const ID: u32 = 69831560;
-pub const INFO: ScriptInfo = ScriptInfo { toss_coin: true, ..ScriptInfo::DEFAULT };
+pub const INFO: ScriptInfo = ScriptInfo { arcanareg: Some(arcanareg), toss_coin: true, ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // Must be properly summoned before reviving

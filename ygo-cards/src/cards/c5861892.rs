@@ -2,7 +2,7 @@
 use super::prelude::*;
 
 pub const ID: u32 = 5861892;
-pub const INFO: ScriptInfo = ScriptInfo {
+pub const INFO: ScriptInfo = ScriptInfo { arcanareg: Some(arcanareg),
     toss_coin: true,
     ..ScriptInfo::DEFAULT
 };

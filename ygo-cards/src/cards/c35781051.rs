@@ -3,7 +3,7 @@ use super::prelude::*;
 
 pub const ID: u32 = 35781051;
 
-pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_ARCANA_FORCE], toss_coin: true, ..ScriptInfo::DEFAULT };
+pub const INFO: ScriptInfo = ScriptInfo { arcanareg: Some(arcanareg), listed_series: &[SET_ARCANA_FORCE], toss_coin: true, ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // Toss a coin and apply the appropriate effect

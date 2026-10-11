@@ -218,6 +218,9 @@ pub struct ScriptInfo {
     /// `s.rum_limit(mc, e)`: whether a Rank-Up-Magic may use `mc` (the monster to rank up) for this
     /// card (read as `c.rum_limit` by the Rank-Up-Magic scripts; absent = no limit)
     pub rum_limit: Option<fn(&mut ygo_core::duel::Duel, ygo_core::types::CardId, ygo_core::types::EffectId) -> bool>,
+    /// `s.arcanareg(c, coin)` of the "Arcana Force" monsters: registers the effect of a coin result
+    /// (read as `c.arcanareg` by "Arcana Call")
+    pub arcanareg: Option<fn(&mut ygo_core::duel::Duel, ygo_core::types::CardId, i32)>,
 }
 
 impl ScriptInfo {
@@ -252,6 +255,7 @@ impl ScriptInfo {
         material_location: None,
         max_metalmorph_stats: None,
         rum_limit: None,
+        arcanareg: None,
     };
 }
 

@@ -3,7 +3,7 @@ use super::prelude::*;
 
 pub const ID: u32 = 8396952;
 
-pub const INFO: ScriptInfo = ScriptInfo { toss_coin: true, ..ScriptInfo::DEFAULT };
+pub const INFO: ScriptInfo = ScriptInfo { arcanareg: Some(arcanareg), toss_coin: true, ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // Toss a coin and apply the appropirate effect

@@ -4,7 +4,7 @@ use super::prelude::*;
 
 pub const ID: u32 = 59712426;
 
-pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_LIGHT_BARRIER], toss_coin: true, ..ScriptInfo::DEFAULT };
+pub const INFO: ScriptInfo = ScriptInfo { arcanareg: Some(arcanareg_i32), listed_names: &[CARD_LIGHT_BARRIER], toss_coin: true, ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // Add 1 "Light Barrier" to the hand
@@ -176,4 +176,8 @@ fn tdesop(d: &mut Duel, a: &EffArgs) {
     if group::get_count(&sg) > 0 {
         duel::destroy(d, sg, REASON_EFFECT, None, None);
     }
+}
+/// (`arcanareg` with the `ScriptInfo::arcanareg` signature)
+fn arcanareg_i32(d: &mut Duel, c: CardId, coin: i32) {
+    arcanareg(d, c, coin as i64)
 }

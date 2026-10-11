@@ -47,6 +47,5 @@ fn rop(d: &mut Duel, a: &EffArgs) -> bool {
     let g = duel::select_matching_card(d, tp, Some(&|d, c| card::is_able_to_remove(d, c, Some(tp), Some(POS_FACEDOWN as u8), None)), tp, LOCATION_HAND, 0, 1, 1, false, NO_EX).nil();
     let h = effect::get_handler(d, a.e).nil();
     card::register_flag_effect(d, h, ID + a.ep as u32, RESET_PHASE | PHASE_END, 0, 1, 0, 0);
-    duel::remove(d, g, POS_FACEDOWN as u8, REASON_COST, None, None);
-    true
+    duel::remove(d, g, POS_FACEDOWN as u8, REASON_COST, None, None) > 0
 }

@@ -93,7 +93,7 @@ fn lkop(d: &mut Duel, a: &EffArgs) {
         duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_SPSUMMON as u64);
         let sel = group::select(d, &g, tp, 1, 1, false, NO_EX).nil();
         if let Some(sc) = group::get_first(d, &sel) {
-            duel::link_summon(d, tp, sc, None, Some(CardSet::from_card(c)), 0, 0);
+            duel::link_summon(d, tp, sc, Some(CardSet::from_card(c)), None, 0, 0);
         }
     }
 }

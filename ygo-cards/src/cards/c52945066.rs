@@ -43,8 +43,8 @@ fn distg(d: &mut Duel, a: &EffArgs) -> bool {
         return duel::is_existing_target(d, Some(&|d, c| card::is_negatable_monster(d, c)), a.tp, 0, LOCATION_MZONE, 1, NO_EX);
     }
     duel::hint(d, HINT_SELECTMSG as u8, a.tp, HINTMSG_FACEUP as u64);
-    // Duel.SelectTarget(tp,s.IsNegatableMonster,...): s.IsNegatableMonster is nil in the script
-    let g = duel::select_target(d, a.tp, None, a.tp, 0, LOCATION_MZONE, 1, 1, false, NO_EX);
+    // Duel.SelectTarget(tp,s.IsNegatableMonster,...): s inherits from Card (setmetatable(self_table,Card)), so this is Card.IsNegatableMonster
+    let g = duel::select_target(d, a.tp, Some(&|d, c| card::is_negatable_monster(d, c)), a.tp, 0, LOCATION_MZONE, 1, 1, false, NO_EX);
     duel::set_operation_info(d, 0, CATEGORY_DISABLE, g, 1, 0, 0);
     true
 }

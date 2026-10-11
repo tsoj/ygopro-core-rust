@@ -20,7 +20,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EVENT_FREE_CHAIN)
     effect::set_code(d, e1, EVENT_FREE_CHAIN);
     // e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER)
-    effect::set_hint_timing(d, e1, 0, None);
+    effect::set_hint_timing(d, e1, 0, Some(TIMINGS_CHECK_MONSTER));
     // e1:SetCountLimit(1,id)
     effect::set_count_limit(d, e1, 1, ID, 0, 0);
     // e1:SetCondition(function(e,tp) return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,SET_RAIDRAPTOR),tp,LOCATION_MZONE,0,1,nil) end)
@@ -47,7 +47,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetRange(LOCATION_GRAVE)
     effect::set_range(d, e2, LOCATION_GRAVE);
     // e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
-    effect::set_hint_timing(d, e2, 0, None);
+    effect::set_hint_timing(d, e2, 0, Some(TIMINGS_CHECK_MONSTER_E));
     // e2:SetCountLimit(1,id)
     effect::set_count_limit(d, e2, 1, ID, 0, 0);
     // e2:SetCost(Cost.SelfBanish)

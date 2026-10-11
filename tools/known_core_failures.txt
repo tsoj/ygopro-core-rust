@@ -9,3 +9,6 @@
 
 # coverage timeouts (core-side: exponential Lua group checks in libocgcore, e.g. deck 616951_Avengers_of_Albaz; gdb shows nested interpreter::check_matching)
 timeout_788082766701810558 timeout_2656450371764849079 timeout_4788083369942057766 timeout_6228222193507110843
+
+# replays: Time Magic Hammer (10960419) return at the 5th Standby differs: core-side reason_effect use-after-free (as pair 712)
+replay boot1_844

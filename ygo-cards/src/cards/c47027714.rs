@@ -3,7 +3,7 @@ use super::prelude::*;
 
 pub const ID: u32 = 47027714;
 
-pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_ASSAULT_MODE, 97836203], ..ScriptInfo::DEFAULT };
+pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_ASSAULT_MODE, 97836203], assault_mode: Some(97836203), ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // c:EnableReviveLimit()

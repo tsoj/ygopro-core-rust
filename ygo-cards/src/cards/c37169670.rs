@@ -4,9 +4,9 @@ use super::prelude::*;
 pub const ID: u32 = 37169670;
 
 // s.listed_names={CARD_ASSAULT_MODE,95526884}
-// s.assault_mode=95526884 (a field of the script table that no other script reads: not declared)
 pub const INFO: ScriptInfo = ScriptInfo {
     listed_names: &[CARD_ASSAULT_MODE, 95526884],
+    assault_mode: Some(95526884),
     ..ScriptInfo::DEFAULT
 };
 

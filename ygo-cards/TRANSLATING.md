@@ -69,7 +69,9 @@ pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_BLUEEYES_W_DRAGON
 ```
 
 The fields are in `ScriptInfo` (`src/lib.rs`). If the script declares a field `ScriptInfo` does not
-have, stop and report it (see "When something is missing").
+have, first grep the scripts for readers of it (`grep -rn "\.listed_counter" external/CardScripts`,
+with the field's name): if no script and no core code reads it (only the declaring script names it),
+leave it out with a comment; otherwise stop and report it (see "When something is missing").
 `s.roll_dice=true` / `s.toss_coin=true` are `roll_dice: true` / `toss_coin: true`; `s.LVnum=4`
 `s.LVset=SET_X` is `lv: Some((4, SET_X))`. `s.xyz_number=39` is `xyz_number: Some(39)` (likewise the other number fields).
 

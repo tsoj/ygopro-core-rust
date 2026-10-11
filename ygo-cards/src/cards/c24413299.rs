@@ -46,6 +46,7 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     // s.announce_filter={TYPE_EXTRA,OPCODE_ISTYPE,OPCODE_NOT}
     let announce_filter = [TYPE_EXTRA as u64, OPCODE_ISTYPE, OPCODE_NOT];
     // local ac=Duel.AnnounceCard(tp,s.announce_filter)
+    crate::class::set_announce_filter(d, ID, &announce_filter);
     let ac = duel::announce_card(d, tp, &announce_filter);
     // Duel.SetTargetParam(ac)
     duel::set_target_param(d, ac as u32);

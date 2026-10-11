@@ -161,9 +161,9 @@ fn actg(d: &mut Duel, a: &EffArgs) -> bool {
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CODE)
     duel::hint(d, HINT_SELECTMSG as u8, a.tp, HINTMSG_CODE as u64);
     // s.announce_filter={TYPE_EXTRA,OPCODE_ISTYPE,OPCODE_NOT}
-    // (only set and read by this function, so it is a local)
     let announce_filter = [TYPE_EXTRA as u64, OPCODE_ISTYPE, OPCODE_NOT];
     // local ac=Duel.AnnounceCard(tp,table.unpack(s.announce_filter))
+    crate::class::set_announce_filter(d, ID, &announce_filter);
     let ac = duel::announce_card(d, a.tp, &announce_filter);
     // Duel.SetTargetParam(ac)
     duel::set_target_param(d, ac as u32);

@@ -143,6 +143,7 @@ fn anctg(d: &mut Duel, a: &EffArgs) -> bool {
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CODE)
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_CODE as u64);
     // local ac1=Duel.AnnounceCard(tp,table.unpack(s.announce_filter))
+    crate::class::set_announce_filter(d, ID, &announce_filter);
     let ac1 = duel::announce_card(d, tp, &announce_filter) as u32;
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CODE)
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_CODE as u64);

@@ -28,7 +28,9 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CODE)
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_CODE as u64);
     // local ac=Duel.AnnounceCard(tp,table.unpack(s.announce_filter))
-    let ac = duel::announce_card(d, tp, &[TYPE_EXTRA as u64, OPCODE_ISTYPE as u64, OPCODE_NOT as u64]);
+    let announce_filter = [TYPE_EXTRA as u64, OPCODE_ISTYPE as u64, OPCODE_NOT as u64];
+    crate::class::set_announce_filter(d, ID, &announce_filter);
+    let ac = duel::announce_card(d, tp, &announce_filter);
     // Duel.SetTargetParam(ac)
     duel::set_target_param(d, ac as u32);
     // Duel.SetOperationInfo(0,CATEGORY_ANNOUNCE,nil,0,tp,ANNOUNCE_CARD_FILTER)

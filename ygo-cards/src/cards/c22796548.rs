@@ -50,7 +50,9 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     // s.announce_filter={TYPE_EXTRA,OPCODE_ISTYPE,OPCODE_NOT}
     // (only read by this line, so the value is not kept)
     // local ac=Duel.AnnounceCard(tp,table.unpack(s.announce_filter))
-    let ac = duel::announce_card(d, tp, &[TYPE_EXTRA as u64, OPCODE_ISTYPE as u64, OPCODE_NOT as u64]);
+    let announce_filter = [TYPE_EXTRA as u64, OPCODE_ISTYPE as u64, OPCODE_NOT as u64];
+    crate::class::set_announce_filter(d, ID, &announce_filter);
+    let ac = duel::announce_card(d, tp, &announce_filter);
     // Duel.SetTargetParam(ac)
     duel::set_target_param(d, ac as u32);
     // Duel.SetOperationInfo(0,CATEGORY_ANNOUNCE,nil,0,tp,ANNOUNCE_CARD_FILTER)

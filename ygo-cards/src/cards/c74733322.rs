@@ -76,6 +76,7 @@ fn thtg(d: &mut Duel, a: &EffArgs) -> bool {
             announce_filter.push(OPCODE_OR);
         }
     }
+    crate::class::set_announce_filter(d, ID, &announce_filter);
     let ac = duel::announce_card(d, a.tp, &announce_filter) as u32;
     let mut names = declared;
     names.push(ac);

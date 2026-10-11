@@ -65,9 +65,9 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
         return true;
     }
     // s.announce_filter={TYPE_NORMAL,OPCODE_ISTYPE}
-    // (only set and read by this function, so it is a local)
     let announce_filter = [TYPE_NORMAL as u64, OPCODE_ISTYPE];
     // local code=Duel.AnnounceCard(tp,s.announce_filter)
+    crate::class::set_announce_filter(d, ID, &announce_filter);
     let code = duel::announce_card(d, a.tp, &announce_filter);
     // Duel.SetTargetParam(code)
     duel::set_target_param(d, code as u32);

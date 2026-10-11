@@ -126,6 +126,7 @@ fn decltg(d: &mut Duel, a: &EffArgs) -> bool {
         }
     }
     // local declared_code=Duel.AnnounceCard(tp,s.announce_filter)
+    crate::class::set_announce_filter(d, ID, &announce_filter);
     let declared_code = duel::announce_card(d, tp, &announce_filter);
     // Duel.SetTargetParam(declared_code)
     duel::set_target_param(d, declared_code as u32);

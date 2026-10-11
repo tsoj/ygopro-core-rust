@@ -152,6 +152,7 @@ fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
         }
     }
     // local code=Duel.AnnounceCard(tp,table.unpack(s.announce_filter))
+    crate::class::set_announce_filter(d, ID, &announce_filter);
     let code = duel::announce_card(d, a.tp, &announce_filter);
     // Duel.SetTargetParam(code)
     duel::set_target_param(d, code as u32);

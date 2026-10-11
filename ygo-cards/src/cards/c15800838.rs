@@ -22,7 +22,9 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     }
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_CODE as u64);
     // s.announce_filter={TYPE_EXTRA,OPCODE_ISTYPE,TYPE_MONSTER,OPCODE_ISTYPE,OPCODE_AND,OPCODE_NOT}
-    let ac = duel::announce_card(d, tp, &[TYPE_EXTRA as u64, OPCODE_ISTYPE, TYPE_MONSTER as u64, OPCODE_ISTYPE, OPCODE_AND, OPCODE_NOT]);
+    let announce_filter = [TYPE_EXTRA as u64, OPCODE_ISTYPE, TYPE_MONSTER as u64, OPCODE_ISTYPE, OPCODE_AND, OPCODE_NOT];
+    crate::class::set_announce_filter(d, ID, &announce_filter);
+    let ac = duel::announce_card(d, tp, &announce_filter);
     duel::set_target_param(d, ac as u32);
     duel::set_operation_info(d, 0, CATEGORY_ANNOUNCE, None, 0, tp, ANNOUNCE_CARD_FILTER as i32);
     true

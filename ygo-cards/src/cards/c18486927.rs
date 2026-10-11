@@ -139,6 +139,7 @@ fn nametg(d: &mut Duel, a: &EffArgs) -> bool {
         OPCODE_AND as u64,
     ];
     // local ac=Duel.AnnounceCard(tp,table.unpack(s.announce_filter))
+    crate::class::set_announce_filter(d, ID, &announce_filter);
     let ac = duel::announce_card(d, a.tp, &announce_filter);
     // Duel.SetTargetParam(ac)
     duel::set_target_param(d, ac as u32);

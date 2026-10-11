@@ -51,7 +51,6 @@ fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
             && card::is_can_be_special_summoned(d, h, a.e, 0, tp, false, false, None, None, None)
             && duel::is_existing_matching_card(d, Some(&|d, c| filter(d, c, a.e, tp)), tp, LOCATION_HAND, 0, 1, h.into());
     }
-    let h = effect::get_handler(d, a.e).nil();
     duel::set_operation_info(d, 0, CATEGORY_SPECIAL_SUMMON, None, 2, tp, LOCATION_HAND as i32);
     true
 }

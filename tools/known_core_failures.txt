@@ -12,3 +12,6 @@ timeout_788082766701810558 timeout_2656450371764849079 timeout_47880833699420577
 
 # replays: Time Magic Hammer (10960419) return at the 5th Standby differs: core-side reason_effect use-after-free (as pair 712)
 replay boot1_844
+
+# coverage: libocgcore segfault in field::process(BattleCommand), as pair 471
+crash_1502655763474649407 (Skull Servants DM vs Yugi Waking the Dragons)

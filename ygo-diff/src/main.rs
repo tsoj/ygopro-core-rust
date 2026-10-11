@@ -443,7 +443,11 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
         // (the decks change seats every game)
         for p in 0..2u8 {
             let deck = &decks[((p as u64 + game) % 2) as usize];
-            for &code in &deck.main {
+            // (the core does not shuffle at the start: the caller orders the Deck, as a server
+            // shuffles it; unshuffled, every game would draw the same cards of a .ydk)
+            let mut main = deck.main.clone();
+            rng.shuffle(&mut main);
+            for &code in &main {
                 let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc: LOCATION_DECK, seq: 0, pos: POS_FACEDOWN_DEFENSE };
                 if let Some(c) = core.as_mut() {
                     c.new_card(&info);

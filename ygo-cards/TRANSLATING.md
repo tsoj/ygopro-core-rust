@@ -256,6 +256,11 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - Summon-type constants are `u32` and `is_type_ctx` takes a `u64` sumtype: `SUMMON_TYPE_SYNCHRO as u64 | MATERIAL_SYNCHRO as u64`.
 - A single card as the `ExtraCard` of `get_location_count_from_ex` is `duel::ExtraCard::Card(c)`.
 - `g:GetNext()` after `g:GetFirst()`: `let order = group::iter(d, &g);` then `order.get(1)`.
+- `c:GetCode()` used as one value is `card::get_code(d, c)[0]` (it returns all codes).
+- A Lua function that returns nothing, wrapped with `lua_fn`, returns `Value::Nil` (`()` is not a value).
+- Lua `g1==g2` on groups compares only their sizes (libgroup.cpp `__eq`).
+- `Duel.GetMZoneCount(tp, c)` / `GetLocationCount(tp, loc)` with the player left out: pass `None` (the core's
+  default is the reason player, not `tp`).
 
 ## Effect functions
 

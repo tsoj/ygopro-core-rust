@@ -144,7 +144,7 @@ fn thop(d: &mut Duel, a: &EffArgs) {
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_ATOHAND as u64);
     // local sc=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.thfilter),tp,LOCATION_REMOVED|LOCATION_DECK|LOCATION_GRAVE,0,1,1,nil,tp,{e:GetLabel()}):GetFirst()
-    let levels = vec![effect::get_label(d, e)];
+    let levels = effect::get_labels(d, e);
     let selected = duel::select_matching_card(
         d,
         tp,
@@ -219,7 +219,7 @@ fn regop(d: &mut Duel, a: &EffArgs) {
             // label_obj:Merge(g)
             group::add_card(&mut label_obj, &g);
             // local levels={e:GetLabel()}
-            let mut levels = vec![effect::get_label(d, e)];
+            let mut levels = effect::get_labels(d, e);
             // for tc in g:Iter() do table.insert(levels,tc:GetOriginalLevel()) end
             for tc in group::iter(d, &g) {
                 levels.push(card::get_original_level(d, tc) as i64);

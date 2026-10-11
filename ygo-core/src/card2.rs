@@ -1388,15 +1388,19 @@ impl CardId {
     }
     /// refresh this->immune_effect
     pub fn filter_immune_effect(self, d: &mut Duel) {
-        let mut imm = Vec::new();
-        imm.extend(self.cc(d).single_effect.range(EFFECT_IMMUNE_EFFECT));
+        // (as the C++, the list is cleared first and filled as it goes: the `is_target` checks below
+        // can ask whether this card is immune, e.g. through its type, and see the partial list)
+        d.card_mut(self).immune_effect.clear();
+        let single: Vec<_> = self.cc(d).single_effect.range(EFFECT_IMMUNE_EFFECT);
+        d.card_mut(self).immune_effect.extend(single);
         for pc in public_order(d, &self.cc(d).equiping_cards.clone()) {
-            imm.extend(d.card(pc).equip_effect.range(EFFECT_IMMUNE_EFFECT));
+            let v: Vec<_> = d.card(pc).equip_effect.range(EFFECT_IMMUNE_EFFECT);
+            d.card_mut(self).immune_effect.extend(v);
         }
         for pc in public_order(d, &self.cc(d).effect_target_owner.clone()) {
             for pe in d.card(pc).target_effect.range(EFFECT_IMMUNE_EFFECT) {
                 if pe.is_target(d, self) {
-                    imm.push(pe);
+                    d.card_mut(self).immune_effect.push(pe);
                 }
             }
         }
@@ -1405,14 +1409,15 @@ impl CardId {
                 if d.effect(pe).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                     continue;
                 }
-                imm.push(pe);
+                d.card_mut(self).immune_effect.push(pe);
             }
         }
         for pe in d.field_effects.aura_effect.range(EFFECT_IMMUNE_EFFECT) {
             if pe.is_target(d, self) {
-                imm.push(pe);
+                d.card_mut(self).immune_effect.push(pe);
             }
         }
+        let mut imm = std::mem::take(&mut d.card_mut(self).immune_effect);
         sort_effects_by_id(d, &mut imm);
         d.card_mut(self).immune_effect = imm;
     }

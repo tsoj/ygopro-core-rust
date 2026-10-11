@@ -3,7 +3,7 @@
 use super::prelude::*;
 
 pub const ID: u32 = 86308219;
-pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_HARPIE_LADY, 75782277], ..ScriptInfo::DEFAULT };
+pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[CARD_HARPIE_LADY, CARD_HARPIE_LADY_SISTERS], ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // Destroy as many monsters your opponent controls as possible, and if you do, inflict damage to your opponent equal to the highest original ATK among those monsters
@@ -41,7 +41,7 @@ fn counterfilter(d: &mut Duel, a: Args) -> bool {
 /// `s.cfilter(c)`
 fn cfilter(d: &mut Duel, c: CardId) -> bool {
     // return c:IsFaceup() and c:IsCode(CARD_HARPIE_LADY,CARD_HARPIE_LADY_SISTERS)
-    card::is_faceup(d, c) && card::is_code(d, c, &[CARD_HARPIE_LADY, 75782277])
+    card::is_faceup(d, c) && card::is_code(d, c, &[CARD_HARPIE_LADY, CARD_HARPIE_LADY_SISTERS])
 }
 /// `s.condition(e,tp,eg,ep,ev,re,r,rp)`
 fn condition_fn(d: &mut Duel, a: &EffArgs) -> bool {

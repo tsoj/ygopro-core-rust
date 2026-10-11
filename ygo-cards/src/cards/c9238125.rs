@@ -30,7 +30,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e1, false);
     // Draw 1 card
     // Vernusylph.AddSpSummonEffect(c,id,1,CATEGORY_DRAW,s.drtg,s.drop)
-    aux::vernusylph::add_sp_summon_effect(d, c, ID, 1, CATEGORY_DRAW, cost_target(drtg), operation(drop_op));
+    aux::vernusylph::add_sp_summon_effect(d, c, ID, 1, CATEGORY_DRAW, cost_target(drtg), lua_fn(drop_op));
 }
 
 /// `s.sumfilter(c)`: `aux.FaceupFilter(Card.IsSetCard,SET_VERNUSYLPH)`
@@ -101,9 +101,9 @@ fn drtg(d: &mut Duel, a: &EffArgs) -> bool {
 }
 
 /// `s.drop(e,tp,eg,ep,ev,re,r,rp)`
-fn drop_op(d: &mut Duel, _a: &EffArgs) {
+fn drop_op(d: &mut Duel, _a: Args) -> bool {
     // local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
     let info = duel::get_chain_info(d, 0, &[CHAININFO_TARGET_PLAYER, CHAININFO_TARGET_PARAM]);
     // return Duel.Draw(p,d,REASON_EFFECT)>0
-    let _ = duel::draw(d, info[0].int() as u8, info[1].int() as u32, REASON_EFFECT) > 0;
+    duel::draw(d, info[0].int() as u8, info[1].int() as u32, REASON_EFFECT) > 0
 }

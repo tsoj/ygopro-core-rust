@@ -384,3 +384,62 @@ pub fn random_response(msg: &[u8], rng: &mut Rng, db: &CardDb, codes: &[u32]) ->
     };
     Some(resp)
 }
+
+/// `--focus`: a response that uses one of the focus cards where the question offers one (summon,
+/// activation, attack, chain; "yes" to an effect of one), or None (then the random response).
+pub fn focus_response(msg: &[u8], rng: &mut Rng, focus: &[u32]) -> Option<Vec<u8>> {
+    let typ = msg[0] as u32;
+    let mut r = Reader { b: msg, p: 1 };
+    let code_at = |r: &Reader, off: usize| u32::from_le_bytes(r.b[r.p + off..r.p + off + 4].try_into().unwrap());
+    let pick = |rng: &mut Rng, v: &[i32]| if v.is_empty() { None } else { Some(i32r(v[rng.below(v.len())])) };
+    match typ {
+        MSG_SELECT_IDLECMD => {
+            r.u8();
+            let mut hits = vec![];
+            for (kind, size) in [(0, 10), (1, 10), (2, 7), (3, 10), (4, 10), (5, 19)] {
+                let n = r.u32() as usize;
+                for i in 0..n {
+                    // (repositioning and setting a focus card are less useful than using it)
+                    if kind != 2 && focus.contains(&code_at(&r, i * size)) {
+                        hits.push(((i as i32) << 16) | kind);
+                    }
+                }
+                r.skip(n * size);
+            }
+            pick(rng, &hits)
+        }
+        MSG_SELECT_BATTLECMD => {
+            r.u8();
+            let mut hits = vec![];
+            let nch = r.u32() as usize;
+            for i in 0..nch {
+                if focus.contains(&code_at(&r, i * 19)) {
+                    hits.push((i as i32) << 16);
+                }
+            }
+            r.skip(nch * 19);
+            let nat = r.u32() as usize;
+            for i in 0..nat {
+                if focus.contains(&code_at(&r, i * 8)) {
+                    hits.push(((i as i32) << 16) | 1);
+                }
+            }
+            pick(rng, &hits)
+        }
+        MSG_SELECT_CHAIN => {
+            r.u8();
+            r.u8();
+            r.u8();
+            r.u32();
+            r.u32();
+            let n = r.u32() as usize;
+            let hits: Vec<i32> = (0..n).filter(|&i| focus.contains(&code_at(&r, i * 23))).map(|i| i as i32).collect();
+            pick(rng, &hits)
+        }
+        MSG_SELECT_EFFECTYN => {
+            r.u8();
+            if focus.contains(&code_at(&r, 0)) { Some(i32r(1)) } else { None }
+        }
+        _ => None,
+    }
+}

@@ -74,6 +74,8 @@ struct Args {
     cache: Option<PathBuf>,
     /// A game to replay (`--replay FILE`): see `Replay`
     replay: Option<Replay>,
+    /// Cards to prefer (`--focus a,b`): when a question offers to use one, it is used (85%)
+    focus: Vec<u32>,
 }
 
 /// A recorded game (e.g. of the Python agents, converted by tools/record_to_replay.py): the duel
@@ -139,7 +141,7 @@ fn load_ydk(path: &str) -> Deck {
 }
 
 fn parse_args() -> Args {
-    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None };
+    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None, focus: vec![] };
     let argv: Vec<String> = std::env::args().collect();
     let mut i = 1;
     while i < argv.len() {
@@ -177,13 +179,17 @@ fn parse_args() -> Args {
                 a.cache = Some(PathBuf::from(&argv[i + 1]));
                 i += 1;
             }
+            "--focus" => {
+                a.focus = argv[i + 1].split(',').map(|x| x.parse().unwrap()).collect();
+                i += 1;
+            }
             "--replay" => {
                 a.replay = Some(load_replay(&argv[i + 1]));
                 a.games = 1;
                 i += 1;
             }
             "-h" | "--help" => {
-                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [-v] [--bench-clone]");
+                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [--focus a,b] [-v] [--bench-clone]");
                 std::process::exit(0);
             }
             "-v" | "--verbose" => a.verbose = true,
@@ -637,7 +643,11 @@ fn after_step(game: u64, args: &Args, db: &Arc<CardDb>, codes: &[u32], r: &mut D
             let Some(x) = rp.responses.get(out.decisions) else { return Ok((false, None)) };
             x.clone()
         } else {
-            random_response(q, rng, db, codes).ok_or_else(|| Some(format!("game {game}: not a question: {}", hex(q))))?
+            let focused = if !args.focus.is_empty() && rng.chance(0.85) { question::focus_response(q, rng, &args.focus) } else { None };
+            match focused {
+                Some(x) => x,
+                None => random_response(q, rng, db, codes).ok_or_else(|| Some(format!("game {game}: not a question: {}", hex(q))))?,
+            }
         };
         if args.verbose {
             eprintln!("  decision {}: msg {} -> {}", out.decisions, q[0], hex(&resp));

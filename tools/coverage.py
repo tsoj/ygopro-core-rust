@@ -246,14 +246,16 @@ def focus(args):
                                 ok = False
                             cards.add(c)
             if ok:
-                pairs.append((int(m[1]), pa, pb, cards))
+                # (focus: the card and the rest of its deck, which is built around it)
+                own = sorted({int(l) for l in open(pa) if l.strip().isdigit()} | {int(m[1])})
+                pairs.append((int(m[1]), pa, pb, cards, own))
     print(f"{len(pairs)} focus deck pairs, {per} games each", flush=True)
     cov = load_cov()
     rng = random.Random()
     stats = {"ok": 0, "mismatch": 0, "timeout": 0, "crash": 0, "budget": 0}
-    todo = [(code, pa, pb, cards, rng.getrandbits(63)) for code, pa, pb, cards in pairs for _ in range(per)]
+    todo = [(code, pa, pb, cards, own, rng.getrandbits(63)) for code, pa, pb, cards, own in pairs for _ in range(per)]
     with concurrent.futures.ThreadPoolExecutor(jobs) as ex:
-        futs = {ex.submit(play, pa, pb, seed, timeout, ("--focus", str(code), "--no-shuffle")): (code, cards, seed) for code, pa, pb, cards, seed in todo}
+        futs = {ex.submit(play, pa, pb, seed, timeout, ("--focus", ",".join(map(str, own)), "--no-shuffle")): (code, cards, seed) for code, pa, pb, cards, own, seed in todo}
         for f in concurrent.futures.as_completed(futs):
             code, cards, seed = futs[f]
             cmd, rc, out = f.result()

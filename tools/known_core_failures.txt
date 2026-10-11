@@ -6,3 +6,6 @@
 907  core segfault in field::process(BattleCommand) (null card)
 912  core segfault in field::process(BattleCommand) (null card)
 1125 core segfault in field::process(BattleCommand) after game 80, all 80 games identical
+
+# coverage timeouts (core-side: exponential Lua group checks in libocgcore, e.g. deck 616951_Avengers_of_Albaz; gdb shows nested interpreter::check_matching)
+timeout_788082766701810558 timeout_2656450371764849079 timeout_4788083369942057766 timeout_6228222193507110843

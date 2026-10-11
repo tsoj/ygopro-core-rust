@@ -3,6 +3,8 @@ use super::prelude::*;
 
 pub const ID: u32 = 82627406;
 
+pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_MAGICIAN_GIRL], ..ScriptInfo::DEFAULT };
+
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // atk up
     // local e1=Effect.CreateEffect(c)

@@ -82,7 +82,10 @@ fn seqop(d: &mut Duel, a: &EffArgs) {
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_TOZONE as u64);
     // local seq=Duel.SelectDisableField(tp,1,LOCATION_MZONE,0,0)
     let seq = duel::select_disable_field(d, tp, 1, LOCATION_MZONE, 0, Some(0), false);
-    // if seq then
+    // if seq then (SelectDisableField returns nothing when no zone is free)
+    if seq == 0 {
+        return;
+    }
     // Duel.MoveSequence(c,math.log(seq,2))
     duel::move_sequence(d, c, (seq as f64).log2() as u8, None);
     // local dg=c:GetColumnGroup():Filter(Card.IsFaceup,c,nil)

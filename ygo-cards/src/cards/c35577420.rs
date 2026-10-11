@@ -3,6 +3,8 @@ use super::prelude::*;
 
 pub const ID: u32 = 35577420;
 
+pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_LIGHTSWORN], ..ScriptInfo::DEFAULT };
+
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // Activate
     let e1 = effect::create_effect(d, c);

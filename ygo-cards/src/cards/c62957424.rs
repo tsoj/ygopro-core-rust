@@ -3,6 +3,8 @@ use super::prelude::*;
 
 pub const ID: u32 = 62957424;
 
+pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_BURNING_ABYSS], ..ScriptInfo::DEFAULT };
+
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // self destroy
     // local e1=Effect.CreateEffect(c)

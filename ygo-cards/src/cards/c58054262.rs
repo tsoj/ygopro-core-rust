@@ -3,6 +3,8 @@ use super::prelude::*;
 
 pub const ID: u32 = 58054262;
 
+pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[22666164, 60999392, 23782705, 96384007], ..ScriptInfo::DEFAULT };
+
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::enable_revive_limit(d, c);
     // Must be Special Summoned by its own condition

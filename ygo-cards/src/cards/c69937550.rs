@@ -3,6 +3,8 @@ use super::prelude::*;
 
 pub const ID: u32 = 69937550;
 
+pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_CRYSTAL_BEAST], ..ScriptInfo::DEFAULT };
+
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // local e1=Effect.CreateEffect(c)
     let e1 = effect::create_effect(d, c);

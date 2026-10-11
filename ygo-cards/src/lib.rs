@@ -97,6 +97,20 @@ pub mod class {
     pub const MAX_TRIBUTE_REQ: u64 = CLASS_FIELDS + 9;
     /// `fit_monster` (`Ritual.AddProcCode`; overrides `s.fit_monster`)
     pub const FIT_MONSTER: u64 = CLASS_FIELDS + 10;
+    /// `announce_filter`: the `Duel.AnnounceCard` opcodes a script last declared with (set at run
+    /// time by the declaring cards; read by "Engraver of the Mark")
+    pub const ANNOUNCE_FILTER: u64 = CLASS_FIELDS + 11;
+    /// `s.announce_filter = {...}` of the script with code `code`
+    pub fn set_announce_filter(d: &mut ygo_core::duel::Duel, code: u32, filter: &[u64]) {
+        d.set_script_var((code, ANNOUNCE_FILTER), ygo_core::types::Value::Multi(filter.iter().map(|&x| ygo_core::types::Value::Int(x as i64)).collect()));
+    }
+    /// `c.announce_filter` (None: nil)
+    pub fn announce_filter(d: &ygo_core::duel::Duel, c: ygo_core::types::CardId) -> Option<Vec<u64>> {
+        match get(d, c, ANNOUNCE_FILTER) {
+            ygo_core::types::Value::Multi(m) => Some(m.iter().map(|v| v.int() as u64).collect()),
+            _ => None,
+        }
+    }
     /// `c.fit_monster`
     pub fn fit_monster(d: &ygo_core::duel::Duel, c: ygo_core::types::CardId) -> Vec<u32> {
         match get(d, c, FIT_MONSTER) {

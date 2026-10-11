@@ -267,6 +267,7 @@ modules, never `ygo_core::api::...` directly: e.g. `card::register_effect` and
 - `Duel.SpecialSummonStep(...)` returns a boolean in Lua, so `Duel.SpecialSummonStep(...)~=0` is always
   true (a boolean is never equal to 0). Translate the condition as written: always true.
 - `Duel.CheckReleaseGroup` / `Duel.SelectReleaseGroup` (not `...Ex`) default `use_hand` to false.
+- The positional `Duel.CheckReleaseGroup(tp, f, minc, [use_hand, max, check_field, to_check, toplayer, zone, use_oppo,] ex, ...)` / `SelectReleaseGroup(...)` (libduel.cpp check_release_group): the 4th argument, if a boolean, is use_hand, then max, check_field, to_check, toplayer, zone, use_oppo; then ex; the rest go to the filter. Fill `duel::ReleaseArgs` from them.
 - Summon-type constants are `u32` and `is_type_ctx` takes a `u64` sumtype: `SUMMON_TYPE_SYNCHRO as u64 | MATERIAL_SYNCHRO as u64`.
 - A single card as the `ExtraCard` of `get_location_count_from_ex` is `duel::ExtraCard::Card(c)`.
 - `g:GetNext()` after `g:GetFirst()`: `let order = group::iter(d, &g);` then `order.get(1)`.

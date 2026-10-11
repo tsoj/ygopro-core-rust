@@ -33,6 +33,15 @@ if MAIN/rust/ygo-cards/src/cards/c<CODE>.rs exists or the card has no script (va
    (rust/ygo-cards/src/cards/c*.rs, do not commit); if it is in the library or core, stop on that
    card and report the evidence.
 
+The decks are replayed regularly by `tools/coverage.py focus`: per pair `<CODE>_a.ydk` (or a
+variant `<CODE>_c.ydk`, ...) against `<CODE>_b.ydk`, 20 games with random seeds, `--no-shuffle`, and
+`--focus` set to ALL cards of the `_a` deck. A deck is good when your card is used in most such runs:
+test it that way (`--games 20` with several seeds, `--no-shuffle --focus <every code of deck a>`),
+not with one lucky seed. Order the `_a` deck (the last card is drawn first) so the card and its
+enablers are drawn early; make deck b passive or supply what the card needs (an attack, an
+activation, a summon to respond to). A card that is only placed by another card (never activated or
+summoned itself) shows 0/0 in the coverage line: then say so instead of chasing it.
+
 Rules: only write decks (in MAIN/build/focus_decks/) and card files (in your worktree). Never read or
 list /home/tsoj/Dokumente/Projects or anything above MAIN. Never use `rm -rf`. Spend at most ~20 minutes
 per card; some cards may be practically impossible (say why).

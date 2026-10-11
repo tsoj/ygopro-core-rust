@@ -20,6 +20,10 @@ fn cond(d: &mut Duel, a: &EffArgs) -> bool {
     card::is_controler(d, atk, 1 - a.tp)
 }
 fn target(d: &mut Duel, a: &EffArgs) -> bool {
+    // if chk==0 then return true end
+    if a.chk == Some(0) {
+        return true;
+    }
     let tp = a.tp;
     let bc = duel::get_attacker(d).nil();
     effect::set_label_object(d, a.e, Value::Card(bc));

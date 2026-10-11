@@ -21,7 +21,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTarget(s.target)
     effect::set_target(d, e1, Some(cost_target(target)));
     // e1:SetOperation(s.activate)
-    effect::set_operation(d, e1, Some(operation(activate)));
+    effect::set_operation(d, e1, Some(lua_fn(activate_lua)));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
 }
@@ -47,8 +47,13 @@ fn thfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_set_card(d, c, &[SET_VAALMONICA as u16]) && !card::is_code(d, c, &[ID]) && card::is_faceup(d, c) && card::is_able_to_hand(d, c, None)
 }
 // function s.activate(e,tp,eg,ep,ev,re,r,rp,angello_or_dimonno)
-fn activate(d: &mut Duel, a: &EffArgs) {
-    activate_with(d, a, None);
+/// (registered as a raw function: "Angello Vaalmonica" / "Dimonno Vaalmonica" call it with a 9th argument)
+fn activate_lua(d: &mut Duel, a: Args) {
+    let extra = match a.v(8) {
+        Value::Int(n) => Some(*n),
+        _ => None,
+    };
+    activate_with(d, &EffArgs::new(a.0), extra);
 }
 /// `s.activate` with the extra argument that "Angello Vaalmonica" and "Dimonno Vaalmonica" pass
 pub fn activate_with(d: &mut Duel, a: &EffArgs, angello_or_dimonno: Option<i64>) {

@@ -108,7 +108,9 @@ def parse_cov(text, alias):
 
 
 def play(pa, pb, seed, timeout, extra=()):
-    cmd = [BIN, "--decks", f"{pa},{pb}", "--games", "1", "--seed", str(seed), *extra]
+    # (pb None: pa is a `--replay` file, the scripted start of a game)
+    games = ["--replay", pa, "--replay-prefix"] if pb is None else ["--decks", f"{pa},{pb}"]
+    cmd = [BIN, *games, "--games", "1", "--seed", str(seed), *extra]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         return cmd, r.returncode, r.stdout + r.stderr
@@ -219,6 +221,7 @@ FOCUS = os.path.join(ROOT, "build", "focus_decks")
 
 def focus(args):
     """The deck pairs of build/focus_decks (<CODE>_a.ydk, <CODE>_b.ydk; written by the focus agents,
+    and scripted starts <CODE>_<x>.replay,
     see rust/ygo-cards/FOCUS.md), each played with `--focus CODE` (the player uses that card whenever
     it can): cards random play never reaches."""
     jobs = int(args[args.index("--jobs") + 1]) if "--jobs" in args else 24
@@ -249,6 +252,23 @@ def focus(args):
                 # (focus: the card and the rest of its deck, which is built around it)
                 own = sorted({int(l) for l in open(pa) if l.strip().isdigit()} | {int(m[1])})
                 pairs.append((int(m[1]), pa, pb, cards, own))
+        # <CODE>_<x>.replay: a scripted start (`ygo-diff --dump-replay`, cut and edited), then
+        # focus play with the cards of player 0
+        m = re.fullmatch(r"(\d+)_(\w+)\.replay", f)
+        if m:
+            pa = os.path.join(FOCUS, f)
+            cards, own, ok = set(), {int(m[1])}, True
+            for l in open(pa):
+                w = l.split()
+                if w and w[0] == "card":
+                    c = deck_plan.script_code(int(w[3]), alias)
+                    if translatable.script_path(c):
+                        ok &= c in done
+                        cards.add(c)
+                    if w[1] == "0":
+                        own.add(int(w[3]))
+            if ok:
+                pairs.append((int(m[1]), pa, None, cards, sorted(own)))
     print(f"{len(pairs)} focus deck pairs, {per} games each", flush=True)
     cov = load_cov()
     rng = random.Random()

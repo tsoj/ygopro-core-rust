@@ -80,6 +80,10 @@ struct Args {
     no_shuffle: bool,
     /// `--rust-only`: no core, no comparison (to profile and benchmark the Rust engine)
     rust_only: bool,
+    /// `--replay-prefix`: when the replay's responses run out, keep playing (focus/random)
+    replay_prefix: bool,
+    /// `--dump-replay FILE`: write each game as a `--replay` file (FILE, or FILE.<game> for several)
+    dump_replay: Option<String>,
 }
 
 /// A recorded game (e.g. of the Python agents, converted by tools/record_to_replay.py): the duel
@@ -145,7 +149,7 @@ fn load_ydk(path: &str) -> Deck {
 }
 
 fn parse_args() -> Args {
-    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None, focus: vec![], no_shuffle: false, rust_only: false };
+    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None, focus: vec![], no_shuffle: false, rust_only: false, replay_prefix: false, dump_replay: None };
     let argv: Vec<String> = std::env::args().collect();
     let mut i = 1;
     while i < argv.len() {
@@ -195,11 +199,16 @@ fn parse_args() -> Args {
                 i += 1;
             }
             "-h" | "--help" => {
-                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [--focus a,b] [--no-shuffle] [--rust-only] [-v] [--bench-clone]");
+                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [--focus a,b] [--no-shuffle] [--rust-only] [--replay-prefix] [--dump-replay FILE] [-v] [--bench-clone]");
                 std::process::exit(0);
             }
             "-v" | "--verbose" => a.verbose = true,
             "--bench-clone" => a.bench_clone = true,
+            "--replay-prefix" => a.replay_prefix = true,
+            "--dump-replay" => {
+                a.dump_replay = Some(argv[i + 1].clone());
+                i += 1;
+            }
             x => panic!("unknown argument {x}"),
         }
         i += 1;
@@ -430,6 +439,14 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
     let po = PlayerOptions { starting_lp: pl[0], starting_draw_count: pl[1], draw_count_per_turn: pl[2] };
     let mut r = Duel::new(&DuelOptions { seed, flags, team1: po, team2: po }, db.clone(), scripts.clone());
     ygo_cards::load_global_scripts(&mut r);
+    // (`--dump-replay`: this game as a `--replay` file, written as it goes)
+    let mut dump = args.dump_replay.as_ref().map(|f| {
+        use std::io::Write;
+        let path = if args.games == 1 { f.clone() } else { format!("{f}.{game}") };
+        let mut w = std::io::BufWriter::new(std::fs::File::create(&path).unwrap_or_else(|e| panic!("{path}: {e}")));
+        writeln!(w, "seed {} {} {} {}\nconfig {flags} {} {} {}", seed[0], seed[1], seed[2], seed[3], pl[0], pl[1], pl[2]).unwrap();
+        w
+    });
     if let Some(rp) = &args.replay {
         for &(p, loc, code) in &rp.cards {
             let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc, seq: 0, pos: POS_FACEDOWN_DEFENSE };
@@ -437,12 +454,20 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
                 c.new_card(&info);
             }
             r.ocg_new_card(&info);
+                if let Some(w) = dump.as_mut() {
+                    use std::io::Write;
+                    writeln!(w, "card {} {} {}", info.con, info.loc, info.code).unwrap();
+                }
         }
         for (p, loc, ids) in &rp.orders {
             if let Some(c) = core.as_mut() {
                 assert!(c.set_location_order_by_id(*p, *loc, ids), "core: order {p} {loc:#x}");
             }
             assert!(r.ext_set_location_order_by_id(*p, *loc, ids), "rust: order {p} {loc:#x}");
+            if let Some(w) = dump.as_mut() {
+                use std::io::Write;
+                writeln!(w, "order {p} {loc} {}", ids.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(" ")).unwrap();
+            }
         }
     }
     if let Some(decks) = &args.decks {
@@ -461,6 +486,10 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
                     c.new_card(&info);
                 }
                 r.ocg_new_card(&info);
+                if let Some(w) = dump.as_mut() {
+                    use std::io::Write;
+                    writeln!(w, "card {} {} {}", info.con, info.loc, info.code).unwrap();
+                }
             }
             for &code in &deck.extra {
                 let info = NewCardInfo { team: p, duelist: 0, code, con: p, loc: LOCATION_EXTRA, seq: 0, pos: POS_FACEDOWN_DEFENSE };
@@ -468,6 +497,10 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
                     c.new_card(&info);
                 }
                 r.ocg_new_card(&info);
+                if let Some(w) = dump.as_mut() {
+                    use std::io::Write;
+                    writeln!(w, "card {} {} {}", info.con, info.loc, info.code).unwrap();
+                }
             }
         }
     }
@@ -486,6 +519,10 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
                 c.new_card(&info);
             }
             r.ocg_new_card(&info);
+                if let Some(w) = dump.as_mut() {
+                    use std::io::Write;
+                    writeln!(w, "card {} {} {}", info.con, info.loc, info.code).unwrap();
+                }
         }
         if !scripted_extra.is_empty() {
             for _ in 0..args.extra {
@@ -495,6 +532,10 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
                     c.new_card(&info);
                 }
                 r.ocg_new_card(&info);
+                if let Some(w) = dump.as_mut() {
+                    use std::io::Write;
+                    writeln!(w, "card {} {} {}", info.con, info.loc, info.code).unwrap();
+                }
             }
         }
     }
@@ -531,7 +572,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
         out.rust_time += t.elapsed();
         let Some(c) = core.as_mut() else {
             if args.rust_only {
-                let (more, resp) = after_step(game, args, db, codes, &mut r, &mut rng, &mut out, &mr, sr)?;
+                let (more, resp) = after_step(game, args, db, codes, &mut r, &mut rng, &mut out, &mr, sr, &mut dump)?;
                 if !more {
                     return Ok(out);
                 }
@@ -543,7 +584,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
             if cache::hash_msgs(&mr) != step.0 || sr != step.1 || rust_state_hash(&mut r) != step.2 {
                 return Err(None);
             }
-            let (more, resp) = after_step(game, args, db, codes, &mut r, &mut rng, &mut out, &mr, sr)?;
+            let (more, resp) = after_step(game, args, db, codes, &mut r, &mut rng, &mut out, &mr, sr, &mut dump)?;
             if !more {
                 return Ok(out);
             }
@@ -587,7 +628,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
         if history.len() > 64 {
             history.drain(..history.len() - 64);
         }
-        let (more, resp) = after_step(game, args, db, codes, &mut r, &mut rng, &mut out, &mr, sr)?;
+        let (more, resp) = after_step(game, args, db, codes, &mut r, &mut rng, &mut out, &mr, sr, &mut dump)?;
         if !more {
             out.record.complete = out.ended;
             return Ok(out);
@@ -601,7 +642,8 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
 /// After a decision's messages matched: coverage, the end check and the random response.
 /// Returns whether the game goes on, and the response to set on both engines.
 #[allow(clippy::too_many_arguments)]
-fn after_step(game: u64, args: &Args, db: &Arc<CardDb>, codes: &[u32], r: &mut Duel, rng: &mut Rng, out: &mut Outcome, mc: &[Vec<u8>], sc: i32) -> Result<(bool, Option<Vec<u8>>), Option<String>> {
+#[allow(clippy::too_many_arguments)]
+fn after_step(game: u64, args: &Args, db: &Arc<CardDb>, codes: &[u32], r: &mut Duel, rng: &mut Rng, out: &mut Outcome, mc: &[Vec<u8>], sc: i32, dump: &mut Option<std::io::BufWriter<std::fs::File>>) -> Result<(bool, Option<Vec<u8>>), Option<String>> {
     {
         {
             for m in mc {
@@ -658,19 +700,29 @@ fn after_step(game: u64, args: &Args, db: &Arc<CardDb>, codes: &[u32], r: &mut D
             });
         }
         let q = mc.last().ok_or_else(|| Some(format!("game {game}: awaiting without a question")))?;
-        let resp = if let Some(rp) = &args.replay {
-            // the recorded response (the record ends: so does the game)
-            let Some(x) = rp.responses.get(out.decisions) else { return Ok((false, None)) };
+        let recorded = args.replay.as_ref().and_then(|rp| rp.responses.get(out.decisions));
+        let resp = if let Some(x) = recorded {
             x.clone()
+        } else if args.replay.is_some() && !args.replay_prefix {
+            // (the record ends: so does the game)
+            return Ok((false, None));
         } else {
             let focused = if !args.focus.is_empty() && rng.chance(0.85) { question::focus_response(q, rng, &args.focus) } else { None };
             match focused {
                 Some(x) => x,
-                None => random_response(q, rng, db, codes).ok_or_else(|| Some(format!("game {game}: not a question: {}", hex(q))))?,
+                None => {
+                    let rewritten = if !args.focus.is_empty() && rng.chance(0.85) { question::focus_rewrite(q) } else { None };
+                    let q = rewritten.as_deref().unwrap_or(q);
+                    random_response(q, rng, db, codes).ok_or_else(|| Some(format!("game {game}: not a question: {}", hex(q))))?
+                }
             }
         };
         if args.verbose {
             eprintln!("  decision {}: msg {} -> {}", out.decisions, q[0], hex(&resp));
+        }
+        if let Some(w) = dump.as_mut() {
+            use std::io::Write;
+            writeln!(w, "resp {}", resp.iter().map(|x| format!("{x:02x}")).collect::<String>()).unwrap();
         }
         out.turns += mc.iter().filter(|m| m[0] as u32 == MSG_NEW_TURN).count();
         out.decisions += 1;

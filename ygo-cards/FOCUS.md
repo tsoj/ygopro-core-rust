@@ -42,6 +42,29 @@ enablers are drawn early; make deck b passive or supply what the card needs (an 
 activation, a summon to respond to). A card that is only placed by another card (never activated or
 summoned itself) shows 0/0 in the coverage line: then say so instead of chasing it.
 
+## Scripted starts (when random play cannot do it)
+
+If the card needs an exact sequence (several specific summons, choosing the right cards), script the
+start of a game and let focus play take over afterwards:
+
+1. Play focus games with `--games 1 --seed S --dump-replay FILE` (one game; add `-v` to see each
+   decision: `decision N: msg TYPE -> RESPONSE`). FILE is a `--replay` file: `seed`, `config`, one
+   `card PLAYER LOCATION CODE` line per card (in the order added: for the Deck, the last is drawn
+   first), then one `resp HEX` line per decision.
+2. Find a game that gets close; keep its header and its `resp` lines up to the decision that went
+   wrong, and change that response (and the following ones) to what you want. Responses are the bytes
+   the core reads (`OCG_DuelSetResponse`): see `random_response` in MAIN/rust/ygo-diff/src/question.rs
+   for each message's format (e.g. IDLECMD: i32 `(index << 16) | kind`, little-endian; selections:
+   i32 count then i32 indices, or the formats there). The questions are documented in
+   MAIN/external/ygopro-core (processor/playerop code) as well.
+3. Check: `ygo-diff --replay FILE --replay-prefix --games 1 --seed S --focus CODES -v`: the scripted
+   responses are used first (a wrong one shows up as an error / retry message from the core: the
+   game then mismatches or stalls), then focus play continues. With `--replay-prefix` the replay is
+   played from its responses, then by the focus player with `--seed`.
+4. Save it as MAIN/build/focus_decks/<CODE>_<x>.replay (x: a letter or word). `coverage.py focus`
+   plays every such file 20 times (`--replay F --replay-prefix`, random seeds, `--focus` = all cards of
+   player 0): the card should be used in most runs (ideally the script itself reaches it, so all do).
+
 Rules: only write decks (in MAIN/build/focus_decks/) and card files (in your worktree). Never read or
 list /home/tsoj/Dokumente/Projects or anything above MAIN. Never use `rm -rf`. Spend at most ~20 minutes
 per card; some cards may be practically impossible (say why).

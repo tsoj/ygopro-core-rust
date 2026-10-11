@@ -406,6 +406,11 @@ pub fn focus_response(msg: &[u8], rng: &mut Rng, focus: &[u32]) -> Option<Vec<u8
                 }
                 r.skip(n * size);
             }
+            // (summoning or activating a card is more useful than setting it)
+            let used: Vec<i32> = hits.iter().copied().filter(|h| matches!(h & 0xffff, 0 | 1 | 5)).collect();
+            if !used.is_empty() && rng.chance(0.8) {
+                return pick(rng, &used);
+            }
             pick(rng, &hits)
         }
         MSG_SELECT_BATTLECMD => {
@@ -439,6 +444,30 @@ pub fn focus_response(msg: &[u8], rng: &mut Rng, focus: &[u32]) -> Option<Vec<u8
         MSG_SELECT_EFFECTYN => {
             r.u8();
             if focus.contains(&code_at(&r, 0)) { Some(i32r(1)) } else { None }
+        }
+        _ => None,
+    }
+}
+
+/// For `--focus`: `msg` without the options to cancel a selection (or to finish one while cards
+/// can still be selected), which the random player otherwise takes often enough to stop the
+/// procedures the focus cards need (e.g. the tributes of "Holactie"). `None`: unchanged.
+pub fn focus_rewrite(msg: &[u8]) -> Option<Vec<u8>> {
+    let mut m = msg.to_vec();
+    match msg[0] as u32 {
+        MSG_SELECT_CARD | MSG_SELECT_TRIBUTE if msg[2] != 0 => {
+            m[2] = 0;
+            Some(m)
+        }
+        MSG_SELECT_UNSELECT_CARD => {
+            // player, finishable, cancelable, min, max, n1 (selectable)
+            let n1 = u32::from_le_bytes(msg[12..16].try_into().unwrap());
+            if n1 == 0 || (msg[2] == 0 && msg[3] == 0) {
+                return None;
+            }
+            m[2] = 0;
+            m[3] = 0;
+            Some(m)
         }
         _ => None,
     }

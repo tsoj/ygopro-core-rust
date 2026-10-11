@@ -18,6 +18,25 @@ fn main() {
         }
     }
     cards.sort();
+    // YGO_CARDS_ONLY="c1 c2 ...": only these cards (and the cards they call through `super::cN`),
+    // for a cheap `cargo check` of a few new card files (the full crate needs ~8 GB of rustc memory)
+    println!("cargo:rerun-if-env-changed=YGO_CARDS_ONLY");
+    if let Ok(only) = std::env::var("YGO_CARDS_ONLY") {
+        let mut keep: std::collections::BTreeSet<u32> = only.split(|ch: char| !ch.is_ascii_digit()).filter_map(|x| x.parse().ok()).collect();
+        let mut todo: Vec<u32> = keep.iter().copied().collect();
+        while let Some(code) = todo.pop() {
+            let Ok(src) = std::fs::read_to_string(dir.join(format!("c{code}.rs"))) else { continue };
+            for part in src.split("super::c").skip(1) {
+                let digits: String = part.chars().take_while(|ch| ch.is_ascii_digit()).collect();
+                if let Ok(dep) = digits.parse::<u32>() {
+                    if keep.insert(dep) {
+                        todo.push(dep);
+                    }
+                }
+            }
+        }
+        cards.retain(|(code, _)| keep.contains(code));
+    }
     let mut out = String::new();
     for (code, _) in &cards {
         writeln!(out, "#[path = {:?}]\npub mod c{code};", dir.join(format!("c{code}.rs")).display().to_string()).unwrap();

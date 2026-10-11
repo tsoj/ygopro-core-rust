@@ -21,7 +21,9 @@ Steps:
    the default up (C++: `lua_get<T, default>` in MAIN/build/ocgcore-src/lib*.cpp; or the Lua
    library). Never guess. An explicit `nil` passed to a boolean parameter is `false`, not the default.
 4. Compile after every two or three cards:
-   `cd rust && CARGO_BUILD_JOBS=2 cargo check -p ygo-cards 2>&1 | grep -E "^(warning|error)" -A7 | head -80`.
+   `cd rust && YGO_CARDS_ONLY="<your codes, space-separated>" CARGO_BUILD_JOBS=2 cargo check -p ygo-cards 2>&1 | grep -E "^(warning|error)" -A7 | head -80`.
+   YGO_CARDS_ONLY makes the build compile only those card files (the full crate needs ~8 GB of
+   memory, and many agents run at once): always set it, listing all your codes.
    Fix all errors and warnings in your files.
 5. If a card needs a library function, ScriptInfo field or API function that does not exist, do not
    add it and do not work around it: delete that card's file, note what is missing, and continue.

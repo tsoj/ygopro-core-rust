@@ -123,7 +123,8 @@ def run(args):
     # a snapshot of the binary: rebuilds during the run do not change it
     shutil.copy2(os.path.join(ROOT, "rust", "target", "release", "ygo-diff"), BIN)
     alias = deck_plan.load_alias()
-    done = translated()
+    # the cards of the snapshot (the source tree can have newer ones)
+    done = set(int(x) for x in subprocess.run([BIN, "--list-cards"], capture_output=True, text=True, check=True).stdout.split())
     decks = book_decks(alias, done)
     names = list(decks)
     print(f"{len(names)} book decks with all cards translated; {len(done)} cards translated", flush=True)

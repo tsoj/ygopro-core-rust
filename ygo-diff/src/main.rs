@@ -591,6 +591,13 @@ fn after_step(game: u64, args: &Args, db: &Arc<CardDb>, codes: &[u32], r: &mut D
 }
 
 fn main() {
+    if std::env::args().any(|a| a == "--list-cards") {
+        // the codes of the translated scripts compiled into this binary
+        for x in ygo_cards::cards::ALL.iter() {
+            println!("{}", x.0);
+        }
+        return;
+    }
     let args = parse_args();
     let root = std::env::var("YGO_ROOT").map(PathBuf::from).unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."));
     let root = root.canonicalize().unwrap();

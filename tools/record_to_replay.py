@@ -47,7 +47,9 @@ def convert(record: GameRecord) -> str:
 
     Duel.new_card, Duel.start, Duel.set_response = new_card, start, set_response
     try:
-        replay(record, [])
+        # (the duel must be closed: the core's registry keeps it alive, so every converted game
+        # leaked a whole duel and its Lua state, and replay workers grew to several GB)
+        replay(record, []).close()
     finally:
         Duel.new_card, Duel.start, Duel.set_response = orig_new_card, orig_start, orig_set_response
     cfg = record.duel_config()

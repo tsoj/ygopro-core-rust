@@ -62,7 +62,7 @@ fn matcheck(d: &mut Duel, a: Args) {
     // local atk=g:GetSum(Card.GetOriginalLevel)+g:GetSum(Card.GetOriginalRank)
     let mut atk: i64 = 0;
     for tc in group::iter(d, &g) {
-        atk += card::info_level(d, tc, None) as i64;
+        atk += card::get_original_level(d, tc) as i64;
     }
     for tc in group::iter(d, &g) {
         atk += card::get_original_rank(d, tc) as i64;

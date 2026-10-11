@@ -86,9 +86,7 @@ fn op(d: &mut Duel, a: &EffArgs) {
     if !card::is_relate_to_effect(d, tc, a.e) {
         return;
     }
-    if duel::get_control(d, tc, tp, PHASE_END as u16, 1, None, None) == 0 {
-        return;
-    }
+    duel::get_control(d, tc, tp, PHASE_END as u16, 1, None, None); // (a Lua number is always true)
     // Duel.NegateRelatedChain(tc,RESET_TURN_SET)
     duel::negate_related_chain(d, tc, RESET_TURN_SET);
     // local e2=Effect.CreateEffect(c)

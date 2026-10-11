@@ -79,16 +79,16 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
 fn ctrltg(d: &mut Duel, a: &EffArgs) -> bool {
     // if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsControlerCanBeChanged() end
     if let Some(chkc) = a.chkc() {
-        return card::is_controler(d, chkc, 1 - a.tp) && card::is_location(d, chkc, LOCATION_MZONE) && card::is_able_to_change_controler(d, chkc);
+        return card::is_controler(d, chkc, 1 - a.tp) && card::is_location(d, chkc, LOCATION_MZONE) && card::is_controler_can_be_changed(d, chkc, false, None);
     }
     // if chk==0 then return Duel.IsExistingTarget(Card.IsControlerCanBeChanged,tp,0,LOCATION_MZONE,1,nil) end
     if a.chk == Some(0) {
-        return duel::is_existing_target(d, Some(&|d, c| card::is_able_to_change_controler(d, c)), a.tp, 0, LOCATION_MZONE, 1, NO_EX);
+        return duel::is_existing_target(d, Some(&|d, c| card::is_controler_can_be_changed(d, c, false, None)), a.tp, 0, LOCATION_MZONE, 1, NO_EX);
     }
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONTROL)
     duel::hint(d, HINT_SELECTMSG as u8, a.tp, HINTMSG_CONTROL as u64);
     // local g=Duel.SelectTarget(tp,Card.IsControlerCanBeChanged,tp,0,LOCATION_MZONE,1,1,nil)
-    let g = duel::select_target(d, a.tp, Some(&|d, c| card::is_able_to_change_controler(d, c)), a.tp, 0, LOCATION_MZONE, 1, 1, false, NO_EX);
+    let g = duel::select_target(d, a.tp, Some(&|d, c| card::is_controler_can_be_changed(d, c, false, None)), a.tp, 0, LOCATION_MZONE, 1, 1, false, NO_EX);
     // Duel.SetOperationInfo(0,CATEGORY_CONTROL,g,1,tp,0)
     duel::set_operation_info(d, 0, CATEGORY_CONTROL, g, 1, a.tp, 0);
     true

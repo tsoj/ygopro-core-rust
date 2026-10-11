@@ -76,7 +76,7 @@ fn ctop(d: &mut Duel, a: &EffArgs) {
     let tc = card::get_battle_target(d, dc);
     // if tc and tc:IsControler(1-tp) and Duel.GetControl(tc,tp) then
     if let Some(tc) = tc {
-        if card::is_controler(d, tc, 1 - a.tp) && duel::get_control(d, tc, a.tp, 0, 0, None, None) != 0 {
+        if card::is_controler(d, tc, 1 - a.tp) && { duel::get_control(d, tc, a.tp, 0, 0, None, None); true } /* (a Lua number is always true) */ {
             // Treat as Zombie
             // local e1=Effect.CreateEffect(e:GetHandler())
             let h = effect::get_handler(d, a.e).nil();

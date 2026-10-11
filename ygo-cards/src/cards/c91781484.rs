@@ -75,9 +75,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     if !card::is_relate_to_effect(d, tc, a.e) {
         return;
     }
-    if duel::get_control(d, tc, tp, PHASE_END as u16, 2, None, None) == 0 {
-        return;
-    }
+    duel::get_control(d, tc, tp, PHASE_END as u16, 2, None, None); // (a Lua number is always true)
     // Negate its effects
     // local e1=Effect.CreateEffect(c)
     let e1 = effect::create_effect(d, c);

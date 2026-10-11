@@ -131,7 +131,7 @@ fn cnop(d: &mut Duel, a: &EffArgs) {
     }
     let tc = duel::first_target(d);
     if let Some(tc) = tc {
-        if card::is_relate_to_effect(d, tc, a.e) && duel::get_control(d, tc, tp, PHASE_END as u16, 1, None, None) != 0 {
+        if card::is_relate_to_effect(d, tc, a.e) && { duel::get_control(d, tc, tp, PHASE_END as u16, 1, None, None); true } /* (a Lua number is always true) */ {
             // Cannot attack directly
             let e1 = effect::create_effect(d, h);
             effect::set_description(d, e1, 3207);

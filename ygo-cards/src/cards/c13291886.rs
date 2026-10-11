@@ -205,7 +205,7 @@ fn ctop(d: &mut Duel, a: &EffArgs) {
         && !card::is_immune_to_effect(d, tc, a.e)
         && card::is_controler(d, tc, 1 - tp)
         && card::is_controler_can_be_changed(d, tc, false, None)
-        && duel::get_control(d, tc, tp, 0, 0, None, None) != 0
+        && { duel::get_control(d, tc, tp, 0, 0, None, None); true } /* (a Lua number is always true) */
     {
         // local c=e:GetHandler()
         let c = effect::get_handler(d, a.e).nil();

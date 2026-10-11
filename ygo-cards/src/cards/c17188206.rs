@@ -151,7 +151,7 @@ fn desop(d: &mut Duel, a: &EffArgs) {
     if !(card::is_relate_to_effect(d, tc, a.e)
         && !card::is_immune_to_effect(d, tc, a.e)
         && card::is_controler(d, tc, 1 - tp)
-        && duel::get_control(d, tc, tp, 0, 0, Some(0xff), None) != 0)
+        && { duel::get_control(d, tc, tp, 0, 0, Some(0xff), None); true } /* (a Lua number is always true) */)
     {
         return;
     }

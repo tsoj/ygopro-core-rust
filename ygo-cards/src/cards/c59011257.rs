@@ -177,7 +177,8 @@ fn ctrlop(d: &mut Duel, a: &EffArgs) {
     let Some(tc) = tc else { return };
     if card::is_relate_to_effect(d, tc, a.e) {
         let p = card::get_controler(d, tc);
-        if duel::get_control(d, CardSet::from_card(c), p, 0, 0, None, None) != 0 && card::is_faceup(d, c) {
+        duel::get_control(d, CardSet::from_card(c), p, 0, 0, None, None);
+        if card::is_faceup(d, c) {
             // c:SetCardTarget(tc)
             card::set_card_target(d, c, tc);
             // local fid=c:GetFieldID()

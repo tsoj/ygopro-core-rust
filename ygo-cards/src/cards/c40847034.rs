@@ -150,9 +150,9 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     }
     // local cd=e:GetChainData()
     // cd.playlist_target_card=tc
-    chain::set_effect_data(d, a.e, None, chain::field::CARD, Value::Card(tc));
+    chain::set_effect_data(d, a.e, None, chain::field::CARD + 100, Value::Card(tc));
     // cd.playlist_target_effect=eff
-    chain::set_effect_data(d, a.e, None, chain::field::CARD + 1, eff.map_or(Value::Nil, Value::Effect));
+    chain::set_effect_data(d, a.e, None, chain::field::CARD + 101, eff.map_or(Value::Nil, Value::Effect));
     // e:SetCategory(CATEGORY_TOHAND)
     effect::set_category(d, a.e, CATEGORY_TOHAND);
     // Duel.SetOperationInfo(0,CATEGORY_TOHAND,tc,1,tp,0)
@@ -184,7 +184,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     let tp = a.tp;
     // local cd=e:GetChainData()
     // local tc=cd.playlist_target_card
-    let tc = chain::effect_data(d, a.e, None, chain::field::CARD).as_card();
+    let tc = chain::effect_data(d, a.e, None, chain::field::CARD + 100).as_card();
     // if tc and tc:IsRelateToEffect(e) then
     if let Some(tc) = tc {
         if card::is_relate_to_effect(d, tc, a.e) {
@@ -192,7 +192,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
             let mut break_chk = false;
             // local te=cd.playlist_target_effect
             // if te then
-            if let Some(te) = chain::effect_data(d, a.e, None, chain::field::CARD + 1).as_effect() {
+            if let Some(te) = chain::effect_data(d, a.e, None, chain::field::CARD + 101).as_effect() {
                 // --● Apply that target's effect that activates when it is sent to the GY as Synchro Material
                 // local op=te:GetOperation()
                 // if tc:IsFaceup() and op then

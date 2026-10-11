@@ -17,7 +17,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetValue(aux.tgoval)
     effect::set_value_fn(d, e1, aux::tgoval());
     // e1:SetCondition(s.indcon)
-    effect::set_condition(d, e1, Some(effect_card_fn(indcon)));
+    effect::set_condition(d, e1, Some(condition(indcon)));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Cannot destroy
@@ -28,7 +28,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetValue(1)
     effect::set_value(d, e2, 1);
     // e2:SetCondition(s.ntcon)
-    effect::set_condition(d, e2, Some(effect_card_fn(ntcon)));
+    effect::set_condition(d, e2, Some(condition(ntcon)));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Normal Summon
@@ -54,14 +54,16 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.indcon(e,c)`
-fn indcon(d: &mut Duel, e: EffectId, _c: CardId) -> bool {
+fn indcon(d: &mut Duel, a: &EffArgs) -> bool {
+    let e = a.e;
     // return e:GetHandler():GetEquipTarget():IsAttackPos()
     let h = effect::get_handler(d, e).nil();
     let tc = card::get_equip_target(d, h).nil();
     card::is_attack_pos(d, tc)
 }
 /// `s.ntcon(e,c)`
-fn ntcon(d: &mut Duel, e: EffectId, _c: CardId) -> bool {
+fn ntcon(d: &mut Duel, a: &EffArgs) -> bool {
+    let e = a.e;
     // return e:GetHandler():GetEquipTarget():IsDefensePos()
     let h = effect::get_handler(d, e).nil();
     let tc = card::get_equip_target(d, h).nil();

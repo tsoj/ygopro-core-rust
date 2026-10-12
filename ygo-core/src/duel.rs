@@ -1,6 +1,7 @@
 //! The state of a duel (ygopro-core's `duel`, `field` and `processor`, merged into one struct).
 
 use std::collections::VecDeque;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::card::{Card, CardState};
@@ -616,9 +617,10 @@ pub struct DuelOptions {
 pub struct Duel {
     // duel
     /// Cards and effects are shared between copies of the duel (copy-on-write: `card_mut` and
-    /// `effect_mut` copy one only when another copy still uses it), so copying a duel is cheap.
-    pub cards: Vec<Arc<Card>>,
-    pub effects: Vec<Option<Arc<Effect>>>,
+    /// `effect_mut` copy one only when another copy still uses it), so copying a duel is cheap
+    /// (non-atomic counts: a duel stays on the thread it was made on).
+    pub cards: Vec<Rc<Card>>,
+    pub effects: Vec<Option<Rc<Effect>>>,
     /// `card::temp` for the stats, by card (see `StatTemp`)
     pub stat_temp: Vec<crate::card::StatTemp>,
     pub assumes: Vec<CardId>,
@@ -682,7 +684,7 @@ impl Duel {
     }
     #[inline]
     pub fn card_mut(&mut self, c: CardId) -> &mut Card {
-        Arc::make_mut(&mut self.cards[c.0 as usize])
+        Rc::make_mut(&mut self.cards[c.0 as usize])
     }
     #[inline]
     pub fn effect(&self, e: EffectId) -> &Effect {
@@ -690,7 +692,7 @@ impl Duel {
     }
     #[inline]
     pub fn effect_mut(&mut self, e: EffectId) -> &mut Effect {
-        Arc::make_mut(self.effects[e.0 as usize].as_mut().expect("deleted effect"))
+        Rc::make_mut(self.effects[e.0 as usize].as_mut().expect("deleted effect"))
     }
     pub fn effect_exists(&self, e: EffectId) -> bool {
         self.effects.get(e.0 as usize).is_some_and(|x| x.as_ref().is_some_and(|x| !x.deleted))
@@ -706,7 +708,7 @@ impl Duel {
         }
         c.data.code = code;
         let (alias, script) = (c.data.alias, c.data.code);
-        self.cards.push(Arc::new(c));
+        self.cards.push(Rc::new(c));
         self.stat_temp.push(Default::default());
         // (the script of an alternative artwork is the original's)
         let script = if alias != 0 && alias < script + 10 && script < alias + 10 { alias } else { script };
@@ -725,13 +727,13 @@ impl Duel {
     /// `duel::new_effect`
     pub fn new_effect(&mut self) -> EffectId {
         let id = EffectId(self.effects.len() as u32);
-        self.effects.push(Some(Arc::new(Effect::new())));
+        self.effects.push(Some(Rc::new(Effect::new())));
         id
     }
     /// `duel::delete_effect`
     pub fn delete_effect(&mut self, e: EffectId) {
         if let Some(x) = self.effects[e.0 as usize].as_mut() {
-            Arc::make_mut(x).deleted = true;
+            Rc::make_mut(x).deleted = true;
         }
     }
     /// A new shared group (`duel::new_group` for the core's own groups).
@@ -978,9 +980,9 @@ mod copy_tests {
         let mut a = duel();
         let n = (a.cards.len(), a.effects.len());
         let mut b = a.clone();
-        assert!(a.cards.iter().zip(&b.cards).all(|(x, y)| Arc::ptr_eq(x, y)), "a copy deep-copied the cards");
+        assert!(a.cards.iter().zip(&b.cards).all(|(x, y)| Rc::ptr_eq(x, y)), "a copy deep-copied the cards");
         let shared = |a: &Duel, b: &Duel| a.effects.iter().zip(&b.effects).all(|(x, y)| match (x, y) {
-            (Some(x), Some(y)) => Arc::ptr_eq(x, y),
+            (Some(x), Some(y)) => Rc::ptr_eq(x, y),
             _ => false,
         });
         assert!(shared(&a, &b), "a copy deep-copied the effects");
@@ -995,8 +997,8 @@ mod copy_tests {
         assert_eq!(b.effect(e).label, vec![7]);
         assert_eq!(b.card(CardId(4)).data.attack, 0);
         // (only the written cards and effects were copied)
-        assert!(!Arc::ptr_eq(&a.cards[3], &b.cards[3]) && !Arc::ptr_eq(&a.cards[4], &b.cards[4]));
-        assert!(Arc::ptr_eq(&a.cards[5], &b.cards[5]));
+        assert!(!Rc::ptr_eq(&a.cards[3], &b.cards[3]) && !Rc::ptr_eq(&a.cards[4], &b.cards[4]));
+        assert!(Rc::ptr_eq(&a.cards[5], &b.cards[5]));
 
         // new cards and effects in one copy do not appear in the other
         b.new_card(0);

@@ -652,6 +652,10 @@ pub struct Duel {
     pub call_depth: i32,
     /// `interpreter::no_action`
     pub no_action: i32,
+    /// Nested calls of card functions from the engine (Lua's `nCcalls`: each `lua_pcall` of the
+    /// core): at `LUA_MAX_C_CALLS` the call fails with "C stack overflow", as in Lua, instead of
+    /// the native stack overflowing (e.g. two "Double Spell" asking about each other).
+    pub lua_ccalls: u32,
     /// The card scripts (code -> initial_effect), shared by all copies.
     pub scripts: Arc<crate::script::Scripts>,
     /// Values kept by card scripts (the globals of the Lua scripts), by (code, key); shared by
@@ -935,6 +939,7 @@ impl Duel {
             script_vars: Arc::new(Vec::new()),
             scope: None,
             ext: Default::default(),
+            lua_ccalls: 0,
             fine_steps: false,
             logs: Vec::new(),
         };

@@ -10,6 +10,9 @@ use crate::types::*;
 /// which fails (the error is logged, the call returns nil).
 pub struct LuaError(pub String);
 
+/// `LUAI_MAXCCALLS` of Lua 5.4
+pub const LUA_MAX_C_CALLS: u32 = 200;
+
 /// `luaL_error`
 pub fn lua_error(msg: impl Into<String>) -> ! {
     resume_unwind(Box::new(LuaError(msg.into())))
@@ -65,10 +68,15 @@ impl Duel {
     /// Runs a card function; `None` if it raised a Lua error (logged, as `lua_pcall` fails).
     pub fn protected_call(&mut self, f: &LuaFn, args: &[Value]) -> Option<Value> {
         self.call_depth += 1;
+        self.lua_ccalls += 1;
         let r = catch_unwind(AssertUnwindSafe(|| {
+            if self.lua_ccalls >= LUA_MAX_C_CALLS {
+                lua_error("C stack overflow");
+            }
             crate::api::script_step(self);
             f.call(self, args)
         }));
+        self.lua_ccalls -= 1;
         self.call_depth -= 1;
         if self.call_depth == 0 {
             self.restore_assumes();

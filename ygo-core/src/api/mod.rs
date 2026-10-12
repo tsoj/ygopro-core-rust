@@ -97,10 +97,16 @@ pub fn script_step(d: &mut Duel) {
 /// Runs a script callback; a Lua error in it is logged and gives `default` (as the core's
 /// `check_matching`/`get_operation_value`).
 pub fn protected<T>(d: &mut Duel, default: T, f: impl FnOnce(&mut Duel) -> T) -> T {
-    match catch_unwind(AssertUnwindSafe(|| {
+    d.lua_ccalls += 1;
+    let r = catch_unwind(AssertUnwindSafe(|| {
+        if d.lua_ccalls >= crate::lua::LUA_MAX_C_CALLS {
+            crate::lua::lua_error("C stack overflow");
+        }
         script_step(d);
         f(d)
-    })) {
+    }));
+    d.lua_ccalls -= 1;
+    match r {
         Ok(v) => v,
         Err(payload) => match crate::lua::script_failure(payload) {
             Ok(msg) => {

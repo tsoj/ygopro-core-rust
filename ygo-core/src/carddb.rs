@@ -10,6 +10,8 @@ use crate::types::{CardData, SetCodes};
 pub struct CardDb {
     pub cards: HashMap<u32, CardData>,
     pub names: HashMap<u32, String>,
+    /// The codes in the order they were first read (the order of ygoai's CardDB dict).
+    pub order: Vec<u32>,
 }
 
 /// Later files override earlier ones.
@@ -97,6 +99,9 @@ impl CardDb {
                 }
             }
             let code = code as u32;
+            if !self.cards.contains_key(&code) {
+                self.order.push(code);
+            }
             self.cards.insert(
                 code,
                 CardData {

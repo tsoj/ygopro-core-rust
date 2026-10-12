@@ -659,6 +659,11 @@ pub struct Duel {
     pub script_vars: Arc<Vec<((u32, u64), Value)>>,
     /// The replay scope of the card function being run (see DESIGN.md).
     pub scope: Option<Box<crate::scope::Scope>>,
+    /// The extensions for the belief replay (`ext.rs`)
+    pub ext: crate::ext::Ext,
+    /// Log messages (`OCG_LogTypes`, text) of the core and the scripts (script errors are type 0),
+    /// for the caller to take
+    pub logs: Vec<(u32, String)>,
 }
 
 impl Duel {
@@ -804,6 +809,22 @@ impl Duel {
             self.buff.extend_from_slice(&m.data);
         }
     }
+    /// Makes a change from outside (an API call, e.g. a forcing of the belief replay): now, and if
+    /// a card function waits for a response, again at the same point when it runs again from its
+    /// snapshot (else the change would be lost). Returns `f`'s result.
+    pub fn outside_change<T>(&mut self, f: impl Fn(&mut Duel) -> T + Send + Sync + 'static) -> T {
+        let f = std::sync::Arc::new(f);
+        let r = f(self);
+        if let Some(s) = self.scope.as_mut() {
+            if !s.running {
+                let g = f.clone();
+                s.ops.push((s.waiting_at, std::sync::Arc::new(move |d: &mut Duel| {
+                    g(d);
+                })));
+            }
+        }
+        r
+    }
     /// `duel::set_response`
     pub fn set_response(&mut self, resp: &[u8]) {
         if let Some(s) = self.scope.as_mut() {
@@ -841,9 +862,22 @@ impl Duel {
         self.core.duel_options & flag == flag
     }
     /// A log message (`duel::handle_message`); errors of card functions end up here.
-    pub fn handle_message(&mut self, _message: &str, typ: u32) {
+    pub fn handle_message(&mut self, message: &str, typ: u32) {
         if self.mute_errors && typ == 0 {
             self.muted_error = true;
+            return;
+        }
+        // (as messages: a scope run again does not log again what an earlier run logged)
+        if let Some(s) = self.scope.as_mut().filter(|s| s.running) {
+            if s.skip_logs > 0 {
+                s.skip_logs -= 1;
+                return;
+            }
+            s.delivered_logs += 1;
+        }
+        // (kept for the caller, e.g. to count script errors; at most a few, not to grow a copy)
+        if self.logs.len() < 1000 {
+            self.logs.push((typ, message.to_string()));
         }
     }
 
@@ -895,6 +929,8 @@ impl Duel {
             scripts,
             script_vars: Arc::new(Vec::new()),
             scope: None,
+            ext: Default::default(),
+            logs: Vec::new(),
         };
         d.temp_card = d.new_card(0);
         d

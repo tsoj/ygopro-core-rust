@@ -109,7 +109,10 @@ fn proc_workaround(d: &mut Duel) {
                     && card::is_location(d, c, LOCATION_MZONE)
                     && card::is_status(d, c, STATUS_SUMMON_TURN | STATUS_FLIP_SUMMON_TURN | STATUS_SPSUMMON_TURN)
             };
+            // (a rule filter: forced matches and the read log of the belief replay do not apply)
+            d.ext.rule_filter = true;
             let g = group::filter(d, &a.eg(), &filter, crate::lua::NO_EX);
+            d.ext.rule_filter = false;
             for c in group::iter(d, &g) {
                 card::set_status(d, c, STATUS_SUMMON_TURN, false);
                 card::set_status(d, c, STATUS_FLIP_SUMMON_TURN, false);

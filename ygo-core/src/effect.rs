@@ -312,6 +312,9 @@ impl EffectId {
     }
     /// reset_count: count of effect reset; count_limit: left count of activation
     pub fn check_count_limit(self, d: &mut Duel, playerid: u8) -> bool {
+        if let Some(h) = self.fx(d).handler {
+            d.note_read(h, 4096);
+        }
         let e = self.fx(d);
         if e.is_flag(EFFECT_FLAG_COUNT_LIMIT) {
             if e.count_limit == 0 {
@@ -560,6 +563,14 @@ impl EffectId {
         }
         if result {
             result = self.is_activate_ready(d, playerid, e, neglect_cond, neglect_cost, neglect_target);
+            // (ext) forced: skip the cost/target checks only if they fail (the checks can have
+            // side effects the activation relies on, e.g. labels)
+            if !result && !(neglect_cost && neglect_target) && d.ext_is_forced_activatable(self, playerid) {
+                result = self.is_activate_ready(d, playerid, e, neglect_cond, true, true);
+                if result && typ & EFFECT_TYPE_TRIGGER_F != 0 {
+                    d.ext_note_forced_used(self); // (a mandatory effect only the forcing activates)
+                }
+            }
         }
         d.core.reason_effect = oreason;
         d.core.reason_player = op;

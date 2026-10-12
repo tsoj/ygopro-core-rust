@@ -647,6 +647,7 @@ impl CardId {
 
     /// the current card name; for double-name cards, the printed name
     pub fn get_code(self, d: &mut Duel) -> u32 {
+        d.note_read(self, 1);
         if let Some(v) = self.c(d).get_assumed(ASSUME_CODE) {
             return v as u32;
         }
@@ -730,6 +731,7 @@ impl CardId {
         }
     }
     pub fn get_set_card(self, d: &mut Duel, setcodes: &mut std::collections::BTreeSet<u16>) {
+        d.note_read(self, 256);
         let code = self.get_code(d);
         let og = if code != self.c(d).data.code { d.read_card(code).setcodes } else { self.c(d).data.setcodes };
         setcodes.extend(og.iter());
@@ -816,6 +818,7 @@ impl CardId {
         }
     }
     pub fn get_type(self, d: &mut Duel, scard: Option<CardId>, sumtype: u64, playerid: u8) -> u32 {
+        d.note_read(self, 2);
         if let Some(v) = self.c(d).get_assumed(ASSUME_TYPE) {
             return v as u32;
         }
@@ -952,6 +955,7 @@ impl CardId {
         batk
     }
     pub fn get_attack(self, d: &mut Duel) -> i32 {
+        d.note_read(self, 64);
         if let Some(v) = self.c(d).get_assumed(ASSUME_ATTACK) {
             return v as i32;
         }
@@ -1153,6 +1157,7 @@ impl CardId {
         bdef
     }
     pub fn get_defense(self, d: &mut Duel) -> i32 {
+        d.note_read(self, 128);
         if self.c(d).data.type_ & TYPE_LINK != 0 {
             return 0;
         }
@@ -1297,6 +1302,7 @@ impl CardId {
     /// Level/Attribute/Race is available for: cards with original type TYPE_MONSTER, cards with
     /// current type TYPE_MONSTER, cards with EFFECT_PRE_MONSTER
     pub fn get_level(self, d: &mut Duel) -> u32 {
+        d.note_read(self, 4);
         let dt = self.c(d).data.type_;
         let status = self.c(d).status;
         if (dt & TYPE_XYZ != 0
@@ -1365,6 +1371,7 @@ impl CardId {
         level as u32
     }
     pub fn get_rank(self, d: &mut Duel) -> u32 {
+        d.note_read(self, 8);
         let dt = self.c(d).data.type_;
         let status = self.c(d).status;
         if ((dt & TYPE_XYZ == 0 || status & STATUS_NO_LEVEL != 0)
@@ -1434,6 +1441,7 @@ impl CardId {
         rank as u32
     }
     pub fn get_link(self, d: &mut Duel) -> u32 {
+        d.note_read(self, 512);
         let c = self.c(d);
         if c.data.type_ & TYPE_LINK == 0 || c.status & STATUS_NO_LEVEL != 0 {
             return 0;
@@ -1548,6 +1556,7 @@ impl CardId {
         self.get_level(d) == lv
     }
     pub fn get_attribute(self, d: &mut Duel, scard: Option<CardId>, sumtype: u64, playerid: u8) -> u32 {
+        d.note_read(self, 16);
         if let Some(v) = self.c(d).get_assumed(ASSUME_ATTRIBUTE) {
             return v as u32;
         }
@@ -1609,6 +1618,7 @@ impl CardId {
         attribute as u32
     }
     pub fn get_race(self, d: &mut Duel, scard: Option<CardId>, sumtype: u64, playerid: u8) -> u64 {
+        d.note_read(self, 32);
         if let Some(v) = self.c(d).get_assumed(ASSUME_RACE) {
             return v;
         }

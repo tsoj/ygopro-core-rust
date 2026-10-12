@@ -163,6 +163,8 @@ pub fn random_select(d: &mut Duel, g: &Group, playerid: u8, count: usize) -> Gro
         }
         out
     };
+    let mut out = out;
+    d.ext_on_random_select(g, &mut out);
     let m = d.new_message(MSG_RANDOM_SELECTED);
     d.msg(m).u8(playerid).u32(count as u32);
     for c in out.iter() {

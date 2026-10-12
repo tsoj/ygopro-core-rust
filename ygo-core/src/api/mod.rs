@@ -114,7 +114,13 @@ pub fn protected<T>(d: &mut Duel, default: T, f: impl FnOnce(&mut Duel) -> T) ->
 }
 /// `interpreter::check_matching`
 pub fn check_matching(d: &mut Duel, f: Filter, c: CardId) -> bool {
-    protected(d, false, |d| f(d, c))
+    // (ext: a card forced to match, or not, decides the filters of card scripts)
+    if let Some(forced) = d.ext_forced_matching(c) {
+        return forced;
+    }
+    let result = protected(d, false, |d| f(d, c));
+    d.ext_log_filter_read(c, result);
+    result
 }
 /// `interpreter::get_operation_value`
 pub fn get_operation_value(d: &mut Duel, f: ValueFn, c: CardId) -> i64 {

@@ -32,28 +32,6 @@ pub struct QueryInfo {
 impl Duel {
     /// `OCG_ExtSetLocationOrderById` (core_ext/ocgext.cpp): puts the cards of a pile (Deck, hand,
     /// Extra Deck without its face-up part, GY, banished) in the order of their card ids. False
-    /// (nothing changed) if the ids are not exactly that pile's cards.
-    pub fn ext_set_location_order_by_id(&mut self, playerid: u8, location: u32, ids: &[u32]) -> bool {
-        if playerid > 1 || location & (LOCATION_DECK | LOCATION_HAND | LOCATION_EXTRA | LOCATION_GRAVE | LOCATION_REMOVED) == 0 || location.count_ones() != 1 {
-            return false;
-        }
-        let list = self.pile_mut(playerid, location as u8).clone();
-        let count = if location == LOCATION_EXTRA { list.len() - self.player[playerid as usize].extra_p_count as usize } else { list.len() };
-        if ids.len() != count {
-            return false;
-        }
-        let mut result: Vec<CardId> = Vec::with_capacity(count);
-        for &id in ids {
-            let Some(&c) = list[..count].iter().find(|&&c| self.card(c).cardid == id) else { return false };
-            if result.contains(&c) {
-                return false;
-            }
-            result.push(c);
-        }
-        self.pile_mut(playerid, location as u8)[..count].copy_from_slice(&result);
-        self.reset_sequence(playerid, location as u8);
-        true
-    }
     /// `OCG_DuelNewCard`
     pub fn ocg_new_card(&mut self, info: &NewCardInfo) {
         if info.loc.count_ones() > 1 {

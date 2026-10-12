@@ -399,7 +399,8 @@ impl Duel {
                 let m = self.new_message(MSG_TOSS_COIN);
                 self.msg(m).u8(playerid).u8(count);
                 for _ in 0..count {
-                    let coin = self.get_next_integer(0, 1);
+                    let r = self.get_next_integer(0, 1);
+                    let coin = self.ext_forced_int(crate::ext::FORCED_COIN, r);
                     self.core.coin_results.push(coin != 0);
                     self.msg(m).u8(coin as u8);
                 }
@@ -459,7 +460,8 @@ impl Duel {
                 let m = self.new_message(MSG_TOSS_DICE);
                 self.msg(m).u8(playerid).u8(count1);
                 for _ in 0..count1 {
-                    let dice = self.get_next_integer(1, 6) as u8;
+                    let r = self.get_next_integer(1, 6);
+                    let dice = self.ext_forced_int(crate::ext::FORCED_DICE, r) as u8;
                     self.core.dice_results.push(dice);
                     self.msg(m).u8(dice);
                 }
@@ -467,7 +469,8 @@ impl Duel {
                     let m = self.new_message(MSG_TOSS_DICE);
                     self.msg(m).u8(1 - playerid).u8(count2);
                     for _ in 0..count2 {
-                        let dice = self.get_next_integer(1, 6) as u8;
+                        let r = self.get_next_integer(1, 6);
+                    let dice = self.ext_forced_int(crate::ext::FORCED_DICE, r) as u8;
                         self.core.dice_results.push(dice);
                         self.msg(m).u8(dice);
                     }

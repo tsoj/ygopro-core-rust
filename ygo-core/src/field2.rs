@@ -134,6 +134,13 @@ impl Duel {
                 self.reset_sequence(playerid, location);
             }
         }
+        {
+            let mut forced_count = self.pile_mut(playerid, location).len();
+            if location as u32 == LOCATION_EXTRA {
+                forced_count -= self.player[p].extra_p_count as usize;
+            }
+            self.ext_on_shuffle(playerid, location, forced_count);
+        }
         let to_shuffle = self.pile_mut(playerid, location).clone();
         if location as u32 == LOCATION_HAND || location as u32 == LOCATION_EXTRA {
             let mut tmp = Message::default();

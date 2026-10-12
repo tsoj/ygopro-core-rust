@@ -557,6 +557,7 @@ impl Duel {
                     ms.push(c);
                     seqs.push(seq);
                 }
+                self.ext_on_shuffle_set_card(&mut ms, &seqs);
                 for k in 0..ms.len() {
                     self.player[toplayer as usize].list_szone[seqs[k] as usize] = Some(ms[k]);
                     self.card_mut(ms[k]).current.sequence = seqs[k] as u32;

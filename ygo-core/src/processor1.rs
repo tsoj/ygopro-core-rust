@@ -65,7 +65,11 @@ impl Duel {
                 cursor: 0,
                 delivered_messages: 0,
                 skip_messages: 0,
+                delivered_logs: 0,
+                skip_logs: 0,
                 running: true,
+                waiting_at: 0,
+                ops: Vec::new(),
             }));
             self.run_scoped(&mut unit)
         } else {
@@ -102,6 +106,7 @@ impl Duel {
                 if payload.is::<Interrupt>() {
                     if let Some(s) = self.scope.as_mut() {
                         s.running = false;
+                        s.waiting_at = s.log.len();
                     }
                     None
                 } else {
@@ -115,11 +120,14 @@ impl Duel {
     fn restart_scope(&mut self) -> Status {
         let mut scope = self.scope.take().unwrap();
         let buff = std::mem::take(&mut self.buff);
+        let logs = std::mem::take(&mut self.logs);
         let mut restored = (*scope.snapshot).clone();
         restored.buff = buff;
+        restored.logs = logs;
         *self = restored;
         scope.cursor = 0;
         scope.skip_messages = scope.delivered_messages;
+        scope.skip_logs = scope.delivered_logs;
         scope.running = true;
         self.splice_subunits();
         let mut unit = self.core.units.pop_front().expect("scope unit");
@@ -137,8 +145,14 @@ impl Duel {
     pub fn scope_take_response(&mut self) {
         let scope = self.scope.as_mut().expect("a question outside of a card function's scope");
         if scope.cursor < scope.log.len() {
-            let r = scope.log[scope.cursor].clone();
+            let k = scope.cursor;
+            let r = scope.log[k].clone();
             scope.cursor += 1;
+            // (the changes made from outside while the scope waited at this question)
+            let ops: Vec<_> = scope.ops.iter().filter(|(at, _)| *at == k).map(|(_, op)| op.clone()).collect();
+            for op in ops {
+                op(self);
+            }
             self.returns.data = r;
         } else {
             resume_unwind(Box::new(Interrupt));

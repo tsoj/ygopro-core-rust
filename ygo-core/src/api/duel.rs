@@ -967,6 +967,7 @@ pub fn shuffle_set_card(d: &mut Duel, g: &Group) {
         let s = d.get_next_integer(0, i as i32) as usize;
         ms.swap(i, s);
     }
+    d.ext_on_shuffle_set_card(&mut ms, &seq);
     let m = d.new_message(MSG_SHUFFLE_SET_CARD);
     d.msg(m).u8(loc).u8(ct as u8);
     for &c in &order {

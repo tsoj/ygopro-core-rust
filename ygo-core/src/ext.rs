@@ -648,7 +648,10 @@ impl Duel {
         if self.card(pcard).current.location == 0 {
             return false;
         }
-        let pos = if location & (LOCATION_DECK | LOCATION_HAND) != 0 || (location == LOCATION_EXTRA && position & POS_FACEUP == 0) {
+        // (a hand card has the position the core gives one: POS_FACEDOWN, as a drawn card)
+        let pos = if location == LOCATION_HAND {
+            POS_FACEDOWN
+        } else if location == LOCATION_DECK || (location == LOCATION_EXTRA && position & POS_FACEUP == 0) {
             POS_FACEDOWN_DEFENSE
         } else {
             position

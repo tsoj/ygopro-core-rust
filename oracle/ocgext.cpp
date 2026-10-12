@@ -755,7 +755,9 @@ OCGEXT_API int OCG_ExtPlaceCard(OCG_Duel ocg_duel, uint32_t id, uint8_t con, uin
 	f.add_card(con, pcard, static_cast<uint8_t>(location), static_cast<uint8_t>(sequence), pzone);
 	if(pcard->current.location == 0)
 		return 0;
-	pcard->current.position = (location & (LOCATION_DECK | LOCATION_HAND)) ? POS_FACEDOWN_DEFENSE
+	// (a hand card has the position the core gives one: POS_FACEDOWN, as a drawn card)
+	pcard->current.position = (location == LOCATION_HAND) ? POS_FACEDOWN
+		: (location == LOCATION_DECK) ? POS_FACEDOWN_DEFENSE
 		: (location == LOCATION_EXTRA && !(position & POS_FACEUP)) ? POS_FACEDOWN_DEFENSE : position;
 	uint32_t reset = location == LOCATION_HAND ? RESET_TOHAND : location == LOCATION_DECK || location == LOCATION_EXTRA
 		? RESET_TODECK : location == LOCATION_GRAVE ? RESET_TOGRAVE : location == LOCATION_REMOVED ? RESET_REMOVE

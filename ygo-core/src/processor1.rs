@@ -60,7 +60,7 @@ impl Duel {
             let mut snapshot = self.clone();
             snapshot.core.units.push_front(unit.clone());
             self.scope = Some(Box::new(Scope {
-                snapshot: Box::new(snapshot),
+                snapshot: std::rc::Rc::new(snapshot),
                 log: Vec::new(),
                 cursor: 0,
                 delivered_messages: 0,
@@ -1052,8 +1052,8 @@ impl Duel {
                     }
                     self.emplace_process(units::SolveChain { step: 0, skip_trigger, skip_freechain, skip_new, backed_up_operation: None });
                 } else {
-                    let pe = std::mem::take(&mut self.core.point_event);
-                    self.core.used_event.extend(pe);
+                    // (the core keeps the events in used_event for Lua's garbage collector: nothing here)
+                    self.core.point_event.clear();
                     self.reset_chain();
                     self.returns.set_i32(0, 0);
                 }

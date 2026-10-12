@@ -829,8 +829,7 @@ impl Duel {
                 false
             }
             12 => {
-                let pe = std::mem::take(&mut self.core.point_event);
-                self.core.used_event.extend(pe);
+                self.core.point_event.clear(); // (the core keeps them in used_event for Lua's GC)
                 self.new_message(MSG_CHAIN_END);
                 self.reset_chain();
                 if (self.core.summoning_card.is_some() || self.core.summoning_proc_group_type != 0 || self.core.effect_damage_step == 1) && self.core.reserved.is_some() {
@@ -881,8 +880,7 @@ impl Duel {
             }
             i += 1;
         }
-        let ie = std::mem::take(&mut self.core.instant_event);
-        self.core.used_event.extend(ie);
+        self.core.instant_event.clear(); // (the core keeps them in used_event for Lua's GC)
         self.adjust_instant();
         if !self.is_flag(DUEL_RELAY) && !self.core.force_turn_end {
             let (winp, rea) = self.win_check_impl();

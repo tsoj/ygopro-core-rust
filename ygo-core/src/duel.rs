@@ -444,7 +444,6 @@ pub struct Processor {
     pub queue_event: VecDeque<Event>,
     pub delayed_activate_event: VecDeque<Event>,
     pub full_event: VecDeque<Event>,
-    pub used_event: VecDeque<Event>,
     pub single_event: VecDeque<Event>,
     pub solving_event: VecDeque<Event>,
     pub sub_solving_event: VecDeque<Event>,

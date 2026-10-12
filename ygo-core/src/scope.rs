@@ -12,7 +12,7 @@ pub type ScopeOp = Arc<dyn Fn(&mut Duel) + Send + Sync>;
 #[derive(Clone)]
 pub struct Scope {
     /// The duel before the card function started.
-    pub snapshot: Box<Duel>,
+    pub snapshot: std::rc::Rc<Duel>,
     /// The responses given inside the scope so far.
     pub log: Vec<Response>,
     /// The next response to take from the log in the current run.

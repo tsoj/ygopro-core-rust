@@ -31,7 +31,6 @@ impl Duel {
         match arg.step {
             0 => {
                 // Pre Draw
-                self.core.used_event.clear();
                 for e in std::mem::take(&mut self.core.reseted_effects) {
                     self.delete_effect(e);
                 }

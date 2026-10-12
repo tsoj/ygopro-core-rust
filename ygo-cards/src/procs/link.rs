@@ -143,9 +143,12 @@ fn check_goal(d: &mut Duel, x: &Ctx, sg: &CardSet, filt: &[ExtraMaterial]) -> bo
         }
     }
     let n = sg.len() as i32;
-    let link = card::get_link(d, x.lc);
+    // (`lc:GetLink()` only once `#sg>=minc` holds: the read log sees the order of the checks)
     sg.len() >= x.minc
-        && group::check_with_sum_equal(d, sg, &get_link_count, link, n, n).0
+        && {
+            let link = card::get_link(d, x.lc);
+            group::check_with_sum_equal(d, sg, &get_link_count, link, n, n).0
+        }
         && x.specialchk.as_ref().is_none_or(|s| s(d, sg, x.lc, SUMMON_TYPE_LINK as u64 | MATERIAL_LINK, x.tp))
         && duel::get_location_count_from_ex(d, x.tp, Some(x.tp), sg.into(), duel::ExtraCard::Card(x.lc), None).0 > 0
 }

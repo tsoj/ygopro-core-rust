@@ -15,6 +15,27 @@ pub fn lua_error(msg: impl Into<String>) -> ! {
     resume_unwind(Box::new(LuaError(msg.into())))
 }
 
+/// What fails a card function: a Lua error, or a panic of the Rust port (a bug, typically where
+/// the Lua fails too, e.g. on a nil value in a state normal play never reaches, as an activation
+/// the belief replay forced), which fails the call like a Lua error instead of the whole engine.
+/// `Err`: an unwind that is not a failure (a card function interrupted to wait, `scope.rs`).
+pub fn script_failure(payload: Box<dyn std::any::Any + Send>) -> Result<String, Box<dyn std::any::Any + Send>> {
+    let payload = match payload.downcast::<LuaError>() {
+        Ok(e) => return Ok(e.0),
+        Err(p) => p,
+    };
+    if payload.is::<crate::scope::Interrupt>() || payload.is::<crate::scope::StopHere>() {
+        return Err(payload);
+    }
+    if let Some(s) = payload.downcast_ref::<String>() {
+        return Ok(format!("engine error: {s}"));
+    }
+    if let Some(s) = payload.downcast_ref::<&str>() {
+        return Ok(format!("engine error: {s}"));
+    }
+    Err(payload)
+}
+
 /// `scriptlib::check_action_permission`
 pub fn check_action_permission(d: &Duel) {
     if d.no_action != 0 {
@@ -54,9 +75,9 @@ impl Duel {
         }
         match r {
             Ok(v) => Some(v),
-            Err(payload) => match payload.downcast::<LuaError>() {
-                Ok(e) => {
-                    self.handle_message(&e.0, 0);
+            Err(payload) => match script_failure(payload) {
+                Ok(msg) => {
+                    self.handle_message(&msg, 0);
                     None
                 }
                 Err(other) => resume_unwind(other),

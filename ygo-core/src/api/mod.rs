@@ -15,7 +15,6 @@ pub mod group;
 use std::panic::{catch_unwind, resume_unwind, AssertUnwindSafe};
 
 use crate::duel::Duel;
-use crate::lua::LuaError;
 use crate::types::*;
 
 /// A card filter of a script (`function(c, ...)`: the extra arguments are captured).
@@ -103,9 +102,9 @@ pub fn protected<T>(d: &mut Duel, default: T, f: impl FnOnce(&mut Duel) -> T) ->
         f(d)
     })) {
         Ok(v) => v,
-        Err(payload) => match payload.downcast::<LuaError>() {
-            Ok(e) => {
-                d.handle_message(&e.0, 0);
+        Err(payload) => match crate::lua::script_failure(payload) {
+            Ok(msg) => {
+                d.handle_message(&msg, 0);
                 default
             }
             Err(other) => resume_unwind(other),

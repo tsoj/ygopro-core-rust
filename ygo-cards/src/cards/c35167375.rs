@@ -92,8 +92,10 @@ fn activate(d: &mut Duel, a: &EffArgs) {
         let c = effect::get_handler(d, e).nil();
         // local race,attr=e:GetLabel()
         let labels = effect::get_labels(d, e);
-        let race = labels[0] as u64;
-        let attr = labels[1] as u32;
+        // (nil where the target set fewer labels, e.g. an activation the belief replay forced:
+        // Lua fails where it is used)
+        let nil = |v: Option<&i64>| v.copied().unwrap_or_else(|| crate::lua_error("attempt to perform bitwise operation on a nil value"));
+        let race = nil(labels.first()) as u64;
         // if tc:IsRaceExcept(race) then
         if card::is_race_except(d, tc, race, None, 0, None) {
             // --It becomes that Type
@@ -113,6 +115,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
             card::register_effect(d, tc, e1, false);
         }
         // if tc:IsAttributeExcept(attr) then
+        let attr = nil(labels.get(1)) as u32;
         if card::is_attribute_except(d, tc, attr, None, 0, None) {
             // --It becomes that Attribute
             // local e2=Effect.CreateEffect(c)

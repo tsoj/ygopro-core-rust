@@ -330,7 +330,7 @@ fn exists_mix(d: &mut Duel, x: &MixCtx, mg: &CardSet, sg: &mut CardSet, sub: boo
     }
     let mut res = false;
     for c in group::iter(d, &group::difference(mg, sg)) {
-        if crate::lua::protected(d, false, |d| check_mix(d, x, c, mg, sg, sub, funs)) {
+        if ygo_core::api::check_matching_with(d, c, |d| check_mix(d, x, c, mg, sg, sub, funs)) {
             res = true;
             break;
         }
@@ -352,7 +352,7 @@ fn check_mix_goal_uncached(d: &mut Duel, x: &MixCtx, sg: &CardSet, sub: bool) ->
     let mut g = CardSet::new();
     let mut ok = false;
     for c in group::iter(d, sg) {
-        if crate::lua::protected(d, false, |d| check_mix(d, x, c, sg, &mut g, sub, x.funs)) {
+        if ygo_core::api::check_matching_with(d, c, |d| check_mix(d, x, c, sg, &mut g, sub, x.funs)) {
             ok = true;
             break;
         }
@@ -394,7 +394,7 @@ fn select_mix(d: &mut Duel, x: &MixCtx, c: CardId, mg: &CardSet, sg: &mut CardSe
         let rest = group::difference(mustg, sg);
         let mut found = false;
         for c2 in group::iter(d, &group::difference(&mg2, sg)) {
-            if crate::lua::protected(d, false, |d| select_mix(d, x, c2, &mg2, sg, &rest, sub)) {
+            if ygo_core::api::check_matching_with(d, c2, |d| select_mix(d, x, c2, &mg2, sg, &rest, sub)) {
                 found = true;
                 break;
             }
@@ -475,7 +475,7 @@ pub fn condition_mix(insf: bool, sub: bool, funs: Arc<[Fun]>) -> LuaFn {
             group::add_card(&mut mg, &mustg);
             let x = MixCtx::new(d, &funs, tp, c, &k, &mg, &mustg);
             for c2 in group::iter(d, &mg) {
-                if crate::lua::protected(d, false, |d| select_mix(d, &x, c2, &mg, &mut sg, &mustg, k.sub)) {
+                if ygo_core::api::check_matching_with(d, c2, |d| select_mix(d, &x, c2, &mg, &mut sg, &mustg, k.sub)) {
                     return true;
                 }
             }
@@ -533,7 +533,7 @@ pub fn operation_mix(sub: bool, funs: Arc<[Fun]>) -> LuaFn {
             let rest = group::difference(&mustg, &sg);
             let mut cg = CardSet::new();
             for c2 in group::iter(d, &group::difference(&mg, &sg)) {
-                if crate::lua::protected(d, false, |d| select_mix(d, &x, c2, &mg, &mut sg, &rest, k.sub)) {
+                if ygo_core::api::check_matching_with(d, c2, |d| select_mix(d, &x, c2, &mg, &mut sg, &rest, k.sub)) {
                     cg.insert(c2);
                 }
             }
@@ -582,7 +582,7 @@ fn check_mix_rep(d: &mut Duel, x: &RepCtx, sg: &CardSet, g: &mut CardSet, sub: b
     if let Some((&first, rest)) = slots.split_first() {
         let _ = rest;
         for c in group::iter(d, &group::difference(sg, g)) {
-            if crate::lua::protected(d, false, |d| check_mix_rep_filter(d, x, c, sg, g, sub, slots, first)) {
+            if ygo_core::api::check_matching_with(d, c, |d| check_mix_rep_filter(d, x, c, sg, g, sub, slots, first)) {
                 return true;
             }
         }
@@ -593,12 +593,12 @@ fn check_mix_rep(d: &mut Duel, x: &RepCtx, sg: &CardSet, g: &mut CardSet, sub: b
         let mut ct1 = 0;
         let mut ct2 = 0;
         for c in group::iter(d, &rest) {
-            if crate::lua::protected(d, false, |d| x.call(d, x.fun1, c, sub, &total, &total)) {
+            if ygo_core::api::check_matching_with(d, c, |d| x.call(d, x.fun1, c, sub, &total, &total)) {
                 ct1 += 1;
             }
         }
         for c in group::iter(d, &rest) {
-            if crate::lua::protected(d, false, |d| x.call(d, x.fun1, c, false, &total, &total)) {
+            if ygo_core::api::check_matching_with(d, c, |d| x.call(d, x.fun1, c, false, &total, &total)) {
                 ct2 += 1;
             }
         }
@@ -695,7 +695,7 @@ fn check_mix_rep_selected_cond(d: &mut Duel, x: &RepCtx, memo: &mut RepMemo, r: 
     let res = if g.len() < r.sg.len() {
         let mut found = false;
         for c in group::iter(d, &group::difference(r.sg, g)) {
-            if crate::lua::protected(d, false, |d| check_mix_rep_template(d, x, memo, c, Cond::Selected, r, mustg, g, sub, minc, maxc, slots)) {
+            if ygo_core::api::check_matching_with(d, c, |d| check_mix_rep_template(d, x, memo, c, Cond::Selected, r, mustg, g, sub, minc, maxc, slots)) {
                 found = true;
                 break;
             }
@@ -723,14 +723,14 @@ fn check_select_mix_rep(d: &mut Duel, x: &RepCtx, memo: &mut RepMemo, r: &RepArg
                 return true;
             }
             for c in group::iter(d, &group::difference(r.mg, g)) {
-                if crate::lua::protected(d, false, |d| check_select_mix_rep_all(d, x, memo, c, r, mustg, g, sub, minc, maxc, slots)) {
+                if ygo_core::api::check_matching_with(d, c, |d| check_select_mix_rep_all(d, x, memo, c, r, mustg, g, sub, minc, maxc, slots)) {
                     return true;
                 }
             }
             false
         } else {
             for c in group::iter(d, &group::difference(r.mg, g)) {
-                let ok = crate::lua::protected(d, false, |d| card::is_controler(d, c, x.tp) && card::is_location(d, c, LOCATION_MZONE) && check_mix_rep_template(d, x, memo, c, Cond::SelectRep, r, mustg, g, sub, minc, maxc, slots));
+                let ok = ygo_core::api::check_matching_with(d, c, |d| card::is_controler(d, c, x.tp) && card::is_location(d, c, LOCATION_MZONE) && check_mix_rep_template(d, x, memo, c, Cond::SelectRep, r, mustg, g, sub, minc, maxc, slots));
                 if ok {
                     return true;
                 }
@@ -804,7 +804,7 @@ fn select_mix_rep(d: &mut Duel, x: &RepCtx, c: CardId, mg: &CardSet, sg: &mut Ca
         let mut g = CardSet::new();
         let mut found = false;
         for c2 in group::iter(d, &sgc) {
-            if crate::lua::protected(d, false, |d| check_mix_rep_template(d, x, &mut memo, c2, Cond::Selected, &r, mustg, &mut g, sub, minc, maxc, &slots)) {
+            if ygo_core::api::check_matching_with(d, c2, |d| check_mix_rep_template(d, x, &mut memo, c2, Cond::Selected, &r, mustg, &mut g, sub, minc, maxc, &slots)) {
                 found = true;
                 break;
             }
@@ -880,7 +880,7 @@ fn condition_mix_rep(insf: bool, sub: bool, f1: Fun, minc: i64, maxc: i64, funs:
             group::add_card(&mut mg, &mustg);
             let x = RepCtx { fun1: &f1, funs: &funs, tp, fc: c, sub2: k.sub, contact: k.contact, sumtype: k.sumtype, chkf: k.chkf };
             for c2 in group::iter(d, &mg) {
-                if crate::lua::protected(d, false, |d| select_mix_rep(d, &x, c2, &mg, &mut sg, &mustg, k.sub, minc, maxc)) {
+                if ygo_core::api::check_matching_with(d, c2, |d| select_mix_rep(d, &x, c2, &mg, &mut sg, &mustg, k.sub, minc, maxc)) {
                     return true;
                 }
             }
@@ -921,7 +921,7 @@ fn operation_mix_rep(sub: bool, f1: Fun, minc: i64, maxc: i64, funs: Arc<[Fun]>)
         while (sg.len() as i64) < maxc + funs.len() as i64 {
             let mut cg = CardSet::new();
             for c2 in group::iter(d, &group::difference(&mg, &sg)) {
-                if crate::lua::protected(d, false, |d| select_mix_rep(d, &x, c2, &mg, &mut sg, &mustg, k.sub, minc, maxc)) {
+                if ygo_core::api::check_matching_with(d, c2, |d| select_mix_rep(d, &x, c2, &mg, &mut sg, &mustg, k.sub, minc, maxc)) {
                     cg.insert(c2);
                 }
             }

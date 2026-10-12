@@ -5,7 +5,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
 use crate::constants::*;
 use crate::duel::{Chain, Duel, Event};
-use crate::scope::{Interrupt, Scope};
+use crate::scope::{Interrupt, Scope, StopHere, StopPoint};
 use crate::types::*;
 use crate::units::{self, Unit};
 
@@ -68,8 +68,10 @@ impl Duel {
                 delivered_logs: 0,
                 skip_logs: 0,
                 running: true,
-                waiting_at: 0,
+                waiting_at: StopPoint::Question(0),
                 ops: Vec::new(),
+                stops_done: 0,
+                stop_cursor: 0,
             }));
             self.run_scoped(&mut unit)
         } else {
@@ -80,6 +82,8 @@ impl Duel {
 
     fn finish_step(&mut self, mut unit: Unit, result: Option<bool>) -> Status {
         match result {
+            // (the scope waits: for a response, or at a stop for the caller to go on)
+            None if self.scope.as_ref().is_some_and(|s| matches!(s.waiting_at, StopPoint::Stop(_))) => Status::Continue,
             None => Status::Awaiting,
             Some(true) => Status::Continue,
             Some(false) => {
@@ -106,7 +110,12 @@ impl Duel {
                 if payload.is::<Interrupt>() {
                     if let Some(s) = self.scope.as_mut() {
                         s.running = false;
-                        s.waiting_at = s.log.len();
+                        s.waiting_at = StopPoint::Question(s.log.len());
+                    }
+                    None
+                } else if payload.is::<StopHere>() {
+                    if let Some(s) = self.scope.as_mut() {
+                        s.running = false;
                     }
                     None
                 } else {
@@ -126,6 +135,7 @@ impl Duel {
         restored.logs = logs;
         *self = restored;
         scope.cursor = 0;
+        scope.stop_cursor = 0;
         scope.skip_messages = scope.delivered_messages;
         scope.skip_logs = scope.delivered_logs;
         scope.running = true;
@@ -149,7 +159,7 @@ impl Duel {
             let r = scope.log[k].clone();
             scope.cursor += 1;
             // (the changes made from outside while the scope waited at this question)
-            let ops: Vec<_> = scope.ops.iter().filter(|(at, _)| *at == k).map(|(_, op)| op.clone()).collect();
+            let ops: Vec<_> = scope.ops.iter().filter(|(at, _)| *at == StopPoint::Question(k)).map(|(_, op)| op.clone()).collect();
             for op in ops {
                 op(self);
             }
@@ -165,6 +175,8 @@ impl Duel {
         // The C++ yields here, and on resume `Execute*` sets reason_effect/reason_player back to the
         // triggering effect (processor.cpp), even if a nested Execute cleared them when it ended.
         let (reason_effect, reason_player) = (self.core.reason_effect, self.core.reason_player);
+        // (the C++ step that ran the card function's code up to here ends)
+        self.scope_stop_point();
         self.run_pushed_units_inner();
         self.core.reason_effect = reason_effect;
         self.core.reason_player = reason_player;
@@ -185,9 +197,42 @@ impl Duel {
                 self.core.units.push_front(unit);
                 if na {
                     self.scope_take_response();
+                    continue;
                 }
             }
+            self.scope_stop_point();
         }
+    }
+
+    /// With `fine_steps`: the end of a step of a running card function, where the C++ core returns
+    /// from `OCG_DuelProcess` if the step sent messages (its Lua code yields to the core between
+    /// steps). A stop passed in an earlier run of the scope is passed again (its messages were sent,
+    /// the changes made from outside there are made again); at a new one the card function is
+    /// interrupted, its messages are sent and `process` says "continue": the caller can change the
+    /// duel there, as between the C++ core's steps.
+    pub fn scope_stop_point(&mut self) {
+        if !self.fine_steps {
+            return;
+        }
+        let Some(s) = self.scope.as_mut() else { return };
+        if !s.running || self.messages.iter().all(|m| m.data.is_empty()) {
+            return;
+        }
+        let k = s.stop_cursor;
+        s.stop_cursor += 1;
+        if k < s.stops_done {
+            let ops: Vec<_> = s.ops.iter().filter(|(at, _)| *at == StopPoint::Stop(k)).map(|(_, op)| op.clone()).collect();
+            self.generate_buffer(); // (sent by an earlier run: dropped)
+            for op in ops {
+                op(self);
+            }
+            return;
+        }
+        self.generate_buffer();
+        let s = self.scope.as_mut().unwrap();
+        s.stops_done = k + 1;
+        s.waiting_at = StopPoint::Stop(k);
+        resume_unwind(Box::new(StopHere));
     }
 
     /// `field::process(Processors::Execute*)`

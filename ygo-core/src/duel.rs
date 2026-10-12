@@ -661,6 +661,11 @@ pub struct Duel {
     pub scope: Option<Box<crate::scope::Scope>>,
     /// The extensions for the belief replay (`ext.rs`)
     pub ext: crate::ext::Ext,
+    /// Stop inside card functions where the C++ core returns from `OCG_DuelProcess` (after each
+    /// step that sent messages), so that a caller that changes the duel between `process` calls
+    /// (the belief replay) does so at the same points (see `scope_stop_point`). Slower (a card
+    /// function runs again from its start after each stop); off by default.
+    pub fine_steps: bool,
     /// Log messages (`OCG_LogTypes`, text) of the core and the scripts (script errors are type 0),
     /// for the caller to take
     pub logs: Vec<(u32, String)>,
@@ -930,6 +935,7 @@ impl Duel {
             script_vars: Arc::new(Vec::new()),
             scope: None,
             ext: Default::default(),
+            fine_steps: false,
             logs: Vec::new(),
         };
         d.temp_card = d.new_card(0);

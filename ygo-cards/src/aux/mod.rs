@@ -309,7 +309,8 @@ fn extends(d: &mut Duel, x: &mut LoopCtx, sg: &mut CardSet) -> bool {
         if sg.contains(c) {
             continue;
         }
-        if crate::lua::protected(d, false, |d| select_unselect_loop_inner(d, x, c, sg)) {
+        // (`mg:IsExists(loop, 1, sg, ...)`: a card filter, see check_matching_with)
+        if ygo_core::api::check_matching_with(d, c, |d| select_unselect_loop_inner(d, x, c, sg)) {
             res = true;
             break;
         }
@@ -370,7 +371,8 @@ pub fn select_unselect_group(
                 continue;
             }
             let mut sg2 = sg.clone();
-            if crate::lua::protected(d, false, |d| select_unselect_loop(d, c, &mut sg2, g, e, tp, minc, maxc, rescon)) {
+            // (`g:Filter(aux.SelectUnselectLoop, sg, ...)`: a card filter, see check_matching_with)
+            if ygo_core::api::check_matching_with(d, c, |d| select_unselect_loop(d, c, &mut sg2, g, e, tp, minc, maxc, rescon)) {
                 mg.insert(c);
             }
         }

@@ -227,7 +227,7 @@ fn check(d: &mut Duel, sg: &CardSet, e: Option<EffectId>, tp: u8, c: Option<Card
 fn match_specific(d: &mut Duel, mg: &mut CardSet, f: &SpecificMatFilter, c: CardId, tp: u8) {
     for x in mg.to_vec() {
         let snapshot = mg.clone();
-        if !crate::lua::protected(d, false, |d| f(d, x, c, &snapshot, tp)) {
+        if !ygo_core::api::check_matching_with(d, x, |d| f(d, x, c, &snapshot, tp)) {
             mg.remove(x);
         }
     }

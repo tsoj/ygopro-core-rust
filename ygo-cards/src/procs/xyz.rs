@@ -296,7 +296,7 @@ fn harmonizing(d: &mut Duel, c: CardId, e: EffectId) -> bool {
 fn exists_recursion(d: &mut Duel, x: &Ctx, mg: &mut CardSet, sg: &mut CardSet, matg: &mut CardSet, ct: usize, matct: usize) -> bool {
     let cands: Vec<CardId> = group::iter(d, &group::difference(mg, sg));
     for c in cands {
-        if crate::lua::protected(d, false, |d| recursion_chk(d, x, c, mg, sg, matg, ct, matct)) {
+        if ygo_core::api::check_matching_with(d, c, |d| recursion_chk(d, x, c, mg, sg, matg, ct, matct)) {
             return true;
         }
     }
@@ -504,7 +504,7 @@ fn target_fn(p: Params) -> LuaFn {
             let cands: Vec<CardId> = group::iter(d, &group::difference(&mg, &sg));
             let mut selg = CardSet::new();
             for tc in cands {
-                if crate::lua::protected(d, false, |d| recursion_chk(d, &x, tc, &mut mg, &mut sg, &mut matg, ct, matct)) {
+                if ygo_core::api::check_matching_with(d, tc, |d| recursion_chk(d, &x, tc, &mut mg, &mut sg, &mut matg, ct, matct)) {
                     selg.insert(tc);
                 }
             }

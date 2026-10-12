@@ -76,7 +76,7 @@ fn exists_recursive(d: &mut Duel, x: &Ctx, mg: &CardSet, sg: &mut CardSet, filt:
         if sg.contains(c) {
             continue;
         }
-        if crate::lua::protected(d, false, |d| check_recursive(d, x, c, sg, &mut shared)) {
+        if ygo_core::api::check_matching_with(d, c, |d| check_recursive(d, x, c, sg, &mut shared)) {
             return true;
         }
     }
@@ -211,7 +211,7 @@ fn exists_recursive_fresh(d: &mut Duel, x: &Ctx, g: &CardSet, sg: &mut CardSet) 
         if sg.contains(c) {
             continue;
         }
-        if crate::lua::protected(d, false, |d| check_recursive(d, x, c, sg, &mut Vec::new())) {
+        if ygo_core::api::check_matching_with(d, c, |d| check_recursive(d, x, c, sg, &mut Vec::new())) {
             return true;
         }
     }
@@ -263,7 +263,7 @@ fn target_fn(p: Params) -> LuaFn {
                 if sg.contains(tc) {
                     continue;
                 }
-                if crate::lua::protected(d, false, |d| check_recursive(d, &x, tc, &mut sg, &mut shared)) {
+                if ygo_core::api::check_matching_with(d, tc, |d| check_recursive(d, &x, tc, &mut sg, &mut shared)) {
                     cg.insert(tc);
                 }
             }

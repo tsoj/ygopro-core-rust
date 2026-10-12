@@ -114,13 +114,37 @@ pub fn protected<T>(d: &mut Duel, default: T, f: impl FnOnce(&mut Duel) -> T) ->
 }
 /// `interpreter::check_matching`
 pub fn check_matching(d: &mut Duel, f: Filter, c: CardId) -> bool {
-    // (ext: a card forced to match, or not, decides the filters of card scripts)
-    if let Some(forced) = d.ext_forced_matching(c) {
-        return forced;
+    check_matching_with(d, c, |d| f(d, c))
+}
+/// `check_matching` with the filter as a closure: for library code that runs a Lua helper as a
+/// card filter of a group function (e.g. `g:Filter(aux.SelectUnselectLoop, ...)`), which the
+/// belief replay's forced matches and read log apply to as to any filter.
+pub fn check_matching_with(d: &mut Duel, c: CardId, f: impl FnOnce(&mut Duel) -> bool) -> bool {
+    // (ext: a card forced to match, or not, decides the filters of card scripts, not those of the
+    // rule helpers (`Ext::rule_filter`, for this filter only: the filters it uses itself are not)
+    let rule = std::mem::replace(&mut d.ext.rule_filter, false);
+    if !rule {
+        if let Some(forced) = d.ext_forced_matching(c) {
+            d.ext.rule_filter = rule;
+            return forced;
+        }
     }
-    let result = protected(d, false, |d| f(d, c));
-    d.ext_log_filter_read(c, result);
+    let result = protected(d, false, f);
+    if !rule {
+        d.ext_log_filter_read(c, result);
+    }
+    d.ext.rule_filter = rule;
     result
+}
+
+/// Runs `f` with `Ext::rule_filter` set: the card filters it passes directly to the engine's group
+/// functions are those of a rule helper (`proc_workaround.lua`), which forced matches and the read
+/// log of the belief replay do not apply to.
+pub fn rule_filters<T>(d: &mut Duel, f: impl FnOnce(&mut Duel) -> T) -> T {
+    let old = std::mem::replace(&mut d.ext.rule_filter, true);
+    let r = f(d);
+    d.ext.rule_filter = old;
+    r
 }
 /// `interpreter::get_operation_value`
 pub fn get_operation_value(d: &mut Duel, f: ValueFn, c: CardId) -> i64 {

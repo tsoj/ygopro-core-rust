@@ -304,7 +304,7 @@ fn goal(d: &mut Duel, x: &Ctx, tsg: &CardSet, ntsg: &CardSet, sg: &CardSet, with
 fn exists_p31(d: &mut Duel, x: &Ctx, g: &mut CardSet, tsg: &mut CardSet, ntsg: &mut CardSet, sg: &mut CardSet) -> bool {
     let cands = group::iter(d, &group::difference(g, sg));
     for c in cands {
-        if crate::lua::protected(d, false, |d| check_p31(d, x, c, g, tsg, ntsg, sg)) {
+        if ygo_core::api::check_matching_with(d, c, |d| check_p31(d, x, c, g, tsg, ntsg, sg)) {
             return true;
         }
     }
@@ -313,7 +313,7 @@ fn exists_p31(d: &mut Duel, x: &Ctx, g: &mut CardSet, tsg: &mut CardSet, ntsg: &
 fn exists_p32(d: &mut Duel, x: &Ctx, g: &mut CardSet, tsg: &mut CardSet, ntsg: &mut CardSet, sg: &mut CardSet) -> bool {
     let cands = group::iter(d, &group::difference(g, sg));
     for c in cands {
-        if crate::lua::protected(d, false, |d| check_p32(d, x, c, g, tsg, ntsg, sg)) {
+        if ygo_core::api::check_matching_with(d, c, |d| check_p32(d, x, c, g, tsg, ntsg, sg)) {
             return true;
         }
     }
@@ -403,7 +403,7 @@ fn key(name: u8, c: CardId, groups: &[&CardSet]) -> (u8, CardId, Vec<Vec<CardId>
 fn exists_p41(d: &mut Duel, x: &Ctx, memo: &mut Memo, tg: &mut CardSet, ntg: &mut CardSet, tsg: &mut CardSet, ntsg: &mut CardSet, sg: &mut CardSet) -> bool {
     let cands = group::iter(d, &group::difference(tg, sg));
     for c in cands {
-        if crate::lua::protected(d, false, |d| check_p41(d, x, memo, c, tg, ntg, tsg, ntsg, sg)) {
+        if ygo_core::api::check_matching_with(d, c, |d| check_p41(d, x, memo, c, tg, ntg, tsg, ntsg, sg)) {
             return true;
         }
     }
@@ -412,7 +412,7 @@ fn exists_p41(d: &mut Duel, x: &Ctx, memo: &mut Memo, tg: &mut CardSet, ntg: &mu
 fn exists_p42(d: &mut Duel, x: &Ctx, memo: &mut Memo, ntg: &mut CardSet, tsg: &mut CardSet, ntsg: &mut CardSet, sg: &mut CardSet) -> bool {
     let cands = group::iter(d, &group::difference(ntg, sg));
     for c in cands {
-        if crate::lua::protected(d, false, |d| check_p42(d, x, memo, c, ntg, tsg, ntsg, sg)) {
+        if ygo_core::api::check_matching_with(d, c, |d| check_p42(d, x, memo, c, ntg, tsg, ntsg, sg)) {
             return true;
         }
     }
@@ -505,7 +505,7 @@ fn check_p42_body(d: &mut Duel, x: &Ctx, memo: &mut Memo, c: CardId, ntg: &mut C
 fn filter_p41(d: &mut Duel, x: &Ctx, tg: &mut CardSet, ntg: &mut CardSet, tsg: &mut CardSet, ntsg: &mut CardSet, sg: &mut CardSet) -> CardSet {
     let mut out = CardSet::new();
     for c in group::iter(d, &group::difference(tg, sg)) {
-        if crate::lua::protected(d, false, |d| check_p41(d, x, &mut Memo::new(), c, tg, ntg, tsg, ntsg, sg)) {
+        if ygo_core::api::check_matching_with(d, c, |d| check_p41(d, x, &mut Memo::new(), c, tg, ntg, tsg, ntsg, sg)) {
             out.insert(c);
         }
     }
@@ -514,7 +514,7 @@ fn filter_p41(d: &mut Duel, x: &Ctx, tg: &mut CardSet, ntg: &mut CardSet, tsg: &
 fn filter_p42(d: &mut Duel, x: &Ctx, ntg: &mut CardSet, tsg: &mut CardSet, ntsg: &mut CardSet, sg: &mut CardSet) -> CardSet {
     let mut out = CardSet::new();
     for c in group::iter(d, &group::difference(ntg, sg)) {
-        if crate::lua::protected(d, false, |d| check_p42(d, x, &mut Memo::new(), c, ntg, tsg, ntsg, sg)) {
+        if ygo_core::api::check_matching_with(d, c, |d| check_p42(d, x, &mut Memo::new(), c, ntg, tsg, ntsg, sg)) {
             out.insert(c);
         }
     }
@@ -523,7 +523,7 @@ fn filter_p42(d: &mut Duel, x: &Ctx, ntg: &mut CardSet, tsg: &mut CardSet, ntsg:
 fn filter_p31(d: &mut Duel, x: &Ctx, g: &mut CardSet, tsg: &mut CardSet, ntsg: &mut CardSet, sg: &mut CardSet) -> CardSet {
     let mut out = CardSet::new();
     for c in group::iter(d, &group::difference(g, sg)) {
-        if crate::lua::protected(d, false, |d| check_p31(d, x, c, g, tsg, ntsg, sg)) {
+        if ygo_core::api::check_matching_with(d, c, |d| check_p31(d, x, c, g, tsg, ntsg, sg)) {
             out.insert(c);
         }
     }
@@ -532,7 +532,7 @@ fn filter_p31(d: &mut Duel, x: &Ctx, g: &mut CardSet, tsg: &mut CardSet, ntsg: &
 fn filter_p32(d: &mut Duel, x: &Ctx, g: &mut CardSet, tsg: &mut CardSet, ntsg: &mut CardSet, sg: &mut CardSet) -> CardSet {
     let mut out = CardSet::new();
     for c in group::iter(d, &group::difference(g, sg)) {
-        if crate::lua::protected(d, false, |d| check_p32(d, x, c, g, tsg, ntsg, sg)) {
+        if ygo_core::api::check_matching_with(d, c, |d| check_p32(d, x, c, g, tsg, ntsg, sg)) {
             out.insert(c);
         }
     }
@@ -631,7 +631,7 @@ fn condition_fn(p: Params) -> LuaFn {
                 let cands = group::iter(d, &g2);
                 let mut found = false;
                 for tc in cands {
-                    if crate::lua::protected(d, false, |d| check_p31(d, &x, tc, &mut g2m, &mut CardSet::new(), &mut CardSet::new(), &mut CardSet::new())) {
+                    if ygo_core::api::check_matching_with(d, tc, |d| check_p31(d, &x, tc, &mut g2m, &mut CardSet::new(), &mut CardSet::new(), &mut CardSet::new())) {
                         found = true;
                         break;
                     }
@@ -649,7 +649,7 @@ fn condition_fn(p: Params) -> LuaFn {
             let cands = group::iter(d, &tg);
             let mut res = false;
             for tc in cands {
-                if crate::lua::protected(d, false, |d| check_p41(d, &x, &mut Memo::new(), tc, &mut tg, &mut ntg, &mut CardSet::new(), &mut CardSet::new(), &mut CardSet::new())) {
+                if ygo_core::api::check_matching_with(d, tc, |d| check_p41(d, &x, &mut Memo::new(), tc, &mut tg, &mut ntg, &mut CardSet::new(), &mut CardSet::new(), &mut CardSet::new())) {
                     res = true;
                     break;
                 }
@@ -692,7 +692,7 @@ fn target_fn(p: Params) -> LuaFn {
                         // (`ntg:Filter(Synchro.CheckP32, sg, g, ...)`: the candidates are ntg's, the checks use g)
                         let mut out = CardSet::new();
                         for cc in group::iter(d, &group::difference(&ntg2, &sg)) {
-                            if crate::lua::protected(d, false, |d| check_p32(d, &x, cc, &mut g, &mut tsg, &mut ntsg, &mut sg)) {
+                            if ygo_core::api::check_matching_with(d, cc, |d| check_p32(d, &x, cc, &mut g, &mut tsg, &mut ntsg, &mut sg)) {
                                 out.insert(cc);
                             }
                         }
@@ -710,7 +710,7 @@ fn target_fn(p: Params) -> LuaFn {
                         let ok = tsg.len() >= p.min1 && tuners_ok(d, &x, &tsg) && {
                             let mut out = 0;
                             for cc in group::iter(d, &group::difference(&ntg, &sg)) {
-                                if crate::lua::protected(d, false, |d| check_p32(d, &x, cc, &mut g, &mut tsg, &mut ntsg, &mut sg)) {
+                                if ygo_core::api::check_matching_with(d, cc, |d| check_p32(d, &x, cc, &mut g, &mut tsg, &mut ntsg, &mut sg)) {
                                     out += 1;
                                 }
                             }
@@ -1016,7 +1016,7 @@ fn majestic_check1(d: &mut Duel, x: &MajCtx, c: CardId, g: &mut CardSet, sg: &mu
 fn majestic_exists(d: &mut Duel, x: &MajCtx, g: &mut CardSet, sg: &mut CardSet, cards: [Option<CardId>; 3]) -> bool {
     let cands = group::iter(d, &group::difference(g, sg));
     for c in cands {
-        if crate::lua::protected(d, false, |d| majestic_check1(d, x, c, g, sg, cards)) {
+        if ygo_core::api::check_matching_with(d, c, |d| majestic_check1(d, x, c, g, sg, cards)) {
             return true;
         }
     }
@@ -1026,7 +1026,7 @@ fn majestic_exists(d: &mut Duel, x: &MajCtx, g: &mut CardSet, sg: &mut CardSet, 
 fn majestic_filter(d: &mut Duel, x: &MajCtx, g: &mut CardSet, sg: &mut CardSet, cards: [Option<CardId>; 3]) -> CardSet {
     let mut out = CardSet::new();
     for c in group::iter(d, &group::difference(g, sg)) {
-        if crate::lua::protected(d, false, |d| majestic_check1(d, x, c, g, sg, cards)) {
+        if ygo_core::api::check_matching_with(d, c, |d| majestic_check1(d, x, c, g, sg, cards)) {
             out.insert(c);
         }
     }
@@ -1141,7 +1141,7 @@ fn majestic_condition(m: Majestic) -> LuaFn {
         let cands = group::iter(d, &g);
         let mut res = false;
         for tc in cands {
-            if crate::lua::protected(d, false, |d| majestic_check1(d, &x, tc, &mut g, &mut CardSet::new(), [None; 3])) {
+            if ygo_core::api::check_matching_with(d, tc, |d| majestic_check1(d, &x, tc, &mut g, &mut CardSet::new(), [None; 3])) {
                 res = true;
                 break;
             }

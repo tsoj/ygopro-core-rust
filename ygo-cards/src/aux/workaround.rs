@@ -105,8 +105,11 @@ fn special_check(d: &mut Duel, check: Option<ReleaseCheck>, tp: u8, exg: &CardSe
 fn release_cost_groups(d: &mut Duel, tp: u8, f: Option<Filter>, use_hand: bool, ex: crate::lua::Exclude) -> (CardSet, CardSet, CardSet) {
     let mut mg = duel::get_release_group(d, tp, use_hand, false, None);
     group::match_(d, &mut mg, f.unwrap_or(&|_, _| true), ex);
-    let (mut g, exg) = group::split(d, &mg, &|d, c| release_cost_filter(d, c, tp), NO_EX);
-    group::match_(d, &mut g, &|d, c| !card::is_has_effect(d, c, EFFECT_EXTRA_RELEASE, None).is_empty() && card::is_controler(d, c, 1 - tp), NO_EX);
+    // (the filters of the rule helper itself: forced matches of the belief replay do not apply)
+    let (mut g, exg) = ygo_core::api::rule_filters(d, |d| group::split(d, &mg, &|d, c| release_cost_filter(d, c, tp), NO_EX));
+    ygo_core::api::rule_filters(d, |d| {
+        group::match_(d, &mut g, &|d, c| !card::is_has_effect(d, c, EFFECT_EXTRA_RELEASE, None).is_empty() && card::is_controler(d, c, 1 - tp), NO_EX)
+    });
     (mg, exg, g)
 }
 /// `Duel.CheckReleaseGroupCost(tp, f, minc, maxc, use_hand, check, ex, ...)`: whether `minc`..`maxc`

@@ -79,8 +79,10 @@ pub struct Ext {
     /// card id a mask of the properties the game read (see `ext_read_log`).
     pub prop_read_on: bool,
     pub prop_read_log: BTreeMap<u32, u32>,
-    /// Set while a filter of the rule helpers (`proc_workaround.lua`) runs: forced matches and the
-    /// read log do not apply to it (`is_rule_filter` of the patch).
+    /// Set while a rule helper (`proc_workaround.lua`) passes its own filters to the engine: forced
+    /// matches and the read log do not apply to them (`is_rule_filter` of the patch; see
+    /// `api::rule_filters`). `check_matching` clears it while the filter runs: the filters that
+    /// one uses are card filters again.
     pub rule_filter: bool,
 }
 
@@ -286,7 +288,7 @@ impl Duel {
     /// matches, `Some(false)` does not, `None` evaluates the filter.
     pub fn ext_forced_matching(&self, c: CardId) -> Option<bool> {
         let st = &self.ext.state;
-        if (st.forced_match.is_empty() && st.forced_nomatch.is_empty()) || self.ext.rule_filter {
+        if st.forced_match.is_empty() && st.forced_nomatch.is_empty() {
             return None;
         }
         let id = self.card(c).cardid;
@@ -320,7 +322,7 @@ impl Duel {
     /// `ocgext::log_filter_read`: a card filter was evaluated on `c` (the read log, if on).
     pub fn ext_log_filter_read(&mut self, c: CardId, result: bool) {
         let st = &self.ext.state;
-        if st.read_viewer < 0 || self.ext.rule_filter || st.read_log.len() >= 4096 {
+        if st.read_viewer < 0 || st.read_log.len() >= 4096 {
             return;
         }
         if self.ext_hidden_from(c, st.read_viewer as u8) {

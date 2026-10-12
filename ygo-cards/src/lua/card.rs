@@ -69,6 +69,23 @@ pub fn has_flag_effect(d: &Duel, c: CardId, id: u32, ct: Option<usize>) -> bool 
     raw::get_flag_effect(d, c, id) >= ct.unwrap_or(1)
 }
 
+/// The scripts that redefine `Card.IsAbleToHandAsCost` and `Card.IsAbleToDeckAsCost` once one of
+/// their cards is in the duel (`aux.GlobalCheck`): false for a card with the script's flag effect
+/// ("Sennet Per Akh", "Zenet journey": a non-Effect Fusion Monster they Special Summoned as a Normal
+/// Monster cannot be returned as a cost).
+const AS_COST_GUARDS: [u32; 2] = [100458007, 100458008];
+fn as_cost_blocked(d: &Duel, c: CardId) -> bool {
+    AS_COST_GUARDS.iter().any(|&code| d.script_var((crate::ns::GLOBAL_CHECK, code as u64)).truthy() && has_flag_effect(d, c, code, None))
+}
+/// `c:IsAbleToHandAsCost()` (see `AS_COST_GUARDS`)
+pub fn is_able_to_hand_as_cost(d: &mut Duel, c: CardId) -> bool {
+    !as_cost_blocked(d, c) && raw::is_able_to_hand_as_cost(d, c)
+}
+/// `c:IsAbleToDeckAsCost()` (see `AS_COST_GUARDS`)
+pub fn is_able_to_deck_as_cost(d: &mut Duel, c: CardId) -> bool {
+    !as_cost_blocked(d, c) && raw::is_able_to_deck_as_cost(d, c)
+}
+
 // ---- utility.lua ----
 
 pub fn is_monster(d: &mut Duel, c: CardId) -> bool {

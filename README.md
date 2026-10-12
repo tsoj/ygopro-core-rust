@@ -143,6 +143,15 @@ Rust engine differs from upstream ygopro-core in these ways:
   instructions, so `ygo-diff` skips games where either engine hits its limit.
 - The sum checks of material selections are memoized, so they no longer take exponential time.
 
+**Extensions** (`ygo-core/src/ext.rs`, the `ext_*` methods of `Duel`)
+- Hooks for reconstructing a duel from one player's observations: forcing coin and dice results,
+  shuffles, random selections and set-card shuffles; treating effects as activatable or cards as
+  matching filters; logging which hidden cards the game read; placing, swapping or creating cards
+  and setting LP or the turn. They do nothing unless called.
+- `Duel::fine_steps` (off by default): `ocg_process` also stops inside card functions where the C++
+  core returns (after each step that sent messages), for callers that change the duel between
+  calls. Changes made while a card function waits are made again when it runs again.
+
 The C++ side of the patch is not part of this repository.
 
 ## Differential testing

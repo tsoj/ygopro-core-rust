@@ -87,11 +87,12 @@ fn filter1(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
     // if c:IsLocation(LOCATION_EXTRA) and Duel.GetLocationCountFromEx(tp,tp,nil,c)<=0 then
     //     return false
     // end
+    let Some(m) = crate::current_info(d, c) else { return false };
     if card::is_location(d, c, LOCATION_EXTRA) && duel::get_location_count_from_ex(d, tp, Some(tp), NO_EX, duel::ExtraCard::Card(c), None).0 <= 0 {
         return false;
     }
     // local no=m.xyz_number
-    let no = crate::card_info(d, c).xyz_number;
+    let no = m.xyz_number;
     // local pg=aux.GetMustBeMaterialGroup(tp,Group.FromCards(c),tp,nil,nil,REASON_XYZ)
     let pg = aux::get_must_be_material_group_opt(d, tp, Some(&CardSet::from_card(c)), tp, None, None, REASON_XYZ);
     // return (#pg<=0 or (#pg==1 and pg:IsContains(c))) and no and no>=101 and no<=107 and c:IsSetCard(SET_NUMBER)
@@ -175,7 +176,8 @@ fn activate(d: &mut Duel, a: &EffArgs) {
         let _pg = aux::get_must_be_material_group_opt(d, tp, Some(&CardSet::from_card(tc1)), tp, None, None, REASON_XYZ);
         // local m=tc1:GetMetatable(true)
         // if not m then return end
-        let no = crate::card_info(d, tc1).xyz_number;
+        let Some(m) = crate::current_info(d, tc1) else { return };
+        let no = m.xyz_number;
         // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
         duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_SPSUMMON as u64);
         // local g2=Duel.SelectMatchingCard(tp,s.filter2,tp,LOCATION_EXTRA,0,1,1,nil,e,tp,tc1,m.xyz_number,pg)

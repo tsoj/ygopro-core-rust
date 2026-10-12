@@ -281,6 +281,18 @@ pub fn card_info(d: &ygo_core::duel::Duel, c: ygo_core::types::CardId) -> &'stat
     script_info(d.card(c).script_code)
 }
 
+/// `c:GetMetatable(true)` (utility.lua): `_G["c"..c:GetCode()]`, the script table of the card's
+/// *current* code (e.g. a name changed in the GY), which exists once a card with that code is in
+/// the duel (its script was loaded); `None` otherwise.
+pub fn current_info(d: &mut ygo_core::duel::Duel, c: ygo_core::types::CardId) -> Option<&'static ScriptInfo> {
+    let code = *ygo_core::api::card::get_code(d, c).first()?;
+    let loaded = (0..d.cards.len() as u32).map(ygo_core::types::CardId).any(|x| {
+        let card = d.card(x);
+        card.script_code == code || card.data.code == code
+    });
+    loaded.then(|| script_info(code))
+}
+
 /// A Lua runtime error in a script (`error(...)` or a type error).
 pub fn lua_error(msg: &str) -> ! {
     ygo_core::lua::lua_error(msg)

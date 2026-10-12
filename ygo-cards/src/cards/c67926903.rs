@@ -65,7 +65,7 @@ fn ovfilter(d: &mut Duel, c: CardId, tp: u8, lc: CardId) -> bool {
     // local class=c:GetMetatable(true)
     // if class==nil then return false end
     // local no=class.xyz_number
-    let no = crate::card_info(d, c).xyz_number;
+    let no = crate::current_info(d, c).and_then(|m| m.xyz_number);
     // return c:IsFaceup() and no and no>=101 and no<=107 and c:IsSetCard(SET_NUMBER_C,lc,SUMMON_TYPE_XYZ,tp)
     card::is_faceup(d, c)
         && no.is_some_and(|no| (101..=107).contains(&no))

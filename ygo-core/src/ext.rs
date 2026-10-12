@@ -71,6 +71,16 @@ impl Default for ExtState {
     }
 }
 
+/// The property read log (card id -> mask), writable through `&Duel`.
+#[derive(Debug, Default)]
+pub struct PropReadLog(pub std::sync::Mutex<BTreeMap<u32, u32>>);
+
+impl Clone for PropReadLog {
+    fn clone(&self) -> Self {
+        PropReadLog(std::sync::Mutex::new(self.0.lock().unwrap().clone()))
+    }
+}
+
 /// `Duel::ext`
 #[derive(Clone, Debug, Default)]
 pub struct Ext {
@@ -78,7 +88,8 @@ pub struct Ext {
     /// The property read log (an analysis aid, `duel::read_log_on`/`read_log` of the patch): per
     /// card id a mask of the properties the game read (see `ext_read_log`).
     pub prop_read_on: bool,
-    pub prop_read_log: BTreeMap<u32, u32>,
+    /// (behind a lock: reads are noted where the engine only reads the duel)
+    pub prop_read_log: PropReadLog,
     /// Set while a rule helper (`proc_workaround.lua`) passes its own filters to the engine: forced
     /// matches and the read log do not apply to them (`is_rule_filter` of the patch; see
     /// `api::rule_filters`). `check_matching` clears it while the filter runs: the filters that
@@ -333,10 +344,10 @@ impl Duel {
 
     /// `duel::note_read`: the game read property `what` of the card (the property read log).
     #[inline]
-    pub fn note_read(&mut self, c: CardId, what: u32) {
+    pub fn note_read(&self, c: CardId, what: u32) {
         if self.ext.prop_read_on && !self.querying {
             let id = self.card(c).cardid;
-            *self.ext.prop_read_log.entry(id).or_insert(0) |= what;
+            *self.ext.prop_read_log.0.lock().unwrap().entry(id).or_insert(0) |= what;
         }
     }
 
@@ -713,6 +724,6 @@ impl Duel {
     /// clearing it. Reads while answering queries are not logged.
     pub fn ext_read_log(&mut self, enable: bool) -> Vec<(u32, u32)> {
         self.ext.prop_read_on = enable;
-        std::mem::take(&mut self.ext.prop_read_log).into_iter().collect()
+        std::mem::take(&mut *self.ext.prop_read_log.0.lock().unwrap()).into_iter().collect()
     }
 }

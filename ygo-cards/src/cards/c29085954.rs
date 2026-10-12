@@ -39,7 +39,7 @@ fn filter(d: &mut Duel, c: CardId, e: EffectId, tp: u8, mc: CardId, pg: &CardSet
     // local m=c:GetMetatable(true)
     // if not m then return false end
     // local no=m.xyz_number
-    let no = crate::card_info(d, c).xyz_number;
+    let no = crate::current_info(d, c).and_then(|m| m.xyz_number);
     // return no and no>=1 and no<=99 and c:IsSetCard(SET_NUMBER) and mc:IsCanBeXyzMaterial(c,tp)
     //     and (#pg<=0 or pg:IsContains(mc)) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_XYZ,tp,false,false)
     no.is_some_and(|no| (1..=99).contains(&no))

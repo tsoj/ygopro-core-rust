@@ -28,9 +28,10 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
 }
-/// `c:GetMetatable(true)`: the `LVnum` and `LVset` the card's script declares.
-fn lv_of(d: &Duel, c: CardId) -> Option<(u32, u32)> {
-    crate::card_info(d, c).lv
+/// `c:GetMetatable(true)`: the `LVnum` and `LVset` the script of the card's current code
+/// declares (nil if its script is not loaded).
+fn lv_of(d: &mut Duel, c: CardId) -> Option<(u32, u32)> {
+    crate::current_info(d, c).and_then(|m| m.lv)
 }
 /// `s.tdfilter(c,e,tp)`
 fn tdfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {

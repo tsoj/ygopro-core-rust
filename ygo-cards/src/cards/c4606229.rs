@@ -53,13 +53,15 @@ fn xyzfilter(d: &mut Duel, c: CardId, mg: &CardSet) -> bool {
 /// `s.mfilter1(c,mg,exg)`
 fn mfilter1(d: &mut Duel, c: CardId, mg: &CardSet, exg: &CardSet) -> bool {
     // return mg:IsExists(s.mfilter2,1,c,c,exg)
-    group::is_exists(d, mg, &|d, x| mfilter2(d, x, c, exg), 1, c.into())
+    group::is_exists(d, mg, &|d, x| mfilter2(d, x, Some(c), exg), 1, c.into())
 }
-/// `s.mfilter2(c,mc,exg)`
-fn mfilter2(d: &mut Duel, c: CardId, mc: CardId, exg: &CardSet) -> bool {
+/// `s.mfilter2(c,mc,exg)` (`mc` nil: `Group.FromCards` skips it)
+fn mfilter2(d: &mut Duel, c: CardId, mc: Option<CardId>, exg: &CardSet) -> bool {
     // return exg:IsExists(Card.IsXyzSummonable,1,nil,nil,Group.FromCards(c,mc))
     let mut both = CardSet::from_card(c);
-    group::add_card(&mut both, &CardSet::from_card(mc));
+    if let Some(mc) = mc {
+        both.insert(mc);
+    }
     group::is_exists(d, exg, &|d, x| card::is_xyz_summonable(d, x, None, Some(both.clone()), 0, 0), 1, NO_EX)
 }
 /// `s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
@@ -89,11 +91,17 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     // local sg1=mg:FilterSelect(tp,s.mfilter1,1,1,nil,mg,exg)
     let sg1 = group::filter_select(d, &mg, tp, &|d, c| mfilter1(d, c, &mg, &exg), 1, 1, false, NO_EX).nil();
     // local tc1=sg1:GetFirst()
-    let tc1 = group::get_first(d, &sg1).nil();
+    // (nil when nothing could be selected, e.g. an activation the belief replay forced: Lua
+    // carries on with it)
+    let tc1 = group::get_first(d, &sg1);
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_SPSUMMON as u64);
     // local sg2=mg:FilterSelect(tp,s.mfilter2,1,1,tc1,tc1,exg)
-    let sg2 = group::filter_select(d, &mg, tp, &|d, c| mfilter2(d, c, tc1, &exg), 1, 1, false, tc1.into()).nil();
+    let ex = match tc1 {
+        Some(tc1) => tc1.into(),
+        None => NO_EX,
+    };
+    let sg2 = group::filter_select(d, &mg, tp, &|d, c| mfilter2(d, c, tc1, &exg), 1, 1, false, ex).nil();
     // sg1:Merge(sg2)
     let mut sg1 = sg1;
     group::add_card(&mut sg1, &sg2);

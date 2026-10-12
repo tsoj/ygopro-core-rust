@@ -1445,6 +1445,7 @@ impl CardId {
     }
     /// return: an effect with code which affects this, or None
     pub fn is_affected_by_effect(self, d: &mut Duel, code: u32) -> Option<EffectId> {
+        d.note_read(self, 2048);
         for pe in self.cc(d).single_effect.range(code) {
             if pe.is_available(d) && (!d.effect(pe).is_flag(EFFECT_FLAG_SINGLE_RANGE) || self.is_affect_by_effect(d, Some(pe))) {
                 return Some(pe);
@@ -1483,6 +1484,7 @@ impl CardId {
     }
     /// `is_affected_by_effect(code, target)`: also requires the effect's value for `target`.
     pub fn is_affected_by_effect_t(self, d: &mut Duel, code: u32, target: Option<CardId>) -> Option<EffectId> {
+        d.note_read(self, 2048);
         for pe in self.cc(d).single_effect.range(code) {
             if pe.is_available(d)
                 && (!d.effect(pe).is_flag(EFFECT_FLAG_SINGLE_RANGE) || self.is_affect_by_effect(d, Some(pe)))

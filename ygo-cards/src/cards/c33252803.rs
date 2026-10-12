@@ -35,11 +35,12 @@ fn filter1(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
     if !(pg_ok && card::is_faceup(d, c) && card::is_set_card(d, c, &[SET_NUMBER as u16]) && !card::is_set_card(d, c, &[SET_NUMBER_C as u16])) {
         return false;
     }
+    let Some(m) = crate::current_info(d, c) else { return false };
     if !(card::get_rank(d, c) > 0 || card::is_status(d, c, STATUS_NO_LEVEL)) {
         return false;
     }
     let rk = card::get_rank(d, c) + 1;
-    let no = crate::card_info(d, c).xyz_number;
+    let no = m.xyz_number;
     duel::is_existing_matching_card(d, Some(&|d, x| filter2(d, x, e, tp, c, rk, no, &pg)), tp, LOCATION_EXTRA, 0, 1, NO_EX)
 }
 /// `s.filter2(c,e,tp,mc,rk,no,pg)`
@@ -90,6 +91,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     // local tc=Duel.GetFirstTarget()
     // local m=tc:GetMetatable(true)
     let tc = duel::first_target(d).nil();
+    let m = crate::current_info(d, tc);
     // local pg=aux.GetMustBeMaterialGroup(tp,Group.FromCards(tc),tp,nil,nil,REASON_XYZ)
     let pg = aux::get_must_be_material_group_opt(d, tp, Some(&CardSet::from_card(tc)), tp, None, None, REASON_XYZ);
     // if not tc or tc:IsFacedown() or not tc:IsRelateToEffect(e) or tc:IsControler(1-tp) or tc:IsImmuneToEffect(e)
@@ -98,6 +100,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
         || !card::is_relate_to_effect(d, tc, e)
         || card::is_controler(d, tc, 1 - tp)
         || card::is_immune_to_effect(d, tc, e)
+        || m.is_none()
         || pg.len() > 1
         || (pg.len() == 1 && !group::is_contains(&pg, tc))
     {
@@ -107,7 +110,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_SPSUMMON as u64);
     // local g=Duel.SelectMatchingCard(tp,s.filter2,tp,LOCATION_EXTRA,0,1,1,nil,e,tp,tc,tc:GetRank()+1,m.xyz_number,pg)
     let rk = card::get_rank(d, tc) + 1;
-    let no = crate::card_info(d, tc).xyz_number;
+    let no = m.and_then(|m| m.xyz_number);
     let g = duel::select_matching_card(d, tp, Some(&|d, c| filter2(d, c, e, tp, tc, rk, no, &pg)), tp, LOCATION_EXTRA, 0, 1, 1, false, NO_EX).nil();
     // local sc=g:GetFirst()
     let sc = group::get_first(d, &g);

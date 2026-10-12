@@ -145,13 +145,14 @@ fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
         // local at=Duel.GetAttackTarget()
         let at = duel::get_attack_target(d).nil();
         // local m=at:GetMetatable(true)
-        let m = crate::script_info(card::get_code(d, at).first().copied().nil());
+        let m = crate::current_info(d, at);
+        let no = m.and_then(|m| m.xyz_number);
         // local pg=aux.GetMustBeMaterialGroup(tp,Group.FromCards(at),tp,nil,nil,REASON_XYZ)
         let pg = aux::get_must_be_material_group_opt(d, tp, Some(&CardSet::from_card(at)), tp, None, None, REASON_XYZ as u32);
         // return #pg<=1 and m and m.xyz_number and Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_EXTRA,0,1,nil,e,tp,at,m.xyz_number,pg)
         return pg.len() <= 1
-            && m.xyz_number.is_some()
-            && duel::is_existing_matching_card(d, Some(&|d, c| filter(d, c, e, tp, at, m.xyz_number, &pg)), tp, LOCATION_EXTRA, 0, 1, NO_EX);
+            && no.is_some()
+            && duel::is_existing_matching_card(d, Some(&|d, c| filter(d, c, e, tp, at, no, &pg)), tp, LOCATION_EXTRA, 0, 1, NO_EX);
     }
     // Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
     duel::set_operation_info(d, 0, CATEGORY_SPECIAL_SUMMON, None, 1, tp, LOCATION_EXTRA as i32);
@@ -172,12 +173,12 @@ fn spop(d: &mut Duel, a: &EffArgs) {
     // local tc=Duel.GetAttackTarget()
     let tc = duel::get_attack_target(d).nil();
     // local m=tc:GetMetatable(true)
-    let m = crate::script_info(card::get_code(d, tc).first().copied().nil());
+    let m = crate::current_info(d, tc);
     // if not tc or tc:IsFacedown() or not tc:IsRelateToBattle() or tc:IsControler(1-tp) or tc:IsImmuneToEffect(e) or not m then return end
-    // (a card without a script is `not m` in Lua: every card here has one)
     if card::is_facedown(d, tc) || !card::is_relate_to_battle(d, tc) || card::is_controler(d, tc, 1 - tp) || card::is_immune_to_effect(d, tc, e) {
         return;
     }
+    let Some(m) = m else { return };
     // local pg=aux.GetMustBeMaterialGroup(tp,Group.FromCards(tc),tp,nil,nil,REASON_XYZ)
     let pg = aux::get_must_be_material_group_opt(d, tp, Some(&CardSet::from_card(tc)), tp, None, None, REASON_XYZ as u32);
     // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)

@@ -91,8 +91,7 @@ fn ovfilter(d: &mut Duel, c: CardId, tp: u8, lc: CardId) -> bool {
     // local class=c:GetMetatable(true)
     // if class==nil then return false end
     // local no=class.xyz_number
-    let code = card::get_code(d, c)[0];
-    let no = crate::script_info(code).xyz_number;
+    let no = crate::current_info(d, c).and_then(|m| m.xyz_number);
     // return no and no>=101 and no<=107
     matches!(no, Some(n) if (101..=107).contains(&n))
 }

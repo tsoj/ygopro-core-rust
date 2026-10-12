@@ -74,7 +74,7 @@ fn atkfilter(d: &mut Duel, c: CardId) -> bool {
     // local m=c:GetMetatable(true)
     // if not m then return false end
     // (a card without a script has no `xyz_number`, which gives the same false below)
-    let m = crate::script_info(card::get_code(d, c).first().copied().nil());
+    let m = crate::current_info(d, c);
     // return c:IsFaceup() and c:IsSetCard(SET_NUMBER) and c:IsType(TYPE_XYZ)
     //     and c:GetOriginalRace()&RACE_DRAGON==RACE_DRAGON and c:GetOriginalAttribute()&ATTRIBUTE_LIGHT==ATTRIBUTE_LIGHT
     //     and m.xyz_number and m.xyz_number>0
@@ -83,7 +83,7 @@ fn atkfilter(d: &mut Duel, c: CardId) -> bool {
         && card::is_type(d, c, TYPE_XYZ)
         && (card::get_original_race(d, c) & RACE_DRAGON) == RACE_DRAGON
         && (card::get_original_attribute(d, c) & ATTRIBUTE_LIGHT) == ATTRIBUTE_LIGHT
-        && m.xyz_number.map_or(false, |n| n > 0)
+        && m.and_then(|m| m.xyz_number).map_or(false, |n| n > 0)
 }
 /// `s.atktg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn atktg(d: &mut Duel, a: &EffArgs) -> bool {
@@ -134,7 +134,7 @@ fn atkop(d: &mut Duel, a: &EffArgs) {
         return;
     }
     // local m=tc:GetMetatable(true)
-    let m = crate::script_info(card::get_code(d, tc).first().copied().nil());
+    let m = crate::current_info(d, tc).nil();
     // local e3=Effect.CreateEffect(c)
     let e3 = effect::create_effect(d, c);
     // e3:SetType(EFFECT_TYPE_SINGLE)

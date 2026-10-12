@@ -80,6 +80,7 @@ pub fn get_original_set_card(d: &Duel, c: CardId) -> Vec<u16> {
     c.get_origin_set_card(d).iter().collect()
 }
 pub fn get_previous_set_card(d: &Duel, c: CardId) -> Vec<u16> {
+    d.note_read(c, 16384);
     let mut s = BTreeSet::new();
     c.get_pre_set_card(d, &mut s);
     s.into_iter().collect()
@@ -231,28 +232,36 @@ pub fn get_text_defense(d: &Duel, c: CardId) -> i32 {
     if cc.status & STATUS_NO_LEVEL != 0 { 0 } else { cc.data.defense }
 }
 pub fn get_previous_code_on_field(d: &Duel, c: CardId) -> Vec<u32> {
+    d.note_read(c, 16384);
     let p = &d.card(c).previous;
     if p.code2 != 0 { vec![p.code, p.code2] } else { vec![p.code] }
 }
 pub fn get_previous_type_on_field(d: &Duel, c: CardId) -> u32 {
+    d.note_read(c, 16384);
     d.card(c).previous.type_
 }
 pub fn get_previous_level_on_field(d: &Duel, c: CardId) -> u32 {
+    d.note_read(c, 16384);
     d.card(c).previous.level
 }
 pub fn get_previous_rank_on_field(d: &Duel, c: CardId) -> u32 {
+    d.note_read(c, 16384);
     d.card(c).previous.rank
 }
 pub fn get_previous_attribute_on_field(d: &Duel, c: CardId) -> u32 {
+    d.note_read(c, 16384);
     d.card(c).previous.attribute
 }
 pub fn get_previous_race_on_field(d: &Duel, c: CardId) -> u64 {
+    d.note_read(c, 16384);
     d.card(c).previous.race
 }
 pub fn get_previous_attack_on_field(d: &Duel, c: CardId) -> i32 {
+    d.note_read(c, 16384);
     d.card(c).previous.attack
 }
 pub fn get_previous_defense_on_field(d: &Duel, c: CardId) -> i32 {
+    d.note_read(c, 16384);
     d.card(c).previous.defense
 }
 pub fn get_owner(d: &Duel, c: CardId) -> u8 {
@@ -262,18 +271,23 @@ pub fn get_controler(d: &Duel, c: CardId) -> u8 {
     d.card(c).current.controler
 }
 pub fn get_previous_controler(d: &Duel, c: CardId) -> u8 {
+    d.note_read(c, 16384);
     d.card(c).previous.controler
 }
 pub fn get_reason(d: &Duel, c: CardId) -> u32 {
+    d.note_read(c, 16384);
     d.card(c).current.reason
 }
 pub fn get_reason_card(d: &Duel, c: CardId) -> Option<CardId> {
+    d.note_read(c, 16384);
     d.card(c).current.reason_card
 }
 pub fn get_reason_player(d: &Duel, c: CardId) -> u8 {
+    d.note_read(c, 16384);
     d.card(c).current.reason_player
 }
 pub fn get_reason_effect(d: &Duel, c: CardId) -> Option<EffectId> {
+    d.note_read(c, 16384);
     d.card(c).current.reason_effect
 }
 /// `c:SetReason(reason, add)`
@@ -300,6 +314,7 @@ pub fn get_position(d: &Duel, c: CardId) -> u32 {
     d.card(c).current.position
 }
 pub fn get_previous_position(d: &Duel, c: CardId) -> u32 {
+    d.note_read(c, 16384);
     d.card(c).previous.position
 }
 pub fn get_battle_position(d: &Duel, c: CardId) -> u32 {
@@ -310,12 +325,14 @@ pub fn get_location(d: &Duel, c: CardId) -> u32 {
     if cc.get_status(STATUS_SUMMONING | STATUS_SUMMON_DISABLED | STATUS_ACTIVATE_DISABLED | STATUS_SPSUMMON_STEP) != 0 { 0 } else { cc.current.location as u32 }
 }
 pub fn get_previous_location(d: &Duel, c: CardId) -> u32 {
+    d.note_read(c, 16384);
     d.card(c).previous.location as u32
 }
 pub fn get_sequence(d: &Duel, c: CardId) -> u32 {
     d.card(c).current.sequence
 }
 pub fn get_previous_sequence(d: &Duel, c: CardId) -> u32 {
+    d.note_read(c, 16384);
     d.card(c).previous.sequence
 }
 pub fn get_summon_type(d: &Duel, c: CardId) -> u32 {
@@ -334,9 +351,11 @@ pub fn get_leave_field_dest(d: &mut Duel, c: CardId) -> u32 {
     c.leave_field_redirect(d, REASON_EFFECT)
 }
 pub fn get_turn_id(d: &Duel, c: CardId) -> u32 {
+    d.note_read(c, 16384);
     d.card(c).turnid as u32
 }
 pub fn get_field_id(d: &Duel, c: CardId) -> u32 {
+    d.note_read(c, 16384);
     d.card(c).fieldid
 }
 pub fn get_real_field_id(d: &Duel, c: CardId) -> u32 {
@@ -423,6 +442,7 @@ pub fn is_original_set_card(d: &Duel, c: CardId, setcodes: &[u16]) -> bool {
     setcodes.iter().any(|&sc| contains_setcode(&s, sc))
 }
 pub fn is_previous_set_card(d: &Duel, c: CardId, setcodes: &[u16]) -> bool {
+    d.note_read(c, 16384);
     let mut s = BTreeSet::new();
     c.get_pre_set_card(d, &mut s);
     setcodes.iter().any(|&sc| contains_setcode(&s, sc))
@@ -496,6 +516,7 @@ pub fn is_original_attribute(d: &Duel, c: CardId, tattrib: u32) -> bool {
     cc.status & STATUS_NO_LEVEL == 0 && cc.data.attribute & tattrib != 0
 }
 pub fn is_reason(d: &Duel, c: CardId, treason: u32) -> bool {
+    d.note_read(c, 16384);
     d.card(c).current.reason & treason != 0
 }
 /// `c:IsSummonType(t1, t2, ...)`: any of the types matches completely.
@@ -511,6 +532,7 @@ pub fn is_summon_player(d: &Duel, c: CardId, player: u8) -> bool {
     d.card(c).summon.player == player
 }
 pub fn is_status(d: &Duel, c: CardId, tstatus: u32) -> bool {
+    d.note_read(c, 16384);
     d.card(c).status & tstatus != 0
 }
 pub fn is_not_tuner(d: &mut Duel, c: CardId, scard: CardId, playerid: u8) -> bool {
@@ -540,6 +562,7 @@ pub fn set_turn_counter(d: &mut Duel, c: CardId, ct: u16) {
     c.count_turn(d, ct);
 }
 pub fn get_turn_counter(d: &Duel, c: CardId) -> u32 {
+    d.note_read(c, 16384);
     d.card(c).turn_counter as u32
 }
 /// `c:SetMaterial(c_or_g_or_nil)`
@@ -562,6 +585,7 @@ pub fn get_equip_target(d: &Duel, c: CardId) -> Option<CardId> {
     d.card(c).equiping_target
 }
 pub fn get_previous_equip_target(d: &Duel, c: CardId) -> Option<CardId> {
+    d.note_read(c, 16384);
     d.card(c).pre_equip_target
 }
 fn check_union_like(d: &mut Duel, c: CardId, target: CardId, code: u32) -> bool {
@@ -695,6 +719,7 @@ pub fn register_effect(d: &mut Duel, c: CardId, e: EffectId, forced: bool) -> Op
 }
 /// `c:IsHasEffect(code, check_player)`: the effects (empty: Lua nil).
 pub fn is_has_effect(d: &mut Duel, c: CardId, code: u32, check_player: Option<u8>) -> Vec<EffectId> {
+    d.note_read(c, 16384);
     let mut eset = Vec::new();
     c.filter_effect(d, code, &mut eset, true);
     let p = check_player.unwrap_or(PLAYER_NONE as u8);
@@ -752,6 +777,7 @@ pub fn register_flag_effect(d: &mut Duel, c: CardId, code: u32, reset: u32, flag
     pe
 }
 pub fn get_flag_effect(d: &Duel, c: CardId, code: u32) -> usize {
+    d.note_read(c, 1024);
     d.card(c).single_effect.range(flag_code(code)).len()
 }
 pub fn reset_flag_effect(d: &mut Duel, c: CardId, code: u32) {
@@ -768,6 +794,7 @@ pub fn set_flag_effect_label(d: &mut Duel, c: CardId, code: u32, lab: u32) -> bo
 }
 /// `c:GetFlagEffectLabel(code)`: one label per flag effect (empty: Lua nil).
 pub fn get_flag_effect_label(d: &Duel, c: CardId, code: u32) -> Vec<i64> {
+    d.note_read(c, 1024);
     d.card(c).single_effect.range(flag_code(code)).into_iter().map(|e| d.effect(e).label.first().copied().unwrap_or(0)).collect()
 }
 pub fn create_relation(d: &mut Duel, c: CardId, rcard: CardId, reset: u32) {
@@ -786,9 +813,11 @@ pub fn clear_effect_relation(d: &mut Duel, c: CardId) {
     c.clear_relate_effect(d);
 }
 pub fn is_relate_to_effect(d: &Duel, c: CardId, e: EffectId) -> bool {
+    d.note_read(c, 16384);
     c.is_has_relation_effect(d, e)
 }
 pub fn is_relate_to_chain(d: &Duel, c: CardId, chain_count: u8) -> bool {
+    d.note_read(c, 16384);
     let n = d.core.current_chain.len();
     let ct = if chain_count as usize > n || chain_count < 1 { n } else { chain_count as usize };
     let ch = &d.core.current_chain[ct - 1];
@@ -1018,12 +1047,14 @@ pub fn is_position(d: &Duel, c: CardId, pos: u32) -> bool {
     d.card(c).is_position(pos & 0xff) != 0
 }
 pub fn is_previous_position(d: &Duel, c: CardId, pos: u32) -> bool {
+    d.note_read(c, 16384);
     d.card(c).previous.position & (pos & 0xff) != 0
 }
 pub fn is_controler(d: &Duel, c: CardId, con: u8) -> bool {
     d.card(c).current.controler == con
 }
 pub fn is_previous_controler(d: &Duel, c: CardId, con: u8) -> bool {
+    d.note_read(c, 16384);
     d.card(c).previous.controler == con
 }
 pub fn is_on_field(d: &Duel, c: CardId) -> bool {
@@ -1040,6 +1071,7 @@ pub fn is_location(d: &Duel, c: CardId, loc: u32) -> bool {
     }
 }
 pub fn is_previous_location(d: &Duel, c: CardId, loc: u32) -> bool {
+    d.note_read(c, 16384);
     d.card(c).previous.is_location(loc & 0xffff)
 }
 pub fn is_level_below(d: &mut Duel, c: CardId, lvl: u32) -> bool {
@@ -1144,6 +1176,7 @@ pub fn remove_all_counters(d: &mut Duel, c: CardId) -> u32 {
     total
 }
 pub fn get_counter(d: &Duel, c: CardId, countertype: u16) -> i32 {
+    d.note_read(c, 16384);
     if countertype == 0 {
         crate::lua::lua_error("Counter type cannot be 0, use Card.GetAllCounters instead");
     }

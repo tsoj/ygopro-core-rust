@@ -90,6 +90,14 @@ always `d: &mut Duel` (or `&Duel`):
 | `Cost.SelfDiscard`                      | `cost::self_discard()`                             |
 | `Chain.IsTriggeringSetcode(ch, s)` / `Chain.IsTriggeringType(ch, t)` / `Chain.IsTriggering<Prop>(...)` | `chain::is_triggering(d, ch, chain::Prop::SetCard, &[s as i64])` (`Prop::Type`, ...; a `Value`: `Nil` without the chain link, else `Bool`) |
 | `Chain.GetCurrentLink()`                | `duel::get_current_chain(d, false)` |
+| `c:GetMetatable(true)` (`m.xyz_number`, `class.LVnum`) | `crate::current_info(d, c)`: the script table of the card's *current* code, `None` if no card with that code is in the duel. (`c.xyz_number`, `c.rum_limit` without GetMetatable: the card's own script, `crate::card_info(d, c)`) |
+| `Duel.LoadCardScriptAlias(code)` (the whole script) | `initial_effect` calls `super::c<code>::initial_effect(d, c)`, and `pub const INFO: ScriptInfo = super::c<code>::INFO;` if that card has an `INFO` (see c27847700.rs) |
+| `c:Type(v)` (setter)                    | `card::info_type(d, c, Some(v))` (the `info_` functions are the getter/setters of `Card.X(c[, v])`) |
+| `e:GetCardAttack()` / `GetCardDefense()` / `GetCardAttribute()` (chain.lua) | `chain::effect_get_card(d, e, chain::Prop::Attack).int()` (`Prop::Defense`, `Prop::Attribute`) |
+| `c.<name>` of a function in the card's own script (`c.descost(...)`) | the script's `s.<name>`: a card's metatable is its script table |
+| `Duel.GetControl(...)` as a condition    | always true (it returns a number; 0 is true in Lua) |
+| `Duel.SetOperationInfo(...)` with more than 6 arguments | the core reads the first 6; drop the rest |
+| `Duel.GetMatchingGroup(f, tp, s, o, 1, nil)` (a number 5th argument) | not an exception (only a card or group is): `NO_EX`, and the number goes to the filter |
 | a library-table function the script defines itself (`function Cost.SelfTribute2(...)`) | a private fn in the card file; a script-set field such as `aux.RitualSummoningLevel=lv` is `set_lua_global(d, "RitualSummoningLevel", Value::Int(lv))` |
 | `Duel.GetChainInfo(0, A, B)`            | `duel::get_chain_info(d, 0, &[A, B])` (a `Vec<Value>`) |
 | `Duel.GetMZoneCount(tp, g, tp)`         | `duel::get_m_zone_count(d, tp, (&g).into(), Some(tp), None, None).0` |
@@ -449,6 +457,18 @@ target, then `tc:IsRelateToEffect(e)`), raise the same error: `option.nil()` ret
 raises a Lua error, which the engine handles like ygopro-core does. Use `.nil()` for every value
 that the Lua indexes without checking it. `effect::get_handler(d, a.e).nil()` is the usual
 `e:GetHandler()`. Never use `.unwrap()` on something Lua could see as `nil`.
+
+Only where the Lua indexes it: a value the Lua merely passes on stays an `Option` (e.g. `local
+tc1=sg1:GetFirst()` given as the exclusion of the next selection or to `Group.FromCards(c, tc1)`,
+both of which skip `nil`). The same for `local a,b=e:GetLabel()`: fewer labels make `b` nil, and the
+Lua fails only where `b` is used (`labels.get(1)`, not `labels[1]`, which panics). Such states
+happen where normal play never goes (e.g. an activation the belief replay forces with no valid
+target), and the differential tests compare them. A panic in a card function fails the call like
+a Lua error, but at another point than the Lua would.
+
+A script that replaces a `Card`/`Duel` function for every card (`aux.GlobalCheck(s, function()
+Card.IsX = ... end)`) needs the replacement in the library (`src/lua/*.rs`, e.g. `AS_COST_GUARDS` in
+lua/card.rs): the card itself only runs `aux::global_check(d, ID, |_| {})`.
 
 A script that calls a function that exists neither in the C++ (`build/ocgcore-src/lib*.cpp`) nor in
 the Lua libraries (e.g. `c:IsInMainZone()`) or a field that no script defines raises "attempt to

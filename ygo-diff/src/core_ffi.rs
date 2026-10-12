@@ -1,4 +1,4 @@
-//! The C++ core (`build/libocgcore.so`, ygopro-core with the project's patches) through its C API,
+//! The C++ core (`target/oracle/libocgcore.so`, ygopro-core with the patches in oracle/) through its C API,
 //! with the same card data and scripts as ygoai/core.py.
 
 use std::collections::HashMap;
@@ -98,6 +98,16 @@ static SETCODES: OnceLock<Mutex<HashMap<u32, Box<[u16]>>>> = OnceLock::new();
 static SCRIPTS: OnceLock<Mutex<HashMap<String, Option<Vec<u8>>>>> = OnceLock::new();
 
 /// Loads the library (once) and sets the card data and the repository root for the readers.
+/// The oracle's library: `$YGO_CORE_LIB`, else `target/oracle/libocgcore.so` (built by oracle/build.sh).
+pub fn oracle_lib() -> PathBuf {
+    std::env::var("YGO_CORE_LIB").map(PathBuf::from).unwrap_or_else(|_| oracle_dir().join("../target/oracle/libocgcore.so"))
+}
+
+/// This repository's oracle/ directory (the patch, the extension, the Lua overrides).
+fn oracle_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../oracle")
+}
+
 pub fn init(lib_path: &Path, root: &Path, db: Arc<CardDb>) {
     let _ = DB.set(db);
     let _ = ROOT.set(root.to_path_buf());
@@ -181,7 +191,7 @@ extern "C" fn card_reader(_payload: *mut c_void, code: u32, out: *mut OcgCardDat
 
 extern "C" fn card_reader_done(_payload: *mut c_void, _data: *mut OcgCardData) {}
 
-/// Set when the core logs that a script ran out of its instruction budget (build/ocgcore-src
+/// Set when the core logs that a script ran out of its instruction budget (target/oracle/src
 /// interpreter.cpp `LUA_STEP_BUDGET`): the core then treats the script as failed, which the Rust
 /// engine (no budget) does not reproduce, so the game is skipped from there on.
 pub static SCRIPT_BUDGET_EXCEEDED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -204,10 +214,10 @@ pub fn find_script(name: &str) -> Option<Vec<u8>> {
     let base = Path::new(name).file_name().unwrap().to_string_lossy().to_string();
     let mut candidates = vec![];
     if base == "ygoai_overrides.lua" {
-        candidates.push(root.join("core_ext").join("lua").join("ygoai_overrides.lua"));
+        candidates.push(oracle_dir().join("ygoai_overrides.lua"));
     } else {
         if base.starts_with('c') && base.len() > 5 && base[1..base.len() - 4].chars().all(|c| c.is_ascii_digit()) {
-            candidates.push(root.join("core_ext").join("lua").join("cards").join(&base));
+            candidates.push(root.join("lua_fixes").join(&base));
             for d in ["official", "pre-release", "pre-errata", "goat"] {
                 candidates.push(scripts.join(d).join(&base));
             }
@@ -269,7 +279,7 @@ impl CoreDuel {
     pub fn start(&mut self) {
         unsafe { (api().start)(self.handle) }
     }
-    /// `OCG_ExtSetLocationOrderById` (core_ext)
+    /// `OCG_ExtSetLocationOrderById` (oracle/ocgext.cpp)
     pub fn set_location_order_by_id(&mut self, playerid: u8, location: u32, ids: &[u32]) -> bool {
         unsafe { (api().set_location_order_by_id)(self.handle, playerid, location, ids.as_ptr(), ids.len() as u32) != 0 }
     }

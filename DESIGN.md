@@ -1,6 +1,6 @@
 # Rust duel engine: design
 
-A port of edo9300's ygopro-core (with our patch, `build/ocgcore-src`) and of the card scripts
+A port of edo9300's ygopro-core (with our patch, `oracle/`) and of the card scripts
 (`external/CardScripts`) to Rust. Goals, in order:
 
 1. **Same behavior as ygopro-core.** The C++ core is the oracle: the same seed, decks and responses
@@ -57,7 +57,7 @@ A waiting duel is therefore still plain data and can be cloned at any decision.
   libgroup/libeffect, the procedures of utility.lua), and an `ocgapi`-compatible C ABI so the
   Python tools can drive it (`YGOAI_CORE_LIB`), plus `OCG_DuelClone`.
 - `ygo-cards`: card implementations, one function per card (translations of the Lua scripts).
-- `ygo-diff`: differential tester; loads `build/libocgcore.so` (C++) next to the Rust engine.
+- `ygo-diff`: differential tester; loads `target/oracle/libocgcore.so` (C++, built by `oracle/build.sh`) next to the Rust engine.
 
 ## Plan
 

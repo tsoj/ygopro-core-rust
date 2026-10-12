@@ -1,6 +1,6 @@
 """Generates ygo-core/src/constants.rs from the #defines and flag enums of ygopro-core's headers.
 
-  python3 tools/gen_constants.py ../build/ocgcore-src > ygo-core/src/constants.rs
+  python3 tools/gen_constants.py target/oracle/src > ygo-core/src/constants.rs
 """
 import re
 import sys

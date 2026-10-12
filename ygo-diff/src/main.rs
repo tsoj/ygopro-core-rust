@@ -756,7 +756,8 @@ fn main() {
     let root = std::env::var("YGO_ROOT").map(PathBuf::from).unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."));
     let root = root.canonicalize().unwrap();
     let db = Arc::new(CardDb::load(&root.join("external").join("BabelCDB")).expect("card database"));
-    core_ffi::init(&root.join("build").join("libocgcore.so"), &root, db.clone());
+    let core_lib = core_ffi::oracle_lib();
+    core_ffi::init(&core_lib, &root, db.clone());
     let scripts = Arc::new(ygo_cards::scripts());
     let pool = vanilla_pool(&db);
     let scripted: Vec<u32> = args.cards.clone().unwrap_or_else(|| ygo_cards::cards::ALL.iter().map(|x| x.0).collect());
@@ -791,7 +792,7 @@ fn main() {
             }
             None => key += &format!("{:?} {:?} {} {} {}", scripted, scripted_extra, args.scripted_permille, args.extra, pool.len()),
         }
-        cache::Cache::new(dir, &root.join("build").join("libocgcore.so"), key.as_bytes())
+        cache::Cache::new(dir, &core_lib, key.as_bytes())
     });
     let (mut cached_games, mut stale) = (0, 0);
     for g in 0..args.games {

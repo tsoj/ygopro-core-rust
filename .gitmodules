@@ -1,0 +1,3 @@
+[submodule "oracle/ygopro-core"]
+	path = oracle/ygopro-core
+	url = https://github.com/edo9300/ygopro-core.git

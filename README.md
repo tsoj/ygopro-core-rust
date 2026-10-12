@@ -152,15 +152,22 @@ Rust engine differs from upstream ygopro-core in these ways:
   core returns (after each step that sent messages), for callers that change the duel between
   calls. Changes made while a card function waits are made again when it runs again.
 
-The C++ side of the patch is not part of this repository.
+The C++ side of the patch is in `oracle/` (see Differential testing).
 
 ## Differential testing
 
-`ygo-diff` needs a build of the original core and the card data. It expects
-`$YGO_ROOT/build/libocgcore.so`, `$YGO_ROOT/external/BabelCDB` and the Lua scripts in
-`$YGO_ROOT/external/CardScripts`. The core must be built with a small extension from the project
-this port was written for. The extension adds a few `OCG_Ext*` functions, for example to set the
-order of a deck, and is not part of this repository. The scripts in `tools/` (coverage runs, failure triage, replays of
+`ygo-diff` runs the original C++ core as the oracle. Its source is the submodule
+`oracle/ygopro-core` (not fetched by default); `oracle/build.sh` applies `oracle/ocgcore.patch`, adds
+the extension `oracle/ocgext.{h,cpp}` (a few `OCG_Ext*` functions, for example to set the order of a
+deck) and builds `target/oracle/libocgcore.so` (or set `$YGO_CORE_LIB`):
+
+```sh
+git submodule update --init --recursive oracle/ygopro-core
+oracle/build.sh                                  # needs meson and ninja
+```
+
+The card data comes from `$YGO_ROOT/external/BabelCDB`, the Lua scripts from
+`$YGO_ROOT/external/CardScripts` (and corrected ones from `$YGO_ROOT/lua_fixes`). The scripts in `tools/` (coverage runs, failure triage, replays of
 recorded games) come from the larger project this port was written for, and some of them assume
 its layout.
 

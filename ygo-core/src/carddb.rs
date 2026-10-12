@@ -12,6 +12,8 @@ pub struct CardDb {
     pub names: HashMap<u32, String>,
     /// The codes in the order they were first read (the order of ygoai's CardDB dict).
     pub order: Vec<u32>,
+    /// The cards' `ot` (where they are legal: 1 OCG, 2 TCG, ...).
+    pub ots: HashMap<u32, u32>,
 }
 
 /// Later files override earlier ones.
@@ -66,7 +68,7 @@ impl CardDb {
     fn load_file(&mut self, path: &Path) -> rusqlite::Result<()> {
         let con = rusqlite::Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
         let mut stmt = con.prepare(
-            "SELECT d.id, d.alias, d.setcode, d.type, d.atk, d.def, d.level, d.race, d.attribute, t.name \
+            "SELECT d.id, d.alias, d.setcode, d.type, d.atk, d.def, d.level, d.race, d.attribute, t.name, d.ot \
              FROM datas d LEFT JOIN texts t ON d.id = t.id",
         )?;
         let rows = stmt.query_map([], |r| {
@@ -81,10 +83,11 @@ impl CardDb {
                 r.get::<_, i64>(7)?,
                 r.get::<_, i64>(8)?,
                 r.get::<_, Option<String>>(9)?.unwrap_or_default(),
+                r.get::<_, i64>(10)?,
             ))
         })?;
         for row in rows {
-            let (code, alias, setcode, typ, atk, mut def, level, race, attribute, name) = row?;
+            let (code, alias, setcode, typ, atk, mut def, level, race, attribute, name, ot) = row?;
             let typ = typ as u32;
             let mut link_marker = 0;
             if typ & TYPE_LINK != 0 {
@@ -120,6 +123,7 @@ impl CardDb {
                 },
             );
             self.names.insert(code, name);
+            self.ots.insert(code, ot as u32);
         }
         Ok(())
     }

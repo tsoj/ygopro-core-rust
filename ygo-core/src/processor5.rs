@@ -957,31 +957,39 @@ impl Duel {
         if self.querying || self.core.refreshing_condition.is_some() {
             return;
         }
-        let mut conditional: Vec<EffectId> = Vec::new();
-        let add = |d: &Duel, c: &crate::duel::EffectContainer, out: &mut Vec<EffectId>| {
+        // (the effects in scan order with their ids; sorted by (id, scan index), as a stable sort
+        // by id would)
+        let mut scan: Vec<(u32, EffectId)> = Vec::new();
+        let add = |d: &Duel, c: &crate::duel::EffectContainer, out: &mut Vec<(u32, EffectId)>| {
             for &(_, e) in &c.items {
-                if d.effect(e).condition.is_some() {
-                    out.push(e);
+                let x = d.effect(e);
+                if x.condition.is_some() {
+                    out.push((x.id, e));
                 }
             }
         };
-        add(self, &self.field_effects.aura_effect, &mut conditional);
+        add(self, &self.field_effects.aura_effect, &mut scan);
         for c in &self.cards {
-            add(self, &c.single_effect, &mut conditional);
-            add(self, &c.field_effect, &mut conditional);
+            add(self, &c.single_effect, &mut scan);
+            add(self, &c.field_effect, &mut scan);
             if c.equiping_target.is_some() {
-                add(self, &c.equip_effect, &mut conditional);
+                add(self, &c.equip_effect, &mut scan);
             }
             if !c.effect_target_cards.is_empty() {
-                add(self, &c.target_effect, &mut conditional);
+                add(self, &c.target_effect, &mut scan);
             }
             if c.overlay_target.is_some() {
-                add(self, &c.xmaterial_effect, &mut conditional);
+                add(self, &c.xmaterial_effect, &mut scan);
             }
         }
-        crate::effect::sort_effects_by_id(self, &mut conditional);
-        conditional.dedup();
-        for pe in conditional {
+        let order = sorted_order(&scan);
+        let mut last = None;
+        for i in order {
+            let pe = scan[i as usize].1;
+            if last == Some(pe) {
+                continue;
+            }
+            last = Some(pe);
             self.core.refreshing_condition = Some(pe);
             pe.is_available(self);
         }
@@ -1071,4 +1079,51 @@ pub fn inc_map(m: &mut Vec<(u32, u32)>, key: u32) {
         Some(x) => x.1 = x.1.wrapping_add(1),
         None => m.push((key, 1)),
     }
+}
+
+thread_local! {
+    /// The last scan of refresh_effect_conditions and its sorted order: a hint for the next sort
+    /// (the scans of consecutive refreshes are mostly the same, their order nearly so).
+    static REFRESH_HINT: std::cell::RefCell<(Vec<EffectId>, Vec<u32>)> = const { std::cell::RefCell::new((Vec::new(), Vec::new())) };
+}
+
+/// The indices of `scan` sorted by (id, index). Starts from the last call's order when the scan
+/// holds the same effects (an insertion sort then fixes what changed), else sorts from scratch;
+/// the result is the same either way, the hint only saves time.
+fn sorted_order(scan: &[(u32, EffectId)]) -> Vec<u32> {
+    let key = |i: u32| (scan[i as usize].0, i);
+    REFRESH_HINT.with(|h| {
+        let mut h = h.borrow_mut();
+        let same = h.0.len() == scan.len() && h.0.iter().zip(scan).all(|(a, b)| *a == b.1);
+        let mut order = if same { std::mem::take(&mut h.1) } else { Vec::new() };
+        // (an insertion sort while the hint is close; past a few moves per element, a full sort)
+        let mut moves = 0;
+        let mut fixed = same;
+        if same {
+            for i in 1..order.len() {
+                let x = order[i];
+                let mut j = i;
+                while j > 0 && key(order[j - 1]) > key(x) {
+                    order[j] = order[j - 1];
+                    j -= 1;
+                }
+                order[j] = x;
+                moves += i - j;
+                if moves > 4 * order.len() {
+                    fixed = false;
+                    break;
+                }
+            }
+        }
+        if !same {
+            order = (0..scan.len() as u32).collect();
+            h.0.clear();
+            h.0.extend(scan.iter().map(|x| x.1));
+        }
+        if !fixed {
+            order.sort_unstable_by_key(|&i| key(i));
+        }
+        h.1.clone_from(&order);
+        order
+    })
 }

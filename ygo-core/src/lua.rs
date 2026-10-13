@@ -59,10 +59,15 @@ impl Duel {
     /// (as `interpreter::call_lua`: no actions during it, `no_action`; operations run through the
     /// coroutine path, `protected_call` alone)
     pub fn call_function(&mut self, f: &LuaFn, _param_count: u32) -> Value {
-        let args = std::mem::take(&mut self.params);
+        let mut args = std::mem::take(&mut self.params);
         self.no_action += 1;
         let r = self.protected_call(f, &args).unwrap_or(Value::Nil);
         self.no_action -= 1;
+        // (the argument buffer back for the next call, unless the call left parameters of its own)
+        if self.params.is_empty() && self.params.capacity() < args.capacity() {
+            args.clear();
+            self.params = args;
+        }
         r
     }
     /// Runs a card function; `None` if it raised a Lua error (logged, as `lua_pcall` fails).

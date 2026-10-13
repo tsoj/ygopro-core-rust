@@ -6,7 +6,8 @@ use crate::aux;
 use crate::constants::*;
 use crate::lua::{card, duel, effect, group, NO_EX};
 use crate::prelude::*;
-use std::collections::HashMap;
+// (memo tables: lookups only, so the fast non-random hash)
+use rustc_hash::FxHashMap as HashMap;
 use std::sync::Arc;
 
 /// What a material function gets after the card: `function(c, fc, sumtype, tp, sub, mg, sg, contact)`
@@ -798,7 +799,7 @@ fn select_mix_rep(d: &mut Duel, x: &RepCtx, c: CardId, mg: &CardSet, sg: &mut Ca
     } else if check_mix_rep_goal(d, x, &sg.clone(), sub, minc, maxc, &slots) {
         true
     } else {
-        let mut memo = RepMemo::new();
+        let mut memo = RepMemo::default();
         let sgc = sg.clone();
         let r = RepArgs { mg: &mg2, sg: &sgc };
         let mut g = CardSet::new();

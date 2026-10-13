@@ -132,10 +132,37 @@ pub fn effect_sort_id(d: &Duel, e1: EffectId, e2: EffectId) -> bool {
 }
 
 pub fn sort_effects_by_id(d: &Duel, v: &mut [EffectId]) {
-    if v.len() < 2 || v.windows(2).all(|w| d.effect(w[0]).id <= d.effect(w[1]).id) {
+    if v.len() < 2 {
         return;
     }
-    v.sort_by_key(|&e| d.effect(e).id);
+    // (a stable sort; the ids looked up once: small sets by insertion, larger ones keyed by
+    // (id, index) so that an unstable sort keeps the order of equal ids)
+    if v.len() <= 16 {
+        let mut ids = [0u32; 16];
+        for (i, &e) in v.iter().enumerate() {
+            ids[i] = d.effect(e).id;
+        }
+        for i in 1..v.len() {
+            let (id, e) = (ids[i], v[i]);
+            let mut j = i;
+            while j > 0 && ids[j - 1] > id {
+                ids[j] = ids[j - 1];
+                v[j] = v[j - 1];
+                j -= 1;
+            }
+            ids[j] = id;
+            v[j] = e;
+        }
+        return;
+    }
+    let mut keyed: Vec<(u32, u32, EffectId)> = v.iter().enumerate().map(|(i, &e)| (d.effect(e).id, i as u32, e)).collect();
+    if keyed.windows(2).all(|w| w[0].0 <= w[1].0) {
+        return;
+    }
+    keyed.sort_unstable_by_key(|k| (k.0, k.1));
+    for (x, k) in v.iter_mut().zip(keyed) {
+        *x = k.2;
+    }
 }
 
 impl EffectId {
@@ -298,14 +325,15 @@ impl EffectId {
         if d.core.refreshing_condition != Some(self) {
             return res;
         }
-        if res {
-            if d.effect(self).status as u32 & EFFECT_STATUS_AVAILABLE == 0 {
-                let id = d.infos.field_id;
-                d.infos.field_id += 1;
-                d.effect_mut(self).id = id;
-            }
-            d.effect_mut(self).status |= EFFECT_STATUS_AVAILABLE as u16;
-        } else {
+        // (written only on a change: a write copies an effect shared with another duel)
+        let available = d.effect(self).status as u32 & EFFECT_STATUS_AVAILABLE != 0;
+        if res && !available {
+            let id = d.infos.field_id;
+            d.infos.field_id += 1;
+            let e = d.effect_mut(self);
+            e.id = id;
+            e.status |= EFFECT_STATUS_AVAILABLE as u16;
+        } else if !res && available {
             d.effect_mut(self).status &= !(EFFECT_STATUS_AVAILABLE as u16);
         }
         res

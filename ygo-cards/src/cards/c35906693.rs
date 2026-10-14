@@ -110,21 +110,12 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     if let Some(chkc) = a.chkc() {
         // local b=chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE)
         let b = card::is_controler(d, chkc, a.tp) && card::is_location(d, chkc, LOCATION_MZONE);
-        // if e:GetLabel()==0 then return b and s.utopiafilter(chkc)
-        if effect::get_label(d, a.e) == 0 {
-            if !b {
-                return false;
-            }
-            // s.utopiafilter is never defined in the script: calling it is a Lua error
-            crate::lua_error("attempt to call a nil value (field 'utopiafilter')");
-        } else {
-            // else return b and s.filter2(chkc,e,tp) end
-            if !b {
-                return false;
-            }
-            // s.filter2 is never defined in the script: calling it is a Lua error
-            crate::lua_error("attempt to call a nil value (field 'filter2')");
-        }
+        // (ygoai override lua_fixes/c35906693.lua: the original calls the undefined s.utopiafilter and
+        // s.filter2; the fix checks s.tgfilter for the chosen effect, 1 equip, 2 Xyz Summon)
+        // if e:GetLabel()==1 then return b and s.tgfilter(chkc,e,tp,true)
+        // else return b and s.tgfilter(chkc,e,tp,false) end
+        let eq = effect::get_label(d, a.e) == 1;
+        return b && tgfilter(d, chkc, a.e, a.tp, eq);
     }
     // local ft=Duel.GetLocationCount(tp,LOCATION_SZONE)
     let mut ft = duel::get_location_count(d, a.tp, LOCATION_SZONE as u8, None, None, None).0;

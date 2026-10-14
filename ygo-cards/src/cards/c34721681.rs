@@ -44,13 +44,6 @@ fn tgfilter(d: &mut Duel, c: CardId, mc: CardId, tp: u8) -> bool {
         && card::is_race(d, c, RACE_MACHINE)
         && (card::is_can_change_position(d, c) || card::is_can_be_xyz_material(d, mc, Some(c), Some(tp), Some(REASON_EFFECT)))
 }
-/// `s.tgfilter` as the Lua `Duel.SelectTarget` calls it: without extra arguments `mc` and `tp` are nil.
-fn tgfilter_no_extra(d: &mut Duel, c: CardId) -> bool {
-    card::is_faceup(d, c)
-        && card::is_type(d, c, TYPE_XYZ)
-        && card::is_race(d, c, RACE_MACHINE)
-        && (card::is_can_change_position(d, c) || crate::lua_error("attempt to index a nil value"))
-}
 fn efftg(d: &mut Duel, a: &EffArgs) -> bool {
     let c = effect::get_handler(d, a.e).nil();
     let label = effect::get_label(d, a.e);
@@ -65,7 +58,10 @@ fn efftg(d: &mut Duel, a: &EffArgs) -> bool {
         return duel::is_existing_target(d, Some(&|d, x| tgfilter(d, x, c, a.tp)), a.tp, LOCATION_MZONE, 0, 1, NO_EX);
     }
     duel::hint(d, HINT_SELECTMSG as u8, a.tp, HINTMSG_TARGET as u64);
-    let g = duel::select_target(d, a.tp, Some(&tgfilter_no_extra), a.tp, LOCATION_MZONE, 0, 1, 1, false, NO_EX).nil();
+    // local tc=Duel.SelectTarget(tp,s.tgfilter,tp,LOCATION_MZONE,0,1,1,nil,c,tp):GetFirst()
+    // (ygoai override lua_fixes/c34721681.lua: the original passed no c,tp to s.tgfilter here, so the
+    // filter indexed a nil mc for a monster that cannot change position, a Lua error in the core)
+    let g = duel::select_target(d, a.tp, Some(&|d, x| tgfilter(d, x, c, a.tp)), a.tp, LOCATION_MZONE, 0, 1, 1, false, NO_EX).nil();
     let tc = group::get_first(d, &g).nil();
     let b1 = card::is_can_change_position(d, tc);
     let b2 = card::is_can_be_xyz_material(d, c, Some(tc), Some(a.tp), Some(REASON_EFFECT));

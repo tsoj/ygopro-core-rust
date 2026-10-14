@@ -91,13 +91,14 @@ fn poscon(d: &mut Duel, a: &EffArgs) -> bool {
 }
 /// `s.postg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn postg(d: &mut Duel, a: &EffArgs) -> bool {
-    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.filter(chkc) end
+    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() and chkc:IsCanChangePosition() end
+    // (ygoai override lua_fixes/c18249921.lua: the original calls s.filter, which the script never
+    // defines, a Lua error; the fix checks the condition of the target selection)
     if let Some(chkc) = a.chkc() {
-        if card::is_controler(d, chkc, a.tp) && card::is_location(d, chkc, LOCATION_MZONE) {
-            // `s.filter` is never defined in this script: calling it is a Lua error
-            crate::lua_error("attempt to call a nil value");
-        }
-        return false;
+        return card::is_controler(d, chkc, a.tp)
+            && card::is_location(d, chkc, LOCATION_MZONE)
+            && card::is_faceup(d, chkc)
+            && card::is_can_change_position(d, chkc);
     }
     // if chk==0 then return Duel.IsExistingTarget(aux.FaceupFilter(Card.IsCanChangePosition),tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
     if a.chk == Some(0) {

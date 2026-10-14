@@ -71,13 +71,11 @@ fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
     } else {
         LOCATION_REMOVED
     };
-    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(loc) and s.spfilter(chkc,e,tp) end
+    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(REMOVED_AND_OR_GRAVE) and s.spfilter(chkc,e,tp) end
+    // (ygoai override lua_fixes/c70576413.lua: the original passes the undefined global loc, and
+    // IsLocation(nil) is a Lua error; the fix passes the locations of the target selection)
     if let Some(chkc) = a.chkc() {
-        if !card::is_controler(d, chkc, tp) {
-            return false;
-        }
-        // `loc` is a global that this script never assigns: it is nil, and IsLocation(nil) raises an error in the core
-        crate::lua_error("bad argument #1 to 'IsLocation' (number expected, got nil)");
+        return card::is_controler(d, chkc, tp) && card::is_location(d, chkc, removed_and_or_grave) && spfilter(d, chkc, a.e, tp);
     }
     // if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
     //     and Duel.IsExistingTarget(s.spfilter,tp,REMOVED_AND_OR_GRAVE,0,1,nil,e,tp) end

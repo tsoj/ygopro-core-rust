@@ -82,13 +82,10 @@ fn tdfilter(d: &mut Duel, c: CardId) -> bool {
 }
 /// `s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn tdtg(d: &mut Duel, a: &EffArgs) -> bool {
-    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.thfilter(chkc) end
+    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.tdfilter(chkc) end
+    // (ygoai override lua_fixes/c43227.lua: the original calls the undefined s.thfilter, a typo for s.tdfilter)
     if let Some(chkc) = a.chkc() {
-        if card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, a.tp) {
-            // s.thfilter is not defined in the script: calling it raises a Lua error
-            crate::lua_error("attempt to call a nil value (field 'thfilter')");
-        }
-        return false;
+        return card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, a.tp) && tdfilter(d, chkc);
     }
     // if chk==0 then return Duel.IsPlayerCanDraw(tp,1) and Duel.IsExistingTarget(s.tdfilter,tp,LOCATION_GRAVE,0,1,nil) end
     if a.chk == Some(0) {

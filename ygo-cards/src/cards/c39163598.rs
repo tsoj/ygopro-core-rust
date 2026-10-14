@@ -99,8 +99,9 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     effect::set_code(d, e1, EVENT_SUMMON_SUCCESS);
     // e1:SetOperation(s.ctop1)
     effect::set_operation(d, e1, Some(operation(ctop1)));
-    // e1:SetReset(RESET_PHASE|PHASE_END|RESET_OPPO_TURN,3)
-    effect::set_reset(d, e1, RESET_PHASE | PHASE_END | RESET_OPPO_TURN, 3);
+    // (ygoai override lua_fixes/c39163598.lua: no e1:SetReset(RESET_PHASE|PHASE_END|RESET_OPPO_TURN,3) here and for
+    // e4: the core deleted e1-e4 in the opponent's 3rd End Phase, before s.reset's cleanup at the turn end,
+    // which then raised on the deleted e4; s.reset alone ends them)
     // Duel.RegisterEffect(e1,tp)
     duel::register_effect(d, e1, tp);
     // local e2=e1:Clone()
@@ -136,8 +137,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     effect::set_label(d, e4, &[0]);
     // e4:SetOperation(s.reset)
     effect::set_operation(d, e4, Some(operation(reset_op)));
-    // e4:SetReset(RESET_PHASE|PHASE_END|RESET_OPPO_TURN,3)
-    effect::set_reset(d, e4, RESET_PHASE | PHASE_END | RESET_OPPO_TURN, 3);
+    // (ygoai override lua_fixes/c39163598.lua: no e4:SetReset, see e1)
     // c:RegisterEffect(e4)
     card::register_effect(d, c, e4, false);
     // table.insert(s[0],e4)
@@ -222,10 +222,8 @@ fn reset_all(d: &mut Duel) {
             break;
         }
         let te = list[i].as_effect().nil();
-        // (te:GetOwnerPlayer() on an effect the engine already deleted is a Lua error)
-        if effect::is_deleted(d, te) {
-            crate::lua_error("attempt to use a deleted Effect object");
-        }
+        // (ygoai override lua_fixes/c39163598.lua: e4 has no core reset any more, so te is never a
+        // deleted effect here)
         // if Duel.GetTurnPlayer()~=te:GetOwnerPlayer() then
         let owner_p = effect::get_owner_player(d, te);
         if duel::get_turn_player(d) != owner_p {

@@ -141,10 +141,11 @@ fn tgfilter(d: &mut Duel, c: CardId) -> bool {
 // function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 fn gytg(d: &mut Duel, a: &EffArgs) -> bool {
     let (e, tp) = (a.e, a.tp);
-    // if chkc then return s.tgfilter() end
-    // (the Lua call passes no card: indexing nil is an error)
-    if a.chkc().is_some() {
-        crate::lua_error("attempt to index a nil value");
+    // if chkc then return chkc:IsOnField() and chkc:IsControler(1-tp) and s.tgfilter(chkc) end
+    // (ygoai override lua_fixes/c69815951.lua: the original calls s.tgfilter() without a card, so the
+    // core raises here; the fix checks chkc like the SelectTarget below)
+    if let Some(chkc) = a.chkc() {
+        return card::is_on_field(d, chkc) && card::is_controler(d, chkc, 1 - tp) && tgfilter(d, chkc);
     }
     // local g=Duel.GetMatchingGroup(s.cfilter,tp,LOCATION_MZONE|LOCATION_GRAVE,0,nil)
     let g = duel::get_matching_group(d, Some(&cfilter), tp, LOCATION_MZONE | LOCATION_GRAVE, 0, NO_EX);

@@ -122,15 +122,13 @@ fn mfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8, mc: CardId) -> bool {
 }
 /// `s.sctg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`: activation legality
 fn sctg(d: &mut Duel, a: &EffArgs) -> bool {
-    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.scfilter1(chkc,e,tp,e:GetHandler()) end
-    if let Some(chkc) = a.chkc() {
-        if !(card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, a.tp)) {
-            return false;
-        }
-        // s.scfilter1 is never defined in the script: calling it is a Lua error
-        crate::lua_error("attempt to call a nil value (field 'scfilter1')");
-    }
     let h = effect::get_handler(d, a.e).nil();
+    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.mfilter(chkc,e,tp,e:GetHandler()) end
+    // (ygoai override lua_fixes/c92932860.lua: the original calls the undefined s.scfilter1, so the
+    // core raises here; the fix calls s.mfilter, the filter of the SelectTarget below)
+    if let Some(chkc) = a.chkc() {
+        return card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, a.tp) && mfilter(d, chkc, a.e, a.tp, h);
+    }
     // if chk==0 then return Duel.IsPlayerCanSpecialSummonCount(tp,2)
     //     and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
     //     and Duel.IsExistingTarget(s.mfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp,e:GetHandler()) end

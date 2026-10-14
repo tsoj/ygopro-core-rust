@@ -36,14 +36,6 @@ fn filter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
             duel::get_first_matching_card(d, Some(&|d, x| filter2(d, x, code, e, tp)), tp, LOCATION_DECK, 0, NO_EX).is_some()
         }
 }
-/// `s.filter(chkc)` as called from `s.target` with `chkc` only: `e` and `tp` are nil in Lua.
-/// The faceup/level/attribute tests pass, then `Duel.GetFirstMatchingCard` gets a nil player and raises.
-fn filter_chkc(d: &mut Duel, c: CardId) -> bool {
-    if !(card::is_faceup(d, c) && card::is_level_below(d, c, 3) && card::is_attribute(d, c, ATTRIBUTE_WATER)) {
-        return false;
-    }
-    crate::lua_error("Parameter 3 should be \"number\" but is \"nil\".")
-}
 /// `s.filter2(c,code,e,tp)`
 fn filter2(d: &mut Duel, c: CardId, code: u32, e: EffectId, tp: u8) -> bool {
     // return c:IsCode(code) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
@@ -53,9 +45,11 @@ fn filter2(d: &mut Duel, c: CardId, code: u32, e: EffectId, tp: u8) -> bool {
 fn target(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
     let e = a.e;
-    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.filter(chkc) end
+    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.filter(chkc,e,tp) end
+    // (ygoai override lua_fixes/c69492187.lua: the original calls s.filter(chkc) without e and tp, so
+    // Duel.GetFirstMatchingCard gets a nil player and the core raises; the fix passes e,tp)
     if let Some(chkc) = a.chkc() {
-        return card::is_location(d, chkc, LOCATION_MZONE) && card::is_controler(d, chkc, tp) && filter_chkc(d, chkc);
+        return card::is_location(d, chkc, LOCATION_MZONE) && card::is_controler(d, chkc, tp) && filter(d, chkc, e, tp);
     }
     // if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
     //   and Duel.IsExistingTarget(s.filter,tp,LOCATION_MZONE,0,1,nil,e,tp)end

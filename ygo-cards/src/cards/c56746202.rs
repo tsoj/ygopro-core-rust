@@ -42,12 +42,9 @@ fn spfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
 /// `s.sumtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn sumtg(d: &mut Duel, a: &EffArgs) -> bool {
     if let Some(chkc) = a.chkc() {
-        // return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.filter(chkc,e,tp)
-        if !(card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, a.tp)) {
-            return false;
-        }
-        // s.filter is never defined in this script: calling it is a Lua error
-        crate::lua_error("attempt to call a nil value");
+        // return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.spfilter(chkc,e,tp)
+        // (ygoai override lua_fixes/c56746202.lua: the original calls the undefined s.filter, a typo for s.spfilter)
+        return card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, a.tp) && spfilter(d, chkc, a.e, a.tp);
     }
     if a.chk == Some(0) {
         // return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and Duel.IsExistingTarget(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp)

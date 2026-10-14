@@ -100,13 +100,11 @@ fn desop(d: &mut Duel, a: &EffArgs) {
 /// `s.nonatktg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn nonatktg(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
-    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and chck:IsFaceup() end
-    // `chck` is never assigned in the script (a typo for `chkc`): indexing it raises an error.
+    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() end
+    // (ygoai override lua_fixes/c87837090.lua: the original misspells chkc as chck, an undefined
+    // global, a Lua error; the fix uses chkc)
     if let Some(chkc) = a.chkc() {
-        if card::is_location(d, chkc, LOCATION_MZONE) {
-            crate::lua_error("attempt to index a nil value (global 'chck')");
-        }
-        return false;
+        return card::is_location(d, chkc, LOCATION_MZONE) && card::is_faceup(d, chkc);
     }
     // if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
     if a.chk == Some(0) {

@@ -61,7 +61,9 @@ fn op(d: &mut Duel, a: &EffArgs) {
     let bt = card::get_battle_target(d, at);
     // if a:IsControler(1-tp) then a,b=b,a end
     let (at, b) = if card::is_controler(d, at, 1 - a.tp) { (bt, Some(at)) } else { (Some(at), bt) };
-    // if a:IsRelateToBattle() then
+    // if a and a:IsRelateToBattle() then
+    // (ygoai override lua_fixes/c6622715.lua: the original indexes a nil a when the attacker is the
+    // opponent's and its battle target has left; the fix skips the indestructibility then)
     if let Some(at) = at {
         if card::is_relate_to_battle(d, at) {
             // local e1=Effect.CreateEffect(c)
@@ -77,9 +79,6 @@ fn op(d: &mut Duel, a: &EffArgs) {
             // a:RegisterEffect(e1)
             card::register_effect(d, at, e1, false);
         }
-    } else {
-        // a:IsRelateToBattle() on nil
-        crate::lua_error("attempt to index a nil value (local 'a')");
     }
     // local e2=Effect.CreateEffect(c)
     let e2 = effect::create_effect(d, c);

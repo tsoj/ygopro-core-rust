@@ -120,10 +120,11 @@ fn spop(d: &mut Duel, a: &EffArgs) {
 /// `s.eqtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn eqtg(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
-    // if chkc then return c:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() end
-    // (`c` is a global that the script never assigns: it is nil, so indexing it is a Lua error)
-    if a.chkc().is_some() {
-        crate::lua_error("attempt to index a nil value (global 'c')");
+    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() end
+    // (ygoai override lua_fixes/c84054556.lua: the original indexed the nil global c here, a Lua
+    // error in the core; the fix checks chkc)
+    if let Some(chkc) = a.chkc() {
+        return card::is_controler(d, chkc, tp) && card::is_location(d, chkc, LOCATION_MZONE) && card::is_faceup(d, chkc);
     }
     // if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0
     //     and Duel.IsExistingTarget(Card.IsFaceup,tp,LOCATION_MZONE,0,1,nil) end

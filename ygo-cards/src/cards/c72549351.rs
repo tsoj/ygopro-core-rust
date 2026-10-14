@@ -31,10 +31,13 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     let (e, tp) = (a.e, a.tp);
     // if chk==0 then
     if a.chk == Some(0) {
-        // if e:GetLabel()==0 then return ft>0 and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil,e,tp) end
+        // if e:GetLabel()==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+        //     and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil,e,tp) end
+        // (ygoai override lua_fixes/c72549351.lua: the original compared the never assigned global ft,
+        // a Lua error in the core; the fix counts the free Main Monster Zones)
         if effect::get_label(d, e) == 0 {
-            // `ft` is never assigned in any script, so it is nil and `ft>0` is a Lua error
-            crate::lua_error("attempt to compare nil with number");
+            return duel::get_location_count(d, tp, LOCATION_MZONE as u8, None, None, None).0 > 0
+                && duel::is_existing_matching_card(d, Some(&|d, c| spfilter(d, c, e, tp)), tp, LOCATION_DECK, 0, 1, NO_EX);
         }
         // e:SetLabel(0)
         effect::set_label(d, e, &[0]);

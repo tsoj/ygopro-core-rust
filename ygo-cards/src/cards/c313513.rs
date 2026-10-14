@@ -119,8 +119,8 @@ fn cost_fn(d: &mut Duel, a: &EffArgs) -> bool {
     effect::set_code(d, e1, EFFECT_CANNOT_SUMMON);
     // e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_OATH)
     effect::set_property(d, e1, EFFECT_FLAG_PLAYER_TARGET + EFFECT_FLAG_OATH, 0);
-    // e1:SetReset(RESET_SELF_TURN|RESET_PHASE|PHASE_END,2)
-    effect::set_reset(d, e1, RESET_SELF_TURN | RESET_PHASE | PHASE_END, 2);
+    // (ygoai override lua_fixes/c313513.lua: no e1:SetReset(RESET_SELF_TURN|RESET_PHASE|PHASE_END,2); the core
+    // deleted e1 before s.reset's turn-end cleanup, which then raised on it; s.reset alone ends it)
     // e1:SetTargetRange(1,0)
     effect::set_target_range(d, e1, 1, 0);
     // Duel.RegisterEffect(e1,tp)
@@ -162,8 +162,8 @@ fn cost_fn(d: &mut Duel, a: &EffArgs) -> bool {
     effect::set_label(d, e3, &[0]);
     // e3:SetOperation(s.reset)
     effect::set_operation(d, e3, Some(operation(reset)));
-    // e3:SetReset(RESET_SELF_TURN|RESET_PHASE|PHASE_END,2)
-    effect::set_reset(d, e3, RESET_SELF_TURN | RESET_PHASE | PHASE_END, 2);
+    // (ygoai override lua_fixes/c313513.lua: no e3:SetReset(RESET_SELF_TURN|RESET_PHASE|PHASE_END,2); the core
+    // deleted e3 before s.reset's turn-end cleanup, which then raised on it; s.reset alone ends it)
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // table.insert(s[0],e3)
@@ -200,10 +200,16 @@ fn reset(d: &mut Duel, a: &EffArgs) {
         };
         // e:Reset()
         effect::reset(d, a.e);
-        // if e1 then e1:Reset() end
-        effect::reset(d, e1);
-        // if e2 then e2:Reset() end
-        effect::reset(d, e2);
+        // if e1 and not e1:IsDeleted() then e1:Reset() end
+        // (ygoai override lua_fixes/c313513.lua: e1/e2 are oath effects, deleted by the core when the
+        // activation was negated; the original raised here and left e in s[0])
+        if !effect::is_deleted(d, e1) {
+            effect::reset(d, e1);
+        }
+        // if e2 and not e2:IsDeleted() then e2:Reset() end
+        if !effect::is_deleted(d, e2) {
+            effect::reset(d, e2);
+        }
         // s[0][e]=nil
         let mut p = pairs(d);
         p.retain(|(k, _, _)| *k != a.e);

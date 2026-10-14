@@ -36,13 +36,11 @@ fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
     // local c=e:GetHandler()
     let c = effect::get_handler(d, a.e).nil();
-    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.filter(chkc) end
-    // (s.filter is never defined in the script: calling it is "attempt to call a nil value")
+    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.posfilter(chkc) end
+    // (ygoai override lua_fixes/c55702233.lua: the original calls s.filter, which the script never
+    // defines, a Lua error; the fix calls s.posfilter, the filter of the target selection)
     if let Some(chkc) = a.chkc() {
-        if !card::is_location(d, chkc, LOCATION_MZONE) {
-            return false;
-        }
-        crate::lua_error("attempt to call a nil value");
+        return card::is_location(d, chkc, LOCATION_MZONE) && posfilter(d, chkc);
     }
     // if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
     //   and c:IsCanBeSpecialSummoned(e,0,tp,false,false)

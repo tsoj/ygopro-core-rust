@@ -64,13 +64,10 @@ fn sptg1(d: &mut Duel, a: &EffArgs) -> bool {
 /// `s.sptg2(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn sptg2(d: &mut Duel, a: &EffArgs) -> bool {
     let (e, tp) = (a.e, a.tp);
-    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.filter2(chkc,e,tp) end
-    // `s.filter2` is never defined in this script: calling it raises the Lua error.
+    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.spfilter2(chkc,e,tp) end
+    // (ygoai override lua_fixes/c14604710.lua: the original calls the undefined s.filter2, a typo for s.spfilter2)
     if let Some(chkc) = a.chkc() {
-        if card::is_location(d, chkc, LOCATION_MZONE) && card::is_controler(d, chkc, tp) {
-            crate::lua_error("attempt to call a nil value");
-        }
-        return false;
+        return card::is_location(d, chkc, LOCATION_MZONE) && card::is_controler(d, chkc, tp) && spfilter2(d, chkc, e, tp);
     }
     // if chk==0 then return not Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT)
     //   and Duel.GetLocationCount(tp,LOCATION_MZONE)>1

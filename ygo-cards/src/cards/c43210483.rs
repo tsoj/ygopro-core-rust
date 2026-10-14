@@ -88,13 +88,11 @@ fn sthtg(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
     // local c=e:GetHandler()
     let c = effect::get_handler(d, a.e).nil();
-    // if chkc then return chkc:IsControler(tp) and chkc:IsOnField() and chkc~=c and s.thfilter(chkc) end
-    // (s.thfilter is never defined in the script: calling it raises an error)
+    // if chkc then return chkc:IsControler(tp) and chkc:IsOnField() and chkc~=c and s.sthfilter(chkc) end
+    // (ygoai override lua_fixes/c43210483.lua: the original called the undefined s.thfilter here, a Lua
+    // error in the core; the fix calls s.sthfilter)
     if let Some(chkc) = a.chkc() {
-        if card::is_controler(d, chkc, tp) && card::is_on_field(d, chkc) && chkc != c {
-            crate::lua_error("attempt to call a nil value");
-        }
-        return false;
+        return card::is_controler(d, chkc, tp) && card::is_on_field(d, chkc) && chkc != c && sthfilter(d, chkc);
     }
     // if chk==0 then return c:IsAbleToHand() and Duel.IsExistingTarget(s.sthfilter,tp,LOCATION_ONFIELD,0,1,c) end
     if a.chk == Some(0) {

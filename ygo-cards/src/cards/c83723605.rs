@@ -63,13 +63,10 @@ fn spfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8, mc: CardId) -> bool {
 fn target(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
     let e = a.e;
-    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.filter(chkc,e,tp) end
+    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.tgfilter(chkc,e,tp) end
+    // (ygoai override lua_fixes/c83723605.lua: the original calls the undefined s.filter, a typo for s.tgfilter)
     if let Some(chkc) = a.chkc() {
-        if card::is_controler(d, chkc, tp) && card::is_location(d, chkc, LOCATION_MZONE) {
-            // s.filter is not defined in the script: calling it is a Lua error
-            crate::lua_error("attempt to call a nil value (field 'filter')");
-        }
-        return false;
+        return card::is_controler(d, chkc, tp) && card::is_location(d, chkc, LOCATION_MZONE) && tgfilter(d, chkc, e, tp);
     }
     // if chk==0 then return Duel.IsExistingTarget(s.tgfilter,tp,LOCATION_MZONE,0,1,nil,e,tp) end
     if a.chk == Some(0) {

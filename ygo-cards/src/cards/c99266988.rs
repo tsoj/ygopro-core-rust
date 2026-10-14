@@ -101,11 +101,10 @@ fn tdfilter(d: &mut Duel, c: CardId) -> bool {
 fn tdtg(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
     if let Some(chkc) = a.chkc() {
-        // chkc:IsControler(tp) and chkc:IsLocation(LOCATION_REMOVED) and s.filter(chkc)
-        // (s.filter is not defined in this script: calling it is a Lua error)
-        return card::is_controler(d, chkc, tp)
-            && card::is_location(d, chkc, LOCATION_REMOVED)
-            && crate::lua_error("attempt to call a nil value (field 'filter')");
+        // chkc:IsControler(tp) and chkc:IsLocation(LOCATION_REMOVED) and s.tdfilter(chkc)
+        // (ygoai override lua_fixes/c99266988.lua: the original calls s.filter, which the script never
+        // defines, a Lua error; the fix calls s.tdfilter, the filter of the target selection)
+        return card::is_controler(d, chkc, tp) && card::is_location(d, chkc, LOCATION_REMOVED) && tdfilter(d, chkc);
     }
     if a.chk == Some(0) {
         return duel::is_existing_target(d, Some(&tdfilter), tp, LOCATION_REMOVED, 0, 1, NO_EX) && duel::is_player_can_draw(d, tp, 1);

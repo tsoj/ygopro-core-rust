@@ -87,8 +87,11 @@ fn checkop(d: &mut Duel, a: &EffArgs) {
     let c = effect::get_handler(d, a.e).nil();
     // local e2=e:GetLabelObject()
     let e2 = effect::get_label_object(d, a.e).as_effect().nil();
-    // if Duel.GetCurrentChain()==1 then e2:SetLabelObject({}) end
-    if duel::get_current_chain(d, false) == 1 {
+    // if Duel.GetCurrentChain()==1 or not e2:GetLabelObject() then e2:SetLabelObject({}) end
+    // (ygoai override lua_fixes/c84521924.lua: the original creates the table only at chain link 1, so
+    // a linked Pendulum effect at chain link 2+ before any chain link 1 indexes nil and the core raises;
+    // the fix also creates the table when there is none yet)
+    if duel::get_current_chain(d, false) == 1 || !matches!(effect::get_label_object(d, e2), Value::Multi(_)) {
         effect::set_label_object(d, e2, Value::Multi(vec![]));
     }
     // if re:IsActiveType(TYPE_PENDULUM) and c:GetLinkedGroup():IsContains(re:GetHandler()) then
@@ -100,8 +103,10 @@ fn checkop(d: &mut Duel, a: &EffArgs) {
         if rc.is_some_and(|rc| lg.contains(rc)) {
             let key = effect::get_field_id(d, re) as i64;
             let val = card::get_field_id(d, c) as i64;
-            let Value::Multi(mut v) = effect::get_label_object(d, e2) else {
-                crate::lua_error("attempt to index a nil value");
+            // (the table always exists here: created above)
+            let mut v = match effect::get_label_object(d, e2) {
+                Value::Multi(v) => v,
+                _ => Vec::new(),
             };
             match v.chunks(2).position(|p| p[0].int() == key) {
                 Some(i) => v[2 * i + 1] = Value::Int(val),

@@ -99,9 +99,11 @@ fn cannot_target_val(d: &mut Duel, a: Args) -> bool {
     let re = a.e(1);
     // local lvl=re:GetCardLevel()
     let lvl = match chain::effect_get_card(d, re, chain::Prop::Level) {
-        Value::Nil => crate::lua_error("attempt to compare nil with number"),
-        v => v.int(),
+        Value::Nil => None,
+        v => Some(v.int()),
     };
-    // return lvl>0 and lvl<=6
-    lvl > 0 && lvl <= 6
+    // return lvl~=nil and lvl>0 and lvl<=6
+    // (ygoai override lua_fixes/c46195773.lua: the original compared a nil level (a global effect)
+    // with a number, a Lua error in the core; the fix treats it as not Level 6 or lower)
+    matches!(lvl, Some(l) if l > 0 && l <= 6)
 }

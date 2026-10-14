@@ -134,13 +134,11 @@ fn discost(d: &mut Duel, a: &EffArgs) -> bool {
 /// `s.distg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn distg(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
-    // if chkc then return chkc:IsOnField() and c:IsControler(1-tp) and chkc:IsNegatable() end
+    // if chkc then return chkc:IsOnField() and chkc:IsControler(1-tp) and chkc:IsNegatable() end
+    // (ygoai override lua_fixes/c15665977.lua: the original indexed the nil global c here, a Lua
+    // error in the core; the fix checks chkc)
     if let Some(chkc) = a.chkc() {
-        if !card::is_on_field(d, chkc) {
-            return false;
-        }
-        // `c` is not a parameter of s.distg: it is a nil global here, and indexing it is a Lua error
-        crate::lua_error("attempt to index a nil value (global 'c')");
+        return card::is_on_field(d, chkc) && card::is_controler(d, chkc, 1 - tp) && card::is_negatable(d, chkc);
     }
     // if chk==0 then return Duel.IsExistingTarget(Card.IsNegatable,tp,0,LOCATION_ONFIELD,1,nil) end
     if a.chk == Some(0) {

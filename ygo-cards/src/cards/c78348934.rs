@@ -48,13 +48,11 @@ fn rescon_fn(d: &mut Duel, sg: &CardSet, _e: Option<EffectId>, _tp: u8, _mg: &Ca
 /// `s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn target(d: &mut Duel, a: &EffArgs) -> bool {
     let (e, tp) = (a.e, a.tp);
-    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(1-tp) and s.filter1(chkc,tp) end
+    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(1-tp) and s.rmvfilter(chkc,e) end
+    // (ygoai override lua_fixes/c78348934.lua: the original calls the undefined s.filter1, so the core
+    // raises here; the fix calls s.rmvfilter, the filter of the selectable targets)
     if let Some(chkc) = a.chkc() {
-        if card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, 1 - tp) {
-            // s.filter1 is never defined by this script: calling it raises
-            crate::lua_error("attempt to call a nil value");
-        }
-        return false;
+        return card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, 1 - tp) && rmvfilter(d, chkc, e);
     }
     // local g=Duel.GetMatchingGroup(s.rmvfilter,tp,0,LOCATION_GRAVE,nil,e)
     let g = duel::get_matching_group(d, Some(&|d, c| rmvfilter(d, c, e)), tp, 0, LOCATION_GRAVE, NO_EX);

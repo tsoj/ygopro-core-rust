@@ -100,13 +100,11 @@ fn spfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
     card::is_level(d, c, &[10]) && card::is_race(d, c, RACE_MACHINE) && card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, Some(POS_FACEUP_DEFENSE as u8), None, None)
 }
 fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
-    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.filter(chkc,e,tp) end
-    // (s.filter is not defined in this script: calling nil)
+    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.spfilter(chkc,e,tp) end
+    // (ygoai override lua_fixes/c146746.lua: the original called the undefined s.filter here, a Lua
+    // error in the core; the fix calls s.spfilter)
     if let Some(chkc) = a.chkc() {
-        if card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, a.tp) {
-            crate::lua_error("attempt to call a nil value");
-        }
-        return false;
+        return card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, a.tp) && spfilter(d, chkc, a.e, a.tp);
     }
     let tp = a.tp;
     let e = a.e;

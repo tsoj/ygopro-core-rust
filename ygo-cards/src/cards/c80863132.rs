@@ -42,11 +42,12 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     duel::change_chain_operation(d, a.ev as u8, operation(repop));
 }
 /// `s.repop(e,tp,eg,ep,ev,re,r,rp)`
-fn repop(d: &mut Duel, a: &EffArgs) {
-    // local ex,cg,cc,cp,cv=Duel.GetOperationInfo(ev,CATEGORY_DRAW)
-    let Some(info) = duel::get_operation_info(d, a.ev, CATEGORY_DRAW) else {
-        // cp is nil here: `cp<2` is a Lua error
-        crate::lua_error("attempt to compare nil with number")
+fn repop(d: &mut Duel, _a: &EffArgs) {
+    // local ex,cg,cc,cp,cv=Duel.GetOperationInfo(0,CATEGORY_DRAW)
+    // (ygoai override lua_fixes/c80863132.lua: the original reads chain link ev, the draw effect's event
+    // value, so it read another link or none (a Lua error on nil); the fix reads the resolving link)
+    let Some(info) = duel::get_operation_info(d, 0, CATEGORY_DRAW) else {
+        return;
     };
     // if cp<2 then
     if info.op_player < 2 {

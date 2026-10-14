@@ -61,13 +61,11 @@ fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
     let e = a.e;
     // local c=e:GetHandler()
     let c = effect::get_handler(d, e).nil();
-    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.filter(chkc,e,tp) end
+    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.spfilter(chkc,e,tp) end
+    // (ygoai override lua_fixes/c83301414.lua: the original calls s.filter, which the script never
+    // defines, a Lua error; the fix calls s.spfilter, the filter of the target selection)
     if let Some(chkc) = a.chkc() {
-        if !(card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, tp)) {
-            return false;
-        }
-        // s.filter is not defined in this script: the call raises "attempt to call a nil value"
-        crate::lua_error("attempt to call a nil value");
+        return card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, tp) && spfilter(d, chkc, e, tp);
     }
     // Excluding itself in the target check here is needed for a proper interaction with "Witchcrafter Genni" [64756282]
     // if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0

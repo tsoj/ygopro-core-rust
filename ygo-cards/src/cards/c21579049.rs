@@ -79,13 +79,11 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     let (e, tp) = (a.e, a.tp);
     // local fishsync=e:IsHasType(EFFECT_TYPE_ACTIVATE) and Duel.IsExistingMatchingCard(s.fishsyncfilter,tp,LOCATION_MZONE,0,1,nil)
     let fishsync = effect::is_has_type(d, e, EFFECT_TYPE_ACTIVATE) && duel::is_existing_matching_card(d, Some(&fishsyncfilter), tp, LOCATION_MZONE, 0, 1, NO_EX);
-    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.desfilter(c,e,tp,fishsync) end
+    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.desfilter(chkc,e,tp,fishsync) end
+    // (ygoai override lua_fixes/c21579049.lua: the original passes the undefined global `c` to
+    // s.desfilter, so the core raises here; the fix passes chkc)
     if let Some(chkc) = a.chkc() {
-        if card::is_location(d, chkc, LOCATION_MZONE) && card::is_controler(d, chkc, tp) {
-            // `c` is not a parameter here: it is the global `c`, which is nil, and `c:IsRace` raises.
-            crate::lua_error("attempt to index a nil value (global 'c')");
-        }
-        return false;
+        return card::is_location(d, chkc, LOCATION_MZONE) && card::is_controler(d, chkc, tp) && desfilter(d, chkc, e, tp, fishsync);
     }
     // if chk==0 then return Duel.IsExistingTarget(s.desfilter,tp,LOCATION_MZONE,0,1,nil,e,tp,fishsync) end
     if a.chk == Some(0) {

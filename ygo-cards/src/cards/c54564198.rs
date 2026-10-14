@@ -76,10 +76,11 @@ fn spfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
 /// `s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
     let (e, tp) = (a.e, a.tp);
-    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and s.filter(chkc,e,tp) end
+    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and s.spfilter(chkc,e,tp) end
+    // (ygoai override lua_fixes/c54564198.lua: the original calls the undefined s.filter, so the core
+    // raises here; the fix calls s.spfilter, the filter of SelectTarget)
     if let Some(chkc) = a.chkc() {
-        // (this script has no `s.filter`: the call is a Lua error)
-        return card::is_location(d, chkc, LOCATION_GRAVE) && crate::lua_error("attempt to call a nil value (field 'filter')");
+        return card::is_location(d, chkc, LOCATION_GRAVE) && spfilter(d, chkc, e, tp);
     }
     // if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
     //     and Duel.IsExistingTarget(s.spfilter,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,nil,e,tp) end

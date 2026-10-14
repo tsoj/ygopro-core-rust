@@ -318,13 +318,11 @@ fn thtg(d: &mut Duel, a: &EffArgs) -> bool {
     // local g=e:GetLabelObject():Filter(s.thfilter,nil,e,tp)
     let g0 = label_group(d, a.e);
     let g = group::filter(d, &g0, &|d, c| thfilter(d, c, a.e, a.tp), NO_EX);
-    // if chkc then return g:IsContains(chkc) and s.cfilter(thfilter,e,tp) end
-    // (s.cfilter is never defined in this script, so a contained chkc raises a Lua error)
+    // if chkc then return g:IsContains(chkc) and s.thfilter(chkc,e,tp) end
+    // (ygoai override lua_fixes/c96029570.lua: the original called the undefined s.cfilter here, a Lua
+    // error in the core; the fix calls s.thfilter)
     if let Some(chkc) = a.chkc() {
-        if group::is_contains(&g, chkc) {
-            crate::lua_error("attempt to call a nil value (field 'cfilter')");
-        }
-        return false;
+        return group::is_contains(&g, chkc) && thfilter(d, chkc, a.e, a.tp);
     }
     // if chk==0 then return #g>0 end
     if a.chk == Some(0) {

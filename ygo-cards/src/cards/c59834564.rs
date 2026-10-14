@@ -56,16 +56,14 @@ fn spcon(d: &mut Duel, a: Args) -> bool {
 }
 /// `s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn destg(d: &mut Duel, a: &EffArgs) -> bool {
-    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.filter(chkc) end
+    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() and chkc:IsAttribute(ATTRIBUTE_FIRE) end
+    // (ygoai override lua_fixes/c59834564.lua: the original calls the undefined s.filter; the fix
+    // uses the face-up FIRE filter of the target selection)
     if let Some(chkc) = a.chkc() {
-        if !card::is_controler(d, chkc, a.tp) {
-            return false;
-        }
-        if !card::is_location(d, chkc, LOCATION_MZONE) {
-            return false;
-        }
-        // `s.filter` is never defined in the script: calling it is a Lua error.
-        crate::lua_error("attempt to call a nil value");
+        return card::is_controler(d, chkc, a.tp)
+            && card::is_location(d, chkc, LOCATION_MZONE)
+            && card::is_faceup(d, chkc)
+            && card::is_attribute(d, chkc, ATTRIBUTE_FIRE);
     }
     // if chk==0 then return true end
     if a.chk == Some(0) {

@@ -25,12 +25,10 @@ fn spfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
             || card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, Some(POS_FACEUP as u8), Some(1 - tp), None))
 }
 fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
+    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.spfilter(chkc,e,tp) end
+    // (ygoai override lua_fixes/c82012319.lua: the original calls the undefined s.filter, a typo for s.spfilter)
     if let Some(chkc) = a.chkc() {
-        if !(card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, a.tp)) {
-            return false;
-        }
-        // `s.filter` is not defined in this script: the Lua call is nil
-        crate::lua_error("attempt to call a nil value");
+        return card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, a.tp) && spfilter(d, chkc, a.e, a.tp);
     }
     if a.chk == Some(0) {
         return (duel::get_location_count(d, a.tp, LOCATION_MZONE as u8, None, None, None).0 > 0

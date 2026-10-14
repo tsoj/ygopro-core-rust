@@ -61,13 +61,11 @@ fn thfilter(d: &mut Duel, c: CardId) -> bool {
 }
 /// `s.thtg(e,tp,...,chk,chkc)`
 fn thtg(d: &mut Duel, a: &EffArgs) -> bool {
-    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.thfilter(c) end
+    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.thfilter(chkc) end
+    // (ygoai override lua_fixes/c63509474.lua: the original passes the undefined global c, so the
+    // core raises here; the fix passes chkc)
     if let Some(chkc) = a.chkc() {
-        if !(card::is_controler(d, chkc, a.tp) && card::is_location(d, chkc, LOCATION_GRAVE)) {
-            return false;
-        }
-        // s.thfilter(c) uses the global `c`, which is nil in the Lua script: calling it raises an error
-        crate::lua_error("attempt to index a nil value (global 'c')");
+        return card::is_controler(d, chkc, a.tp) && card::is_location(d, chkc, LOCATION_GRAVE) && thfilter(d, chkc);
     }
     // if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_GRAVE,0,1,nil) end
     if a.chk == Some(0) {

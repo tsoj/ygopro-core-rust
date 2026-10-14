@@ -229,13 +229,10 @@ fn sptg(d: &mut Duel, a: &EffArgs) -> bool {
     let e3 = a.e;
     let label_grp = effect::get_label_object(d, e3).as_group().cloned().nil();
     let g = group::filter(d, &label_grp, &|d, x| spfilter(d, x, a.e, a.tp), NO_EX);
-    // if chkc then return g:IsContains(chkc) and chkc:IsLocation(LOCATION_REMOVED) and s.cfilter(chkc,e,tp) end
+    // if chkc then return g:IsContains(chkc) and chkc:IsLocation(LOCATION_REMOVED) and s.spfilter(chkc,e,tp) end
+    // (ygoai override lua_fixes/c95973569.lua: the original calls the undefined s.cfilter, a typo for s.spfilter)
     if let Some(chkc) = a.chkc() {
-        if g.contains(chkc) && card::is_location(d, chkc, LOCATION_REMOVED) {
-            // s.cfilter is not defined in the script: calling it is a Lua error
-            crate::lua_error("attempt to call a nil value");
-        }
-        return false;
+        return g.contains(chkc) && card::is_location(d, chkc, LOCATION_REMOVED) && spfilter(d, chkc, a.e, a.tp);
     }
     // if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and #g>0 end
     if a.chk == Some(0) {

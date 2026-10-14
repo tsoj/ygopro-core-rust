@@ -32,10 +32,11 @@ fn efftgfilter(d: &mut Duel, c: CardId, tp: u8) -> bool {
 /// `s.efftg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn efftg(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
-    // if chkc then return c:IsLocation(LOCATION_MZONE) and c:IsControler(1-tp) and s.efftgfilter(chkc,tp) end
-    // `c` is not a local of this function: the Lua global `c` is nil, and indexing it is an error
-    if a.chkc().is_some() {
-        crate::lua_error("attempt to index a nil value (global 'c')");
+    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and s.efftgfilter(chkc,tp) end
+    // (ygoai override lua_fixes/c45951104.lua: the original indexes the undefined global c, a Lua error;
+    // the fix uses chkc)
+    if let Some(chkc) = a.chkc() {
+        return card::is_location(d, chkc, LOCATION_MZONE) && card::is_controler(d, chkc, 1 - tp) && efftgfilter(d, chkc, tp);
     }
     // if chk==0 then return Duel.IsExistingTarget(s.efftgfilter,tp,0,LOCATION_MZONE,1,nil,tp) end
     if a.chk == Some(0) {

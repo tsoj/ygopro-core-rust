@@ -100,13 +100,11 @@ fn not_dino_faceup(d: &mut Duel, c: CardId) -> bool {
 /// `s.excavtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn excavtg(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
-    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and not c:IsRace(RACE_DINOSAUR) and c:IsFaceup() end
+    // if chkc then return chkc:IsLocation(LOCATION_MZONE) and not chkc:IsRace(RACE_DINOSAUR) and chkc:IsFaceup() end
+    // (ygoai override lua_fixes/c39706423.lua: the original indexes the undefined global c, a Lua error;
+    // the fix uses chkc)
     if let Some(chkc) = a.chkc() {
-        if !card::is_location(d, chkc, LOCATION_MZONE) {
-            return false;
-        }
-        // `c` is not a local of this function: it is the global c, which is nil, and indexing it is a Lua error
-        crate::lua_error("attempt to index a nil value (global 'c')");
+        return card::is_location(d, chkc, LOCATION_MZONE) && !card::is_race(d, chkc, RACE_DINOSAUR as u64) && card::is_faceup(d, chkc);
     }
     // if chk==0 then return Duel.IsExistingTarget(aux.FaceupFilter(aux.NOT(Card.IsRace),RACE_DINOSAUR),tp,LOCATION_MZONE,LOCATION_MZONE,1,nil)
     //     and Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_DECK,0,1,nil) end

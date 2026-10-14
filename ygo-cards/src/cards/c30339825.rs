@@ -72,14 +72,10 @@ fn desfilter(d: &mut Duel, c: CardId, water: bool) -> bool {
 fn sptg(d: &mut Duel, a: &EffArgs, water: bool) -> bool {
     let tp = a.tp;
     let e = a.e;
-    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and s.spfilter(chkc,e,water) end
-    // The Lua passes water as the tp argument here and nil as water: IsCanBeSpecialSummoned then
-    // gets a boolean where it reads a player, and the core raises an error.
+    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and s.spfilter(chkc,e,tp,water) end
+    // (ygoai override lua_fixes/c30339825.lua: the original omits tp, so water lands in the tp slot)
     if let Some(chkc) = a.chkc() {
-        if card::is_location(d, chkc, LOCATION_GRAVE) {
-            crate::lua_error("Parameter 4 should be \"INT\" but is \"boolean\".");
-        }
-        return false;
+        return card::is_location(d, chkc, LOCATION_GRAVE) && spfilter(d, chkc, e, tp, water);
     }
     // if chk==0 then return Duel.IsExistingTarget(s.spfilter,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,nil,e,tp,water) end
     if a.chk == Some(0) {

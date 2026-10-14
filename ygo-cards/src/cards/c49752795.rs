@@ -40,10 +40,11 @@ fn filter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
 /// `s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn target(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
-    // if chkc then return chck:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.filter(chkc,e,tp) end
-    // (`chck` is never assigned: indexing nil raises an error)
-    if a.chkc().is_some() {
-        crate::lua_error("attempt to index a nil value (global 'chck')");
+    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.filter(chkc,e,tp) end
+    // (ygoai override lua_fixes/c49752795.lua: the original indexes the misspelled nil global `chck`,
+    // so the core raises here; the fix spells it chkc)
+    if let Some(chkc) = a.chkc() {
+        return card::is_controler(d, chkc, tp) && card::is_location(d, chkc, LOCATION_GRAVE) && filter(d, chkc, a.e, tp);
     }
     // if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
     //     and Duel.IsExistingTarget(s.filter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end

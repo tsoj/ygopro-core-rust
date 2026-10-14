@@ -150,13 +150,11 @@ fn gyspfilter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
 }
 /// `s.gysptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn gysptg(d: &mut Duel, a: &EffArgs) -> bool {
-    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.filter(chkc,e,tp) end
+    // if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.gyspfilter(chkc,e,tp) end
+    // (ygoai override lua_fixes/c20934683.lua: the original called the undefined s.filter here, a Lua
+    // error in the core; the fix calls s.gyspfilter)
     if let Some(chkc) = a.chkc() {
-        // s.filter is not defined by this script: calling it is a Lua error (when the first two tests pass)
-        if card::is_controler(d, chkc, a.tp) && card::is_location(d, chkc, LOCATION_GRAVE) {
-            crate::lua_error("attempt to call a nil value");
-        }
-        return false;
+        return card::is_controler(d, chkc, a.tp) && card::is_location(d, chkc, LOCATION_GRAVE) && gyspfilter(d, chkc, a.e, a.tp);
     }
     // if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
     //     and Duel.IsExistingTarget(s.gyspfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end

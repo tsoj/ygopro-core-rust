@@ -119,10 +119,11 @@ fn fusfilter(cd: u32) -> fusion::FusMat {
 }
 /// `s.contactfil(tp)`
 fn contactfil(d: &mut Duel, tp: u8) -> CardSet {
-    // if Duel.IsPlayerAffectedByEffect(tp,CARD_SPIRIT_ELIMINATION) then return false end
+    // if Duel.IsPlayerAffectedByEffect(tp,CARD_SPIRIT_ELIMINATION) then return Group.CreateGroup() end
+    // (ygoai override lua_fixes/c46186135.lua: the original returns false, not a group, and the
+    // contact procedure raises where it uses it; the fix returns an empty group)
     if duel::is_player_affected_by_effect(d, tp, CARD_SPIRIT_ELIMINATION).is_some() {
-        // (the core rejects the `false` as the material group: a Lua error where it is used)
-        crate::lua_error("parameter 2 should be group");
+        return CardSet::new();
     }
     // return Duel.GetMatchingGroup(Card.IsAbleToRemoveAsCost,tp,LOCATION_ONFIELD|LOCATION_GRAVE,0,nil)
     duel::get_matching_group(d, Some(&|d, c| card::is_able_to_remove_as_cost(d, c, None)), tp, LOCATION_ONFIELD | LOCATION_GRAVE, 0, NO_EX)

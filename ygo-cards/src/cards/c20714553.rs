@@ -190,13 +190,10 @@ fn thfilter(d: &mut Duel, c: CardId) -> bool {
 // function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 fn thtg(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
-    // if chkc then return chkc:IsLocation(LOCATION_STZONE) and chkc:IsControler(tp) and s.thfilter(chck) end
+    // if chkc then return chkc:IsLocation(LOCATION_STZONE) and chkc:IsControler(tp) and s.thfilter(chkc) end
+    // (ygoai override lua_fixes/c20714553.lua: the original passes the misspelled nil global chck)
     if let Some(chkc) = a.chkc() {
-        if card::is_location(d, chkc, LOCATION_STZONE) && card::is_controler(d, chkc, tp) {
-            // `chck` is a misspelled, unassigned global: nil, and `c:IsRace` on it raises an error
-            crate::lua_error("attempt to index a nil value (local 'c')");
-        }
-        return false;
+        return card::is_location(d, chkc, LOCATION_STZONE) && card::is_controler(d, chkc, tp) && thfilter(d, chkc);
     }
     // if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_STZONE,0,1,nil) end
     if a.chk == Some(0) {

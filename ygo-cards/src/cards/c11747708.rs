@@ -29,7 +29,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
 /// `s.costfilter(c,hz)`
 fn costfilter(d: &mut Duel, c: CardId, hz: bool) -> bool {
     // return c:IsRace(RACE_PLANT) and c:HasLevel() and c:IsAbleToRemoveAsCost() and aux.SpElimFilter(c,true)
-    //     and (hz or (c:IsLocation(LOCATION_MZONE) and c:IsInMainZone()))
+    //     and (hz or (c:IsLocation(LOCATION_MZONE) and c:IsInMainMZone()))
     if !(card::is_race(d, c, RACE_PLANT)
         && card::has_level(d, c)
         && card::is_able_to_remove_as_cost(d, c, None)
@@ -40,11 +40,9 @@ fn costfilter(d: &mut Duel, c: CardId, hz: bool) -> bool {
     if hz {
         return true;
     }
-    if !card::is_location(d, c, LOCATION_MZONE) {
-        return false;
-    }
-    // c:IsInMainZone() is defined nowhere in the core or the libraries: the Lua raises "attempt to call a nil value"
-    crate::lua_error("attempt to call a nil value")
+    // (ygoai override lua_fixes/c11747708.lua: the original calls c:IsInMainZone(), which does not
+    // exist, so the core raises here; the fix calls IsInMainMZone)
+    card::is_location(d, c, LOCATION_MZONE) && card::is_in_main_m_zone(d, c, None)
 }
 /// `s.cost(e,tp,eg,ep,ev,re,r,rp,chk)`
 fn cost(d: &mut Duel, a: &EffArgs) -> bool {

@@ -84,13 +84,11 @@ fn cost_fn(d: &mut Duel, a: &EffArgs) -> bool {
 }
 /// `s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn target(d: &mut Duel, a: &EffArgs) -> bool {
-    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.filter2(chkc,e,tp) end
+    // if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.spfilter(chkc,e,tp) end
+    // (ygoai override lua_fixes/c44686185.lua: the original calls the undefined s.filter2, so the
+    // core raises here; the fix calls s.spfilter, the filter of SelectTarget)
     if let Some(chkc) = a.chkc() {
-        if card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, a.tp) {
-            // s.filter2 is never defined by the script: calling it is a Lua error
-            crate::lua_error("attempt to call a nil value");
-        }
-        return false;
+        return card::is_location(d, chkc, LOCATION_GRAVE) && card::is_controler(d, chkc, a.tp) && spfilter(d, chkc, a.e, a.tp);
     }
     // if chk==0 then return true end
     if a.chk == Some(0) {

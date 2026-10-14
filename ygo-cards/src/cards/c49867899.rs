@@ -12,8 +12,10 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     let params = fusion::SummonEff {
         fusfilter: Some(fusion::fus_filter(|d, c, _tp| card::is_race(d, c, RACE_FIEND))),
         matfilter: Some(fusion::mat_filter_fn(|_d, _c, _e, _tp, _chk| false)),
+        // s.fextra: Duel.GetMatchingGroup(aux.NecroValleyFilter(Fusion.IsMonsterFilter(Card.IsAbleToDeck)),tp,LOCATION_GRAVE,0,nil)
         extrafil: Some(Arc::new(|d: &mut Duel, _e: EffectId, tp: u8, _mg: &CardSet| {
-            (Some(duel::get_matching_group(d, Some(&|d, c| card::is_monster(d, c) && card::is_able_to_deck(d, c)), tp, LOCATION_GRAVE, 0, NO_EX)), None)
+            let f = aux::necro_valley_filter(|d, c| card::is_monster(d, c) && card::is_able_to_deck(d, c));
+            (Some(duel::get_matching_group(d, Some(&f), tp, LOCATION_GRAVE, 0, NO_EX)), None)
         })),
         extraop: Some(fusion::shuffle_material()),
         extratg: Some(cost_target(extratg)),

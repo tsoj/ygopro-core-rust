@@ -220,9 +220,9 @@ fn cond(d: &mut Duel, a: &EffArgs) -> bool {
 /// `s.operation(e,tp,...)`
 fn op(d: &mut Duel, a: &EffArgs) {
     // local tc=Duel.GetFirstMatchingCard(Card.IsCode,tp,LOCATION_DECK,0,nil,35906693)
-    let g = duel::get_matching_group(d, Some(&|d, c| card::is_code(d, c, &[35906693])), a.tp, LOCATION_DECK, 0, NO_EX);
+    let tc = duel::get_first_matching_card(d, Some(&|d, c| card::is_code(d, c, &[35906693])), a.tp, LOCATION_DECK, 0, NO_EX);
     // if tc then
-    if let Some(tc) = group::get_first(d, &g) {
+    if let Some(tc) = tc {
         // Duel.ShuffleDeck(tp)
         duel::shuffle_deck(d, a.tp);
         // Duel.MoveSequence(tc,0)

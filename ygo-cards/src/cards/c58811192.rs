@@ -214,6 +214,8 @@ fn spop(d: &mut Duel, a: &EffArgs) {
             // Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
             duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_SPSUMMON as u64);
             // local sc=tg:FilterSelect(Card.IsCanBeSpecialSummoned,tp,ft,ft,nil,e,0,tp,false,false,POS_FACEUP_DEFENSE):GetFirst()
+            // (ygoai override lua_fixes/c58811192.lua: the original passes the filter before the player,
+            // so the core raises here and the Special Summon never happens; the fix passes them in order)
             let sel = group::filter_select(
                 d,
                 &tg,

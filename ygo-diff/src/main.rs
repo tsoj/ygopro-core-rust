@@ -628,6 +628,12 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
             let types: Vec<String> = mc.iter().map(|m| m[0].to_string()).collect();
             Some(format!("game {game} (seed {:?}), decision {}: {e}\n  messages since the last decision: {}", seed, out.decisions, types.join(" ")))
         })?;
+        if std::env::var_os("YGO_DIFF_MSGS").is_some() {
+            // (every message of the decision, as both engines agreed on it)
+            for m in &mc {
+                eprintln!("    msg {}", hex(m));
+            }
+        }
         out.record.steps.push((cache::hash_msgs(&mc), sc, state));
         history.extend(mc.iter().cloned());
         if history.len() > 64 {

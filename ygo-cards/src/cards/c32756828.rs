@@ -118,8 +118,9 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
 /// `s.operation(e,tp,eg,ep,ev,re,r,rp)`
 fn op(d: &mut Duel, a: &EffArgs) {
     // local tc=Duel.GetFirstTarget()
-    let tc = duel::first_target(d).nil();
-    // if tc:IsRelateToEffect(e) then
+    // if tc and tc:IsRelateToEffect(e) then
+    // (ygoai override lua_fixes/c32756828.lua: no target when the cost's release also removed the only target)
+    let Some(tc) = duel::first_target(d) else { return };
     if card::is_relate_to_effect(d, tc, a.e) {
         // Duel.Destroy(tc,REASON_EFFECT)
         duel::destroy(d, tc, REASON_EFFECT, None, None);

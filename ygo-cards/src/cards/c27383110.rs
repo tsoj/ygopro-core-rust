@@ -74,7 +74,12 @@ fn ritualfil(d: &mut Duel, c: CardId) -> bool {
 }
 /// `s.stage2(mg,e,tp,eg,ep,ev,re,r,rp,tc)`
 fn stage2(d: &mut Duel, _mat: &CardSet, a: &EffArgs, tc: CardId) {
-    // e:GetLabelObject():SetLabelObject(tc)
+    // if e:GetHandler():IsCode(id) then e:GetLabelObject():SetLabelObject(tc) end
+    // (ygoai override lua_fixes/c27383110.lua: a copy (Transonic Bird) passes its own e, whose label object is this card's e1)
+    let h = effect::get_handler(d, a.e).nil();
+    if !card::is_code(d, h, &[ID]) {
+        return;
+    }
     let e3 = effect::get_label_object(d, a.e).as_effect().nil();
     effect::set_label_object(d, e3, Value::Card(tc));
 }

@@ -184,7 +184,9 @@ fn endop(d: &mut Duel, a: &EffArgs) {
     let g = label_group(d, e1);
     // local tc=g:GetFirst()
     let _ = group::get_first(d, &g);
-    // for tc in aux.Next(g) do
+    // for tc in aux.Next(g:Clone()) do
+    // (ygoai override lua_fixes/c86100785.lua: the original iterated g itself, which s.resetcon changes during s.desop's
+    // destroy; group::iter is a copy)
     for tc in group::iter(d, &g) {
         // s.desop(tc,e:GetLabelObject():GetLabelObject(),e:GetHandler())
         let c = effect::get_handler(d, a.e).nil();

@@ -55,8 +55,9 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     let e5 = effect::create_effect(d, c);
     // e5:SetType(EFFECT_TYPE_FIELD)
     effect::set_type(d, e5, EFFECT_TYPE_FIELD);
-    // e5:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_SET_AVAILABLE+EFFECT_FLAG_IGNORE_RANGE)
-    effect::set_property(d, e5, EFFECT_FLAG_CANNOT_DISABLE + EFFECT_FLAG_SET_AVAILABLE + EFFECT_FLAG_IGNORE_RANGE, 0);
+    // e5:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_SET_AVAILABLE+EFFECT_FLAG_IGNORE_RANGE+EFFECT_FLAG_UNCOPYABLE)
+    // (ygoai override lua_fixes/c88935103.lua: uncopyable like e4, whose label it sets; a copy got e5 with a deleted e4)
+    effect::set_property(d, e5, EFFECT_FLAG_CANNOT_DISABLE + EFFECT_FLAG_SET_AVAILABLE + EFFECT_FLAG_IGNORE_RANGE + EFFECT_FLAG_UNCOPYABLE, 0);
     // e5:SetRange(LOCATION_MZONE)
     effect::set_range(d, e5, LOCATION_MZONE);
     // e5:SetCode(EFFECT_MATERIAL_CHECK)

@@ -1,6 +1,6 @@
 diff -ruN core_a/card.cpp core_b/card.cpp
---- core_a/card.cpp	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/card.cpp	2026-10-06 13:04:11.480940583 +0200
+--- core_a/card.cpp	2026-09-25 10:05:07.000000000 +0200
++++ core_b/card.cpp	2026-10-26 21:26:58.495665164 +0100
 @@ -75,6 +75,25 @@
  			return c1->current.sequence < c2->current.sequence;
  	}
@@ -395,8 +395,8 @@ diff -ruN core_a/card.cpp core_b/card.cpp
  		for(auto eit = rg.first; eit != rg.second;) {
  			peffect = eit->second;
 diff -ruN core_a/card.h core_b/card.h
---- core_a/card.h	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/card.h	2026-10-06 13:04:11.481269936 +0200
+--- core_a/card.h	2026-09-25 10:05:07.000000000 +0200
++++ core_b/card.h	2026-10-26 21:26:58.496261250 +0100
 @@ -182,6 +182,13 @@
  	explicit card(duel* pd);
  	~card() = default;
@@ -412,8 +412,8 @@ diff -ruN core_a/card.h core_b/card.h
  		return (set_code & 0xfffu) == (to_match & 0xfffu) && (set_code & to_match) == set_code;
  	}
 diff -ruN core_a/duel.cpp core_b/duel.cpp
---- core_a/duel.cpp	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/duel.cpp	2026-10-06 13:04:11.481322432 +0200
+--- core_a/duel.cpp	2026-09-25 10:05:07.000000000 +0200
++++ core_b/duel.cpp	2026-10-26 21:26:58.496331950 +0100
 @@ -10,6 +10,7 @@
  #include "duel.h"
  #include "effect.h"
@@ -431,8 +431,8 @@ diff -ruN core_a/duel.cpp core_b/duel.cpp
  		delete pcard;
  	for(auto& pgroup : groups) {
 diff -ruN core_a/duel.h core_b/duel.h
---- core_a/duel.h	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/duel.h	2026-10-06 13:04:11.481362417 +0200
+--- core_a/duel.h	2026-09-25 10:05:07.000000000 +0200
++++ core_b/duel.h	2026-10-26 21:26:58.496380958 +0100
 @@ -62,6 +62,16 @@
  	};
  	std::vector<uint8_t> buff;
@@ -467,8 +467,8 @@ diff -ruN core_a/duel.h core_b/duel.h
  	}
  	inline int read_script(const char* name) {
 diff -ruN core_a/effect.cpp core_b/effect.cpp
---- core_a/effect.cpp	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/effect.cpp	2026-10-07 01:27:15.409207491 +0200
+--- core_a/effect.cpp	2026-09-25 10:05:07.000000000 +0200
++++ core_b/effect.cpp	2026-10-26 21:26:58.496452419 +0100
 @@ -10,6 +10,7 @@
  #include "effect.h"
  #include "field.h"
@@ -551,8 +551,8 @@ diff -ruN core_a/effect.cpp core_b/effect.cpp
  	pduel->game_field->core.reason_player = op;
  	pduel->game_field->restore_lp_cost();
 diff -ruN core_a/field.cpp core_b/field.cpp
---- core_a/field.cpp	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/field.cpp	2026-10-06 13:04:11.481631210 +0200
+--- core_a/field.cpp	2026-09-25 10:05:07.000000000 +0200
++++ core_b/field.cpp	2026-10-26 21:26:58.496655141 +0100
 @@ -11,7 +11,9 @@
  #include "card.h"
  #include "duel.h"
@@ -897,8 +897,8 @@ diff -ruN core_a/field.cpp core_b/field.cpp
  int32_t field::check_with_sum_greater_limit_m(const card_vector& mats, int32_t acc, int32_t index, int32_t opmin, int32_t must_count, int32_t* should_continue) {
  	if(acc <= 0)
 diff -ruN core_a/field.h core_b/field.h
---- core_a/field.h	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/field.h	2026-10-06 23:32:30.259449569 +0200
+--- core_a/field.h	2026-09-25 10:05:07.000000000 +0200
++++ core_b/field.h	2026-10-26 21:26:58.496913889 +0100
 @@ -301,6 +301,7 @@
  	uint8_t win_player{ 5 };
  	uint8_t win_reason;
@@ -936,8 +936,8 @@ diff -ruN core_a/field.h core_b/field.h
  	void refresh_location_info_instant();
  	void solve_continuous(uint8_t playerid, effect* peffect, const tevent& e);
 diff -ruN core_a/group.h core_b/group.h
---- core_a/group.h	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/group.h	2026-10-06 13:04:11.481908951 +0200
+--- core_a/group.h	2026-09-25 10:05:07.000000000 +0200
++++ core_b/group.h	2026-10-26 21:26:58.496988369 +0100
 @@ -20,6 +20,8 @@
  public:
  	card_set container;
@@ -948,8 +948,8 @@ diff -ruN core_a/group.h core_b/group.h
  	bool is_iterator_dirty{ true };
  	
 diff -ruN core_a/interpreter.cpp core_b/interpreter.cpp
---- core_a/interpreter.cpp	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/interpreter.cpp	2026-10-06 13:04:11.481940580 +0200
+--- core_a/interpreter.cpp	2026-09-25 10:05:07.000000000 +0200
++++ core_b/interpreter.cpp	2026-10-26 21:26:58.497063163 +0100
 @@ -15,6 +15,7 @@
  #include "lua_obj.h"
  #include "group.h"
@@ -1078,8 +1078,8 @@ diff -ruN core_a/interpreter.cpp core_b/interpreter.cpp
  }
  lua_Integer interpreter::get_operation_value(card* pcard, int32_t findex, int32_t extraargs) {
 diff -ruN core_a/libcard.cpp core_b/libcard.cpp
---- core_a/libcard.cpp	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/libcard.cpp	2026-10-06 13:04:11.482111672 +0200
+--- core_a/libcard.cpp	2026-09-25 10:05:07.000000000 +0200
++++ core_b/libcard.cpp	2026-10-26 21:26:58.497192732 +0100
 @@ -116,6 +116,7 @@
  	return static_cast<int32_t>(setcodes.size());
  }
@@ -1320,8 +1320,8 @@ diff -ruN core_a/libcard.cpp core_b/libcard.cpp
  	auto countertype = lua_get<uint16_t>(L, 2);
  	if(countertype == 0)
 diff -ruN core_a/libduel.cpp core_b/libduel.cpp
---- core_a/libduel.cpp	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/libduel.cpp	2026-10-06 13:04:11.482393608 +0200
+--- core_a/libduel.cpp	2026-09-25 10:05:07.000000000 +0200
++++ core_b/libduel.cpp	2026-10-26 21:26:58.497466703 +0100
 @@ -12,6 +12,7 @@
  #include "duel.h"
  #include "effect.h"
@@ -1485,8 +1485,8 @@ diff -ruN core_a/libduel.cpp core_b/libduel.cpp
  	}
  	return 0;
 diff -ruN core_a/libgroup.cpp core_b/libgroup.cpp
---- core_a/libgroup.cpp	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/libgroup.cpp	2026-10-06 13:04:11.482611376 +0200
+--- core_a/libgroup.cpp	2026-09-25 10:05:07.000000000 +0200
++++ core_b/libgroup.cpp	2026-10-26 21:26:58.497731423 +0100
 @@ -13,6 +13,7 @@
  #include "card.h"
  #include "duel.h"
@@ -1678,8 +1678,8 @@ diff -ruN core_a/libgroup.cpp core_b/libgroup.cpp
  	lua_pushinteger(L, bit::popcnt(er));
  	return 1;
 diff -ruN core_a/lua/luaconf-customize.h core_b/lua/luaconf-customize.h
---- core_a/lua/luaconf-customize.h	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/lua/luaconf-customize.h	2026-10-06 13:04:11.482687822 +0200
+--- core_a/lua/luaconf-customize.h	2026-09-25 10:05:07.000000000 +0200
++++ core_b/lua/luaconf-customize.h	2026-10-26 21:26:58.497829038 +0100
 @@ -5,3 +5,8 @@
  #if defined(__ANDROID__)
  #define lua_getlocaledecpoint() '.'
@@ -1690,8 +1690,8 @@ diff -ruN core_a/lua/luaconf-customize.h core_b/lua/luaconf-customize.h
 +#define luai_makeseed(L) (cast(unsigned int, 0x5eed))
 +
 diff -ruN core_a/meson.build core_b/meson.build
---- core_a/meson.build	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/meson.build	2026-10-06 13:04:11.482717054 +0200
+--- core_a/meson.build	2026-09-25 10:05:07.000000000 +0200
++++ core_b/meson.build	2026-10-26 21:26:58.497863580 +0100
 @@ -31,6 +31,7 @@
  	'libeffect.cpp',
  	'libgroup.cpp',
@@ -1701,8 +1701,8 @@ diff -ruN core_a/meson.build core_b/meson.build
  	'playerop.cpp',
  	'processor.cpp',
 diff -ruN core_a/ocgapi.cpp core_b/ocgapi.cpp
---- core_a/ocgapi.cpp	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/ocgapi.cpp	2026-10-06 13:04:11.482755788 +0200
+--- core_a/ocgapi.cpp	2026-09-25 10:05:07.000000000 +0200
++++ core_b/ocgapi.cpp	2026-10-26 21:26:58.497906773 +0100
 @@ -111,6 +111,7 @@
  int OCG_DuelProcess(OCG_Duel ocg_duel) {
  	auto* pduel = static_cast<duel*>(ocg_duel);
@@ -1712,8 +1712,8 @@ diff -ruN core_a/ocgapi.cpp core_b/ocgapi.cpp
  	do {
  		flag = pduel->game_field->process();
 diff -ruN core_a/operations.cpp core_b/operations.cpp
---- core_a/operations.cpp	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/operations.cpp	2026-10-06 23:32:49.713114107 +0200
+--- core_a/operations.cpp	2026-09-25 10:05:07.000000000 +0200
++++ core_b/operations.cpp	2026-10-26 21:26:58.498157374 +0100
 @@ -14,6 +14,7 @@
  #include "duel.h"
  #include "effect.h"
@@ -3122,8 +3122,8 @@ diff -ruN core_a/operations.cpp core_b/operations.cpp
  				message->write<uint8_t>(dice);
  			}
 diff -ruN core_a/playerop.cpp core_b/playerop.cpp
---- core_a/playerop.cpp	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/playerop.cpp	2026-10-06 13:04:11.483586819 +0200
+--- core_a/playerop.cpp	2026-09-25 10:05:07.000000000 +0200
++++ core_b/playerop.cpp	2026-10-26 21:26:58.499050809 +0100
 @@ -309,7 +309,7 @@
  		message->write<uint32_t>(min);
  		message->write<uint32_t>(max);
@@ -3170,8 +3170,8 @@ diff -ruN core_a/playerop.cpp core_b/playerop.cpp
  			message->write<uint32_t>(pcard->data.code);
  			message->write(pcard->get_info_location());
 diff -ruN core_a/processor.cpp core_b/processor.cpp
---- core_a/processor.cpp	2026-09-29 02:25:58.000000000 +0200
-+++ core_b/processor.cpp	2026-10-06 23:32:30.259709136 +0200
+--- core_a/processor.cpp	2026-09-25 10:05:07.000000000 +0200
++++ core_b/processor.cpp	2026-10-26 21:27:06.609578935 +0100
 @@ -962,6 +962,13 @@
  			}
  			++ifit;
@@ -3209,7 +3209,26 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  			}
  			emplace_process<Processors::Destroy>(Step{ 3 }, des, nullptr, REASON_BATTLE, PLAYER_NONE);
  		}
-@@ -3259,6 +3265,7 @@
+@@ -2940,6 +2946,18 @@
+ 	std::array<bool, 2> bd{};
+ 	bool pierce = false;
+ 	core.battle_damage[0] = core.battle_damage[1] = 0;
++	// (ygoai: an attack target without a controler, an Xyz material or a token that left the
++	// field, the attack not canceled: battle_damage was indexed by PLAYER_NONE, out of bounds;
++	// now no damage and nothing destroyed, as in the Rust core)
++	if(core.attack_target && core.attack_target->current.controler == PLAYER_NONE) {
++		if(pdamchange)
++			*pdamchange = nullptr;
++		if(preason_card)
++			*preason_card = nullptr;
++		if(battle_destroyed)
++			*battle_destroyed = {false, false};
++		return;
++	}
+ 	if(core.attacker->is_position(POS_FACEUP_DEFENSE)) {
+ 		effect* defattack = core.attacker->is_affected_by_effect(EFFECT_DEFENSE_ATTACK);
+ 		if(defattack && defattack->get_value(core.attacker))
+@@ -3259,6 +3277,7 @@
  	switch(arg.step) {
  	case 0: {
  		//Pre Draw
@@ -3217,7 +3236,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  		core.used_event.clear();
  		for(auto& peffect : core.reseted_effects) {
  			pduel->delete_effect(peffect);
-@@ -3832,7 +3839,7 @@
+@@ -3832,7 +3851,7 @@
  		card* phandler = peffect->get_handler();
  		if(clit.target_cards && clit.target_cards->container.size()) {
  			if(peffect->is_flag(EFFECT_FLAG_CARD_TARGET)) {
@@ -3226,7 +3245,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  					raise_single_event(pcard, nullptr, EVENT_BECOME_TARGET, peffect, 0, clit.triggering_player, 0, clit.chain_count);
  				process_single_event();
  				if(clit.target_cards->container.size())
-@@ -3880,7 +3887,7 @@
+@@ -3880,7 +3899,7 @@
  						// indecates that it is the opponent that special summons the target monsters
  						if(peffect->is_flag(EFFECT_FLAG_CARD_TARGET) && optarget.op_player == 0x10)
  							sumplayer = 1 - sumplayer;
@@ -3235,7 +3254,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  							if(pcard->spsummon_code) {
  								++core.spsummon_once_map[sumplayer][pcard->spsummon_code];
  								++core.spsummon_once_map_rst[sumplayer][pcard->spsummon_code];
-@@ -4246,7 +4253,7 @@
+@@ -4246,7 +4265,7 @@
  							// indecates that it is the opponent that special summons the target monsters
  							if(cait->triggering_effect->is_flag(EFFECT_FLAG_CARD_TARGET) && optarget.op_player == 0x10)
  								sumplayer = 1 - sumplayer;
@@ -3244,7 +3263,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  								if(is_flag(DUEL_SPSUMMON_ONCE_OLD_NEGATE) && (core.global_flag & GLOBALFLAG_SPSUMMON_ONCE) && ptarget->spsummon_code)
  									++core.spsummon_once_map[sumplayer][ptarget->spsummon_code];
  								check_card_counter(ptarget, ACTIVITY_SPSUMMON, sumplayer);
-@@ -4285,7 +4292,7 @@
+@@ -4285,7 +4304,7 @@
  		if((cait->flag & CHAIN_HAND_EFFECT) && !pcard->is_position(POS_FACEUP) && (pcard->current.location == LOCATION_HAND))
  			shuffle(pcard->current.controler, LOCATION_HAND);
  		if(cait->target_cards && cait->target_cards->container.size()) {
@@ -3253,7 +3272,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  				ptarget->release_relation(*cait);
  		}
  		if((pcard->data.type & TYPE_EQUIP) && (peffect->type & EFFECT_TYPE_ACTIVATE)
-@@ -4302,7 +4309,7 @@
+@@ -4302,7 +4321,7 @@
  		peffect->active_type = 0;
  		peffect->active_handler = nullptr;
  		pcard->release_relation(*cait);
@@ -3262,7 +3281,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  			if(cit->current.location == LOCATION_MZONE)
  				cit->enable_field_effect(true);
  		}
-@@ -4325,10 +4332,9 @@
+@@ -4325,10 +4344,9 @@
  		return FALSE;
  	}
  	case 11: {
@@ -3276,7 +3295,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  		}
  		if(core.leave_confirmed.size())
  			send_to(core.leave_confirmed, nullptr, REASON_RULE, PLAYER_NONE, PLAYER_NONE, LOCATION_GRAVE, 0, POS_FACEUP);
-@@ -4434,8 +4440,69 @@
+@@ -4434,8 +4452,69 @@
  	}
  	return 0;
  }
@@ -3346,7 +3365,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  	adjust_disable_check_list();
  	adjust_self_destroy_set();
  }
-@@ -4650,6 +4717,7 @@
+@@ -4650,6 +4729,7 @@
  	switch(arg.step) {
  	case 0: {
  		core.re_adjust = false;
@@ -3354,7 +3373,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  		return FALSE;
  	}
  	case 1: {
-@@ -4783,7 +4851,7 @@
+@@ -4783,7 +4863,7 @@
  			core.re_adjust = true;
  			get_control(core.control_adjust_set[1 - infos.turn_player], nullptr, PLAYER_NONE, infos.turn_player, 0, 0, 0xff);
  			get_control(core.control_adjust_set[infos.turn_player], nullptr, PLAYER_NONE, 1 - infos.turn_player, 0, 0, 0xff);
@@ -3363,7 +3382,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  				++core.readjust_map[rcard];
  				if(core.readjust_map[rcard] > 3)
  					destroy(rcard, nullptr, REASON_RULE, PLAYER_NONE);
-@@ -4896,18 +4964,35 @@
+@@ -4896,18 +4976,35 @@
  	}
  	case 12: {
  		//shuffle check
@@ -3401,7 +3420,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  		if(core.shuffle_hand_check[infos.turn_player])
  			shuffle(infos.turn_player, LOCATION_HAND);
  		if(core.shuffle_hand_check[1 - infos.turn_player])
-@@ -4992,6 +5077,11 @@
+@@ -4992,6 +5089,11 @@
  			arg.step = Processors::restart;
  			return FALSE;
  		}

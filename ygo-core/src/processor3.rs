@@ -1280,6 +1280,24 @@ impl Duel {
         let mut bd = [false, false];
         let mut pierce = false;
         self.core.battle_damage = [0, 0];
+        // (deviation from the C++ core, also in oracle/ocgcore.patch: an attack target without a
+        // controler, an Xyz material or a token that left the field, the attack not canceled; the
+        // C++ core indexes battle_damage by that controler, out of bounds: here no damage and
+        // nothing destroyed)
+        if let Some(target) = self.core.attack_target
+            && self.card(target).current.controler as u32 == PLAYER_NONE
+        {
+            if let Some(p) = pdamchange {
+                *p = None;
+            }
+            if let Some(p) = preason_card {
+                *p = None;
+            }
+            if let Some(p) = battle_destroyed {
+                *p = [false, false];
+            }
+            return;
+        }
         if self.card(attacker).is_position(POS_FACEUP_DEFENSE) != 0 {
             if let Some(defattack) = attacker.is_affected_by_effect(self, EFFECT_DEFENSE_ATTACK) {
                 if defattack.get_value_card(self, Some(attacker), 0) != 0 {

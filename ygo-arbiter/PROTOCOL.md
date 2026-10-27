@@ -9,8 +9,8 @@ This document specifies how the arbiter (`ygo-arbiter`) and a bot communicate.
 | arbiter | The program that runs the duel and starts the bots. |
 | bot | A program that plays one side of a duel. |
 | engine | The program that applies the rules of the duel: ygopro-core-rust. The arbiter uses it. |
-| message | A line from the arbiter to the bot. It always has the member `"type"`. |
-| reply | A line from the bot to the arbiter. It has no member `"type"`. |
+| message | A JSON object on one line, from the arbiter to the bot. Its member `type` gives its name, for example `{"type": "isready"}`. |
+| reply | A JSON object on one line, from the bot to the arbiter. It has no member `type`. |
 | player | The side the bot plays in a game: 0 or 1. |
 | prompt | A question of the duel to the player, for example "select a card". |
 | response | The answer of the bot to a prompt. |
@@ -214,6 +214,31 @@ An observation is a message of ygopro-core as a JSON object:
 3. A card place has the members `con` (controller), `loc` (location), `seq` (sequence) and `pos`
    (position).
 
+The most frequent values (all values: `ygo-core/src/constants.rs`):
+
+| Member | Values |
+|---|---|
+| `loc` | 1 Deck, 2 hand, 4 Monster Zone, 8 Spell & Trap Zone, 16 GY, 32 banished, 64 Extra Deck, 128 Xyz material |
+| `pos` | 1 face-up attack, 2 face-down attack, 4 face-up defense, 8 face-down defense; 5 face-up, 10 face-down |
+| `phase` | 1 Draw, 2 Standby, 4 Main 1, 8 to 128 Battle Phase steps, 256 Main 2, 512 End |
+
+Examples from one game, as player 0 received them:
+
+```json
+{"type": "DRAW", "player": 0, "cards": [{"code": 82385847, "pos": 8}, {"code": 14558127, "pos": 8}, {"code": 84211599, "pos": 8}, {"code": 98022050, "pos": 8}, {"code": 38179121, "pos": 8}]}
+{"type": "DRAW", "player": 1, "cards": [{"code": 0, "pos": 8}, {"code": 0, "pos": 8}, {"code": 0, "pos": 8}, {"code": 0, "pos": 8}, {"code": 0, "pos": 8}]}
+{"type": "MOVE", "code": 14558127, "from": {"con": 0, "loc": 2, "seq": 1, "pos": 8}, "to": {"con": 0, "loc": 4, "seq": 4, "pos": 1}, "reason": 0}
+{"type": "SET", "code": 0, "con": 1, "loc": 8, "seq": 2, "pos": 10}
+```
+
+1. Player 0 draws its start hand. It sees the five cards (Dinowrestler Pankratops, Ash Blossom &
+   Joyous Spring, Pot of Prosperity, Animadorned Archosaur, Double Evolution Pill).
+2. Player 1 draws its start hand. Player 0 sees five cards with code 0.
+3. Ash Blossom & Joyous Spring moves from the hand of player 0 (`loc` 2, `seq` 1) to its Monster
+   Zone (`loc` 4, `seq` 4), in face-up attack position (`pos` 1).
+4. Player 1 Sets a card face-down in its Spell & Trap Zone (`loc` 8, `seq` 2). Player 0 sees the
+   place, but not the card (`code` 0).
+
 The arbiter removes what the player must not know:
 
 1. The code of a hidden card is 0. A hidden card is, for example, a card in the hand of the
@@ -237,6 +262,23 @@ The arbiter sorts the option lists of a prompt: by the place of the card, then b
 then by the effect description. Numbers to announce are sorted by value. The order of the core could
 show hidden information. An index in a response refers to the
 list as the bot received it. A negative index counts from the end of the list.
+
+An example: player 0 can Normal Summon two cards, Set cards and activate two cards from its hand
+(the lists `msetable`, `ssetable` and the rest of `activatable` are shortened here):
+
+```json
+{"type": "SELECT_IDLECMD", "player": 0,
+ "summonable": [{"code": 14558127, "con": 0, "loc": 2, "seq": 1}, {"code": 98022050, "con": 0, "loc": 2, "seq": 3}],
+ "spsummonable": [], "repositionable": [], "msetable": [...], "ssetable": [...],
+ "activatable": [{"code": 84211599, "con": 0, "loc": 2, "seq": 2, "desc": 0, "client_mode": 0}, ...],
+ "to_bp": 0, "to_ep": 1, "can_shuffle": 1}
+```
+
+The bot Normal Summons the first card of `summonable` (Ash Blossom & Joyous Spring):
+
+```json
+{"response": {"kind": "summon", "index": 0}}
+```
 
 A response is a JSON object. Its members depend on the prompt type:
 

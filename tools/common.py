@@ -9,8 +9,8 @@ ROOT = os.path.join(ENGINE, "..")
 BOOK = os.path.join(ROOT, "runs", "books", "match1.jsonl")
 CARDS = os.path.join(ENGINE, "ygo-cards", "src", "cards")
 YGO_DIFF = os.path.join(ENGINE, "target", "release", "ygo-diff")
-# (the project's: recorded games as ygo-diff replay files; tools/replay_records.py)
-DIFF_REPLAYS = os.path.join(ENGINE, "target", "release", "ygoai-diff-replays")
+# (recorded games as ygo-diff replay files; tools/replay_records.py)
+DIFF_REPLAYS = os.path.join(ENGINE, "target", "release", "ygo-diff-replays")
 # the directories the core searches, in its order (ygo-diff core_ffi::find_script)
 SCRIPT_DIRS = [os.path.join(ROOT, "external", "CardScripts", d) for d in ("official", "pre-release", "pre-errata", "goat")]
 

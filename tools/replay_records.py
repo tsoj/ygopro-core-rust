@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Replay recorded games of the agents (ygoai-match's records: alpha-beta search, policies, ...) on
-both engines with ygo-diff --replay: their decisions reach game states random play rarely does.
+"""Replay recorded games of engines (ygo-arbiter's records) on both engines with ygo-diff --replay:
+their decisions reach game states random play rarely does.
 
   tools/replay_records.py RECORDS.jsonl [more.jsonl ...] [--jobs N] [--every K] [--first N] [--timeout S]
 
-The records become replay files in build/replays/ (ygoai-diff-replays of the project's ygoai crate,
-built into this repository's target/: the project's README; --every and --first apply per records
-file). Only games whose cards are all translated (by a snapshot of target/release/ygo-diff) are
+The records become replay files in build/replays/ (ygo-diff-replays; --every and --first apply per
+records file). Only games whose cards are all translated (by a snapshot of target/release/ygo-diff) are
 played. Failures go to build/replay_fails/{mismatch,crash,timeout}_<game>.txt (line 1: the
 command, then ygo-diff's output).
 """

@@ -23,6 +23,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, mpsc};
 use std::time::Instant;
 
+use ygo_arbiter::game::AgentError;
 use ygo_arbiter::matchrun::{EngineSpec, MatchStats, NpsNodes, Opening, load_book_lines, play_opening, sprt_bounds};
 
 struct Args {
@@ -47,7 +48,7 @@ fn usage(msg: &str) -> ! {
     eprintln!("ygo-arbiter: {msg}");
     eprintln!(
         "usage: ygo-arbiter --engine NAME=COMMAND --engine NAME=COMMAND --book BOOK [-n N] [--tc BASE+INC] \
-         [--sprt ELO0 ELO1] [--alpha A] [--beta B] [-c J] [--records PATH] [--book-min N] [--shuffle SEED] [--pool N] [--max-turns N] [--nps-nodes N] [--resume RECORDS]"
+         [--sprt ELO0 ELO1] [--alpha A] [--beta B] [-c J] [--records PATH] [--book-min N] [--shuffle SEED] [--pool N] [--max-turns N] [--nps-nodes N] [--resume RECORDS] [--option ENGINE.NAME=VALUE ...]"
     );
     std::process::exit(2)
 }
@@ -112,6 +113,7 @@ fn parse_args() -> Args {
         nps_nodes: None,
         resume: None,
     };
+    let mut options = Vec::new();
     let argv: Vec<String> = std::env::args().skip(1).collect();
     let mut i = 0;
     let next = |i: &mut usize, what: &str| -> String {
@@ -125,6 +127,13 @@ fn parse_args() -> Args {
             "--engine" => {
                 let v = next(&mut i, "--engine");
                 a.engines.push(EngineSpec::parse(&v).unwrap_or_else(|| usage("expected NAME=COMMAND")));
+            }
+            "--option" => {
+                let v = next(&mut i, "--option");
+                let Some((engine, (key, value))) = v.split_once('.').and_then(|(e, rest)| Some((e, rest.split_once('=')?))) else {
+                    usage("expected --option ENGINE.NAME=VALUE")
+                };
+                options.push((engine.to_string(), key.to_string(), value.to_string()));
             }
             "-n" | "--openings" => a.openings = num(next(&mut i, &arg), "-n") as usize,
             "--tc" => {
@@ -148,16 +157,16 @@ fn parse_args() -> Args {
             "--resume" => a.resume = Some(next(&mut i, &arg).into()),
             "--nps-nodes" => a.nps_nodes = Some(num(next(&mut i, &arg), &arg) as u64),
             "--shuffle" => a.shuffle = Some(next(&mut i, &arg).parse().unwrap_or_else(|_| usage("--shuffle takes an integer seed"))),
-            // (accepted for the old scripts/match.py command lines; unused)
-            "--seed" | "--mirror-prob" => {
-                next(&mut i, &arg);
-            }
             _ => usage(&format!("unknown argument {arg}")),
         }
         i += 1;
     }
     if a.engines.len() != 2 {
         usage("exactly two engines are required");
+    }
+    for (engine, key, value) in options {
+        let Some(spec) = a.engines.iter_mut().find(|e| e.name == engine) else { usage(&format!("--option for {engine}, which is no engine")) };
+        spec.options.push((key, value));
     }
     if a.book.is_none() {
         usage("--book is required");
@@ -173,6 +182,16 @@ fn main() {
     if let Err(e) = ygo_arbiter::game::init(None) {
         eprintln!("{e}");
         std::process::exit(1);
+    }
+    // (each engine once before the match: its identity, and its options checked)
+    for spec in &args.engines {
+        match spec.start() {
+            Ok(e) => println!("engine {}: {}", spec.name, serde_json::to_string(&e.hello.id).unwrap()),
+            Err(AgentError::Failed(e) | AgentError::Forfeit(e)) => {
+                eprintln!("ygo-arbiter: {e}");
+                std::process::exit(1);
+            }
+        }
     }
     let mut openings: Vec<Opening> = load_book_lines(args.book.as_ref().unwrap(), args.book_min, args.pool).unwrap_or_else(|e| usage(&format!("book: {e}")));
     if let Some(seed) = args.shuffle {

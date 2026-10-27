@@ -9,6 +9,7 @@
 //! * [`game`]: setting up, playing and replaying games, game records
 //! * [`protocol`]: an engine process, for the arbiter; [`engine`]: the engine side
 //! * [`matchrun`]: matches: openings, clocks, statistics, the SPRT
+//! * [`random`]: random valid responses to any prompt
 //! * [`pyrandom`]: Python's random.Random (the games' random choices, as when they were first
 //!   played in Python)
 //!
@@ -22,4 +23,5 @@ pub mod messages;
 pub mod observe;
 pub mod protocol;
 pub mod pyrandom;
+pub mod random;
 pub mod state;

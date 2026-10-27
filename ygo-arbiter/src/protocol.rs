@@ -7,18 +7,17 @@ use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, channel};
 use std::time::{Duration, Instant};
 
-use serde_json::{Value, json};
+use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value, json};
 
 use crate::actions::Response;
 use crate::game::{Agent, AgentError, InitInfo, SearchInfo};
 use crate::messages::Msg;
 use crate::state::Snapshot;
 
-/// (the arbiter-side process: an engine ends with it, see protocol._end_with_parent)
-const PARENT_ENV: &str = "YGOAI_ENGINE_PARENT";
-/// (engines fork: no BLAS thread pools, a fork would copy their state but not their threads)
-const SINGLE_THREADED: [(&str, &str); 3] = [("OPENBLAS_NUM_THREADS", "1"), ("OMP_NUM_THREADS", "1"), ("MKL_NUM_THREADS", "1")];
-/// Seconds an engine may take to load (one that does not know "isready" is not waited for longer).
+/// The version of the protocol this arbiter speaks (sent with "hello").
+pub const PROTOCOL_VERSION: u32 = 1;
+/// Seconds an engine may take to answer "hello", and to load (to answer "isready").
 const READY_TIMEOUT: f64 = 30.0;
 /// Seconds past its clock an engine may take to respond before it is given up on (the clock
 /// itself is checked after the response, as the Python arbiter does).
@@ -80,8 +79,83 @@ pub fn shlex_split(s: &str) -> Vec<String> {
     out
 }
 
+/// An engine's identity (the "id" of its "hello" reply): its name, and further members (author,
+/// version, ...) whose values are strings.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Identity {
+    pub name: String,
+    #[serde(flatten)]
+    pub more: Map<String, Value>,
+}
+
+/// An option an engine declares (in its "hello" reply).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum EngineOption {
+    /// true or false
+    Check { name: String, default: bool },
+    /// an integer from min to max
+    Spin { name: String, default: i64, min: i64, max: i64 },
+    /// one of values
+    Combo { name: String, default: String, values: Vec<String> },
+    /// any text
+    String { name: String, default: String },
+}
+
+impl EngineOption {
+    pub fn name(&self) -> &str {
+        match self {
+            EngineOption::Check { name, .. } | EngineOption::Spin { name, .. } | EngineOption::Combo { name, .. } | EngineOption::String { name, .. } => name,
+        }
+    }
+
+    pub fn default_value(&self) -> Value {
+        match self {
+            EngineOption::Check { default, .. } => json!(default),
+            EngineOption::Spin { default, .. } => json!(default),
+            EngineOption::Combo { default, .. } | EngineOption::String { default, .. } => json!(default),
+        }
+    }
+
+    /// The value `text` (from a command line) stands for, if it is a valid value of the option.
+    pub fn parse(&self, text: &str) -> Result<Value, String> {
+        let v = match self {
+            EngineOption::Check { .. } => match text {
+                "true" => json!(true),
+                "false" => json!(false),
+                _ => return Err(format!("option {}: {text:?} is not true or false", self.name())),
+            },
+            EngineOption::Spin { .. } => json!(text.parse::<i64>().map_err(|_| format!("option {}: {text:?} is not an integer", self.name()))?),
+            EngineOption::Combo { .. } | EngineOption::String { .. } => json!(text),
+        };
+        self.check(&v)?;
+        Ok(v)
+    }
+
+    /// Whether `v` is a valid value of the option: of its type, in its range or among its values.
+    pub fn check(&self, v: &Value) -> Result<(), String> {
+        let ok = match self {
+            EngineOption::Check { .. } => v.is_boolean(),
+            EngineOption::Spin { min, max, .. } => v.as_i64().is_some_and(|x| (*min..=*max).contains(&x)),
+            EngineOption::Combo { values, .. } => v.as_str().is_some_and(|x| values.iter().any(|c| c == x)),
+            EngineOption::String { .. } => v.is_string(),
+        };
+        if ok { Ok(()) } else { Err(format!("option {}: {v} is not a valid value ({})", self.name(), serde_json::to_string(self).unwrap())) }
+    }
+}
+
+/// An engine's "hello" reply: its identity and its options.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Hello {
+    pub id: Identity,
+    #[serde(default)]
+    pub options: Vec<EngineOption>,
+}
+
 pub struct EngineProcess {
     pub name: String,
+    /// its identity and options
+    pub hello: Hello,
     child: Child,
     stdin: Option<ChildStdin>,
     lines: Receiver<String>,
@@ -98,16 +172,11 @@ fn engine_error(name: &str, what: &str) -> AgentError {
 }
 
 impl EngineProcess {
-    /// Starts the engine and waits until it is ready (loading is not on its clock).
-    pub fn start(command: &[String], name: &str) -> Result<EngineProcess, AgentError> {
+    /// Starts the engine, sets its `options` (name and value as text) and waits until it is ready
+    /// (loading is not on its clock).
+    pub fn start(command: &[String], name: &str, options: &[(String, String)]) -> Result<EngineProcess, AgentError> {
         let mut cmd = Command::new(&command[0]);
         cmd.args(&command[1..]).stdin(Stdio::piped()).stdout(Stdio::piped());
-        for (k, v) in SINGLE_THREADED {
-            if std::env::var_os(k).is_none() {
-                cmd.env(k, v);
-            }
-        }
-        cmd.env(PARENT_ENV, std::process::id().to_string());
         let mut child = cmd.spawn().map_err(|e| engine_error(name, &format!("cannot start: {e}")))?;
         let stdin = child.stdin.take();
         let stdout = child.stdout.take().unwrap();
@@ -120,19 +189,39 @@ impl EngineProcess {
                 }
             }
         });
-        let mut e = EngineProcess { name: name.into(), child, stdin, lines, pending: Vec::new(), last_think_time: 0.0, info: None, node_limit: None };
+        let hello = Hello { id: Identity { name: String::new(), more: Map::new() }, options: Vec::new() };
+        let mut e = EngineProcess { name: name.into(), hello, child, stdin, lines, pending: Vec::new(), last_think_time: 0.0, info: None, node_limit: None };
+        e.send(&json!({"type": "hello", "protocol": PROTOCOL_VERSION}))?;
+        let line = e.handshake_line("hello")?;
+        e.hello = serde_json::from_str(&line).map_err(|err| engine_error(name, &format!("sent {line} instead of its id and options: {err}")))?;
+        if let Some((k, v)) = e.hello.id.more.iter().find(|(_, v)| !v.is_string()) {
+            return Err(engine_error(name, &format!("id: {k} is {v}, not a string")));
+        }
+        for (key, text) in options {
+            let Some(option) = e.hello.options.iter().find(|o| o.name() == key) else {
+                let names: Vec<&str> = e.hello.options.iter().map(EngineOption::name).collect();
+                let has = if names.is_empty() { "none".to_string() } else { names.join(", ") };
+                return Err(engine_error(name, &format!("has no option {key} (its options: {has})")));
+            };
+            let value = option.parse(text).map_err(|err| engine_error(name, &err))?;
+            e.send(&json!({"type": "setoption", "name": key, "value": value}))?;
+        }
         e.send(&json!({"type": "isready"}))?;
-        match e.lines.recv_timeout(Duration::from_secs_f64(READY_TIMEOUT)) {
-            Ok(line) => {
-                let reply: Value = serde_json::from_str(&line).map_err(|_| engine_error(name, &format!("sent {line:?}")))?;
-                if reply.get("ready") != Some(&Value::Bool(true)) {
-                    return Err(engine_error(name, &format!("sent {line} instead of ready")));
-                }
-            }
-            Err(RecvTimeoutError::Timeout) => {}
-            Err(RecvTimeoutError::Disconnected) => return Err(engine_error(name, "exited")),
+        let line = e.handshake_line("isready")?;
+        let reply: Value = serde_json::from_str(&line).map_err(|_| engine_error(name, &format!("sent {line:?}")))?;
+        if reply.get("ready") != Some(&Value::Bool(true)) {
+            return Err(engine_error(name, &format!("sent {line} instead of ready")));
         }
         Ok(e)
+    }
+
+    /// The engine's reply to `what` (a message of the handshake).
+    fn handshake_line(&mut self, what: &str) -> Result<String, AgentError> {
+        match self.lines.recv_timeout(Duration::from_secs_f64(READY_TIMEOUT)) {
+            Ok(line) => Ok(line),
+            Err(RecvTimeoutError::Timeout) => Err(engine_error(&self.name, &format!("did not answer {what} within {READY_TIMEOUT} s"))),
+            Err(RecvTimeoutError::Disconnected) => Err(engine_error(&self.name, "exited")),
+        }
     }
 
     fn send(&mut self, v: &Value) -> Result<(), AgentError> {
@@ -228,5 +317,37 @@ impl Agent for EngineProcess {
     fn end(&mut self, result: &serde_json::Map<String, Value>) {
         let msg = json!({"type": "end", "obs": std::mem::take(&mut self.pending), "result": result});
         let _ = self.send(&msg);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn option_values() {
+        let check = EngineOption::Check { name: "Ponder".into(), default: false };
+        assert_eq!(check.parse("true"), Ok(json!(true)));
+        assert!(check.parse("1").is_err());
+        let spin = EngineOption::Spin { name: "Hash".into(), default: 16, min: 1, max: 64 };
+        assert_eq!(spin.parse("64"), Ok(json!(64)));
+        assert!(spin.parse("65").is_err() && spin.parse("x").is_err() && spin.check(&json!("16")).is_err());
+        let combo = EngineOption::Combo { name: "Style".into(), default: "a".into(), values: vec!["a".into(), "b".into()] };
+        assert_eq!(combo.parse("b"), Ok(json!("b")));
+        assert!(combo.parse("c").is_err());
+        let string = EngineOption::String { name: "Net".into(), default: String::new() };
+        assert_eq!(string.parse("x.onnx"), Ok(json!("x.onnx")));
+    }
+
+    #[test]
+    fn hello_reply() {
+        // (members this version does not know are ignored; the id keeps its own)
+        let line = r#"{"id": {"name": "e", "author": "a"}, "options": [{"type": "spin", "name": "Hash", "default": 16, "min": 1, "max": 64, "unit": "MB"}], "later": 1}"#;
+        let hello: Hello = serde_json::from_str(line).unwrap();
+        assert_eq!(hello.id.name, "e");
+        assert_eq!(hello.id.more["author"], json!("a"));
+        assert_eq!(hello.options, vec![EngineOption::Spin { name: "Hash".into(), default: 16, min: 1, max: 64 }]);
+        let bare: Hello = serde_json::from_str(r#"{"id": {"name": "e"}}"#).unwrap();
+        assert!(bare.options.is_empty());
     }
 }

@@ -14,25 +14,32 @@ use serde_json::{Value, json};
 use crate::game::{Agent, AgentError, Clock, Deck, DuelConfig, GameError, GameRecord, PlayOptions, SearchInfo, new_record, play};
 use crate::protocol::{EngineProcess, shlex_split};
 
-/// An engine: a command speaking the engine protocol.
+/// An engine: a command speaking the engine protocol, and the options to set (name and value as
+/// text).
 #[derive(Debug, Clone)]
 pub struct EngineSpec {
     pub name: String,
     pub command: String,
+    pub options: Vec<(String, String)>,
 }
 
 impl EngineSpec {
     /// NAME=COMMAND
     pub fn parse(text: &str) -> Option<EngineSpec> {
         let (name, cmd) = text.split_once('=')?;
-        (!cmd.is_empty()).then(|| EngineSpec { name: name.into(), command: cmd.into() })
+        (!cmd.is_empty()).then(|| EngineSpec { name: name.into(), command: cmd.into(), options: Vec::new() })
+    }
+
+    /// The engine as a process (started, its options set, ready).
+    pub fn start(&self) -> Result<EngineProcess, AgentError> {
+        EngineProcess::start(&shlex_split(&self.command), &self.name, &self.options)
     }
 }
 
 /// A fresh engine process (one per game: games stay independent, and an engine's memory does not
 /// grow over a match).
 pub fn get_engine(spec: &EngineSpec) -> Result<Box<dyn Agent>, AgentError> {
-    Ok(Box::new(EngineProcess::start(&shlex_split(&spec.command), &spec.name)?))
+    Ok(Box::new(spec.start()?))
 }
 
 /// An NPS-adjusted node limit (`--nps-nodes`): engine b (the base) searches `nodes` per decision,

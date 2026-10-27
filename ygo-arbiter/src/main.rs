@@ -1,18 +1,18 @@
-//! fastchess-style match between two Yu-Gi-Oh engines.
+//! fastchess-style match between two Yu-Gi-Oh bots.
 //!
-//!   ygo-arbiter --engine new="my-engine --hash 64" --engine base="other-engine" \
+//!   ygo-arbiter --bot new="my-bot --hash 64" --bot base="other-bot" \
 //!       --book book.jsonl --sprt 0 5 --tc 10+0.1 -n 10000 -c 32
 //!
 //! Openings come from a book (a JSON line per opening: its two decks); every opening is played
-//! twice, the engines swapping seats. Engines are commands speaking the engine protocol
+//! twice, the bots swapping seats. Bots are commands speaking the bot protocol
 //! (PROTOCOL.md).
 //!
-//! `--nps-nodes N` (NPS-adjusted node limit): the second engine (the base) searches N nodes per
+//! `--nps-nodes N` (NPS-adjusted node limit): the second bot (the base) searches N nodes per
 //! decision, the first N times the ratio of their nodes per second, measured over the match's
-//! searches (`matchrun::NpsNodes`): a fixed-node test that charges a slower engine for its speed.
+//! searches (`matchrun::NpsNodes`): a fixed-node test that charges a slower bot for its speed.
 //!
 //! `--resume RECORDS` continues a stopped match: the finished pairs of RECORDS (an earlier run's
-//! `--records`, the same engine names) count towards the statistics and the SPRT, their openings
+//! `--records`, the same bot names) count towards the statistics and the SPRT, their openings
 //! are not played again, and the records file of this run starts with them.
 
 use std::collections::HashMap;
@@ -23,11 +23,11 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, mpsc};
 use std::time::Instant;
 
-use ygo_arbiter::game::AgentError;
-use ygo_arbiter::matchrun::{EngineSpec, MatchStats, NpsNodes, Opening, load_book_lines, play_opening, sprt_bounds};
+use ygo_arbiter::game::BotError;
+use ygo_arbiter::matchrun::{BotSpec, MatchStats, NpsNodes, Opening, load_book_lines, play_opening, sprt_bounds};
 
 struct Args {
-    engines: Vec<EngineSpec>,
+    bots: Vec<BotSpec>,
     openings: usize,
     tc: Option<(f64, f64)>,
     max_turns: u32,
@@ -47,8 +47,8 @@ struct Args {
 fn usage(msg: &str) -> ! {
     eprintln!("ygo-arbiter: {msg}");
     eprintln!(
-        "usage: ygo-arbiter --engine NAME=COMMAND --engine NAME=COMMAND --book BOOK [-n N] [--tc BASE+INC] \
-         [--sprt ELO0 ELO1] [--alpha A] [--beta B] [-c J] [--records PATH] [--book-min N] [--shuffle SEED] [--pool N] [--max-turns N] [--nps-nodes N] [--resume RECORDS] [--option ENGINE.NAME=VALUE ...]"
+        "usage: ygo-arbiter --bot NAME=COMMAND --bot NAME=COMMAND --book BOOK [-n N] [--tc BASE+INC] \
+         [--sprt ELO0 ELO1] [--alpha A] [--beta B] [-c J] [--records PATH] [--book-min N] [--shuffle SEED] [--pool N] [--max-turns N] [--nps-nodes N] [--resume RECORDS] [--option BOT.NAME=VALUE ...]"
     );
     std::process::exit(2)
 }
@@ -78,7 +78,7 @@ fn finished_pairs(path: &PathBuf, name: &str) -> Vec<(i64, Vec<String>, Vec<f64>
         let r: serde_json::Value = serde_json::from_str(line).unwrap_or_else(|e| usage(&format!("resume: {e}")));
         let seed = r["seed"].as_i64().unwrap_or_else(|| usage("resume: a record without a seed"));
         let seat = r["agents"].as_array().and_then(|a| a.iter().position(|n| n.as_str() == Some(name)));
-        let seat = seat.unwrap_or_else(|| usage(&format!("resume: a record without the engine {name}")));
+        let seat = seat.unwrap_or_else(|| usage(&format!("resume: a record without the bot {name}")));
         let score = match r["result"]["winner"].as_u64() {
             None => 0.5,
             Some(w) if w as usize == seat => 1.0,
@@ -97,7 +97,7 @@ fn finished_pairs(path: &PathBuf, name: &str) -> Vec<(i64, Vec<String>, Vec<f64>
 
 fn parse_args() -> Args {
     let mut a = Args {
-        engines: Vec::new(),
+        bots: Vec::new(),
         openings: 100,
         tc: None,
         max_turns: 100,
@@ -124,16 +124,16 @@ fn parse_args() -> Args {
     while i < argv.len() {
         let arg = argv[i].clone();
         match arg.as_str() {
-            "--engine" => {
-                let v = next(&mut i, "--engine");
-                a.engines.push(EngineSpec::parse(&v).unwrap_or_else(|| usage("expected NAME=COMMAND")));
+            "--bot" => {
+                let v = next(&mut i, "--bot");
+                a.bots.push(BotSpec::parse(&v).unwrap_or_else(|| usage("expected NAME=COMMAND")));
             }
             "--option" => {
                 let v = next(&mut i, "--option");
-                let Some((engine, (key, value))) = v.split_once('.').and_then(|(e, rest)| Some((e, rest.split_once('=')?))) else {
-                    usage("expected --option ENGINE.NAME=VALUE")
+                let Some((bot, (key, value))) = v.split_once('.').and_then(|(e, rest)| Some((e, rest.split_once('=')?))) else {
+                    usage("expected --option BOT.NAME=VALUE")
                 };
-                options.push((engine.to_string(), key.to_string(), value.to_string()));
+                options.push((bot.to_string(), key.to_string(), value.to_string()));
             }
             "-n" | "--openings" => a.openings = num(next(&mut i, &arg), "-n") as usize,
             "--tc" => {
@@ -161,11 +161,11 @@ fn parse_args() -> Args {
         }
         i += 1;
     }
-    if a.engines.len() != 2 {
-        usage("exactly two engines are required");
+    if a.bots.len() != 2 {
+        usage("exactly two bots are required");
     }
-    for (engine, key, value) in options {
-        let Some(spec) = a.engines.iter_mut().find(|e| e.name == engine) else { usage(&format!("--option for {engine}, which is no engine")) };
+    for (bot, key, value) in options {
+        let Some(spec) = a.bots.iter_mut().find(|e| e.name == bot) else { usage(&format!("--option for {bot}, which is no bot")) };
         spec.options.push((key, value));
     }
     if a.book.is_none() {
@@ -183,11 +183,11 @@ fn main() {
         eprintln!("{e}");
         std::process::exit(1);
     }
-    // (each engine once before the match: its identity, and its options checked)
-    for spec in &args.engines {
+    // (each bot once before the match: its identity, and its options checked)
+    for spec in &args.bots {
         match spec.start() {
-            Ok(e) => println!("engine {}: {}", spec.name, serde_json::to_string(&e.hello.id).unwrap()),
-            Err(AgentError::Failed(e) | AgentError::Forfeit(e)) => {
+            Ok(e) => println!("bot {}: {}", spec.name, serde_json::to_string(&e.hello.id).unwrap()),
+            Err(BotError::Failed(e) | BotError::Forfeit(e)) => {
                 eprintln!("ygo-arbiter: {e}");
                 std::process::exit(1);
             }
@@ -199,7 +199,7 @@ fn main() {
         println!("book shuffled with seed {seed}");
     }
     openings.truncate(args.openings);
-    let (a, b) = (args.engines[0].clone(), args.engines[1].clone());
+    let (a, b) = (args.bots[0].clone(), args.bots[1].clone());
     println!("{} vs {}: {} openings x 2 games", a.name, b.name, openings.len());
     let nps = args.nps_nodes.map(|n| Arc::new(NpsNodes::new(n)));
     if let Some(n) = args.nps_nodes {
@@ -295,7 +295,7 @@ fn main() {
     }
     println!("final: {} errors: {errors}{}", stats.summary(args.sprt), nps_line(&nps));
     let _ = std::io::stdout().flush();
-    // (games still running are abandoned, as the Python arbiter does; their engines end with
+    // (games still running are abandoned, as the Python arbiter does; their bots end with
     // this process)
     std::process::exit(0);
 }

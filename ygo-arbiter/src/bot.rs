@@ -1,16 +1,16 @@
-//! An agent as an engine process on stdio (PROTOCOL.md): JSON lines from the arbiter ("hello",
+//! A bot as a bot process on stdio (PROTOCOL.md): JSON lines from the arbiter ("hello",
 //! "setoption", "isready", "init", "prompt", "end", "quit"), a response line per prompt (with
 //! "info": the search's value, depth, nodes and seconds, if it searched). A prompt's "nodes" is the
-//! node limit for that decision. A new game ("init") gets a new agent, except the first one, which
+//! node limit for that decision. A new game ("init") gets a new bot, except the first one, which
 //! "isready" created and warmed up. Message types it does not know are ignored.
 
 use std::io::{BufRead, Write};
 
 use serde_json::{Map, Value, json};
 
-use crate::game::{Agent, InitInfo};
+use crate::game::{Bot, InitInfo};
 use crate::messages::Msg;
-use crate::protocol::{EngineOption, Identity};
+use crate::protocol::{BotOption, Identity};
 use crate::state::Snapshot;
 
 /// Exits when the process's parent is gone (the arbiter died): a watcher thread.
@@ -30,9 +30,9 @@ fn field<T: serde::de::DeserializeOwned>(msg: &Value, key: &str) -> Result<T, St
     serde_json::from_value(msg.get(key).cloned().unwrap_or(Value::Null)).map_err(|e| format!("{key}: {e}"))
 }
 
-/// Serves agents made by `factory` (from the options' values, by name) until "quit" or the end of
-/// the input, as the engine `id` with `options`.
-pub fn serve(id: Identity, options: Vec<EngineOption>, mut factory: impl FnMut(&Map<String, Value>) -> Result<Box<dyn Agent>, String>) -> Result<(), String> {
+/// Serves bots made by `factory` (from the options' values, by name) until "quit" or the end of
+/// the input, as the bot `id` with `options`.
+pub fn serve(id: Identity, options: Vec<BotOption>, mut factory: impl FnMut(&Map<String, Value>) -> Result<Box<dyn Bot>, String>) -> Result<(), String> {
     end_with_parent();
     let stdin = std::io::stdin();
     let mut out = std::io::stdout().lock();
@@ -42,7 +42,7 @@ pub fn serve(id: Identity, options: Vec<EngineOption>, mut factory: impl FnMut(&
         out.write_all(line.as_bytes()).and_then(|_| out.flush()).map_err(|e| e.to_string())
     };
     let mut values: Map<String, Value> = options.iter().map(|o| (o.name().to_string(), o.default_value())).collect();
-    let (mut agent, mut fresh): (Option<Box<dyn Agent>>, bool) = (None, false);
+    let (mut bot, mut fresh): (Option<Box<dyn Bot>>, bool) = (None, false);
     for line in stdin.lock().lines() {
         let line = line.map_err(|e| e.to_string())?;
         if line.trim().is_empty() {
@@ -57,26 +57,26 @@ pub fn serve(id: Identity, options: Vec<EngineOption>, mut factory: impl FnMut(&
                 let value = msg.get("value").cloned().unwrap_or(Value::Null);
                 option.check(&value)?;
                 values.insert(name, value);
-                agent = None; // (made again, with the new value)
+                bot = None; // (made again, with the new value)
             }
             "isready" => {
-                if agent.is_none() {
-                    agent = Some(factory(&values)?);
+                if bot.is_none() {
+                    bot = Some(factory(&values)?);
                     fresh = true;
                 }
                 send(&json!({"ready": true}))?;
             }
             "init" => {
-                if agent.is_none() || !fresh {
-                    agent = Some(factory(&values)?);
+                if bot.is_none() || !fresh {
+                    bot = Some(factory(&values)?);
                 }
                 fresh = false;
                 let init: InitInfo = serde_json::from_value(msg.clone()).map_err(|e| format!("init: {e}"))?;
                 let player: u32 = field(&msg, "player")?;
-                agent.as_mut().unwrap().start(player, &init).map_err(|e| format!("{e:?}"))?;
+                bot.as_mut().unwrap().start(player, &init).map_err(|e| format!("{e:?}"))?;
             }
             "prompt" => {
-                let a = agent.as_mut().ok_or("a prompt before init")?;
+                let a = bot.as_mut().ok_or("a prompt before init")?;
                 for o in field::<Vec<Msg>>(&msg, "obs")? {
                     a.observe(&o);
                 }
@@ -91,7 +91,7 @@ pub fn serve(id: Identity, options: Vec<EngineOption>, mut factory: impl FnMut(&
                 }
             }
             "end" => {
-                if let Some(a) = agent.as_mut() {
+                if let Some(a) = bot.as_mut() {
                     for o in field::<Vec<Msg>>(&msg, "obs")? {
                         a.observe(&o);
                     }

@@ -239,7 +239,7 @@ pub struct RecordedResponse {
 
 /// A searched decision's labels: the response's index in the record, the player who searched,
 /// the root value for that player (in LP), the depth completed and, in matches, the nodes searched,
-/// the seconds the move took on the arbiter's clock and the search's own seconds (the engine's).
+/// the seconds the move took on the arbiter's clock and the search's own seconds (the bot's).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Label {
     pub decision: usize,
@@ -254,7 +254,7 @@ pub struct Label {
     pub search_time: Option<f64>,
 }
 
-/// A search's result as an engine reports it (a chess engine's "info score ... depth ... nodes"):
+/// A search's result as a bot reports it (like a chess engine's "info score ... depth ... nodes"):
 /// the root value for the searching player (in LP), the depth completed, the nodes searched and
 /// the search's seconds (without what came before it, e.g. the reconstruction; 0: not reported).
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -280,10 +280,11 @@ pub struct GameRecord {
     /// retries, script_errors
     #[serde(default)]
     pub result: serde_json::Map<String, Value>,
-    #[serde(default)]
-    pub agents: Vec<String>,
-    /// the agents' searches (`Agent::search_info`) at the decisions they searched (matches;
-    /// ygoai-datagen keeps its own in `datarow::GameData`)
+    /// (the bots' names; "agents" in records)
+    #[serde(default, rename = "agents")]
+    pub bots: Vec<String>,
+    /// the bots' searches (`Bot::search_info`) at the decisions they searched (matches;
+    /// bot-datagen keeps its own in `datarow::GameData`)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<Label>,
 }
@@ -313,7 +314,7 @@ pub fn new_record(decks: &[Deck], seed: i64, config: &DuelConfig) -> GameRecord 
         config: config.clone(),
         responses: Vec::new(),
         result: serde_json::Map::new(),
-        agents: Vec::new(),
+        bots: Vec::new(),
         labels: Vec::new(),
     }
 }
@@ -349,33 +350,33 @@ pub fn init_info(record: &GameRecord, duel: &Duel, player: u32) -> InitInfo {
     }
 }
 
-/// Why an agent could not respond: it forfeits (e.g. its engine sent no response) or failed.
+/// Why a bot could not respond: it forfeits (e.g. its bot sent no response) or failed.
 #[derive(Debug, Clone)]
-pub enum AgentError {
+pub enum BotError {
     Forfeit(String),
     Failed(String),
 }
 
-/// An AI playing one side of a duel: `start` once, then `observe` for every
+/// A player of one side of a duel (e.g. a bot): `start` once, then `observe` for every
 /// message the player is allowed to see (already filtered) and `respond` whenever the player has
 /// to decide, with the (filtered) prompt and, if it wants it, the player's view of the state.
 /// Under a time control `clock` is (seconds left, increment per decision).
-pub trait Agent {
+pub trait Bot {
     fn name(&self) -> String;
     fn wants_state(&self) -> bool {
         false
     }
-    fn start(&mut self, _player: u32, _init: &InitInfo) -> Result<(), AgentError> {
+    fn start(&mut self, _player: u32, _init: &InitInfo) -> Result<(), BotError> {
         Ok(())
     }
     fn observe(&mut self, _msg: &Msg) {}
-    fn respond(&mut self, prompt: &Msg, state: Option<&Snapshot>, clock: Option<(f64, f64)>) -> Result<Response, AgentError>;
+    fn respond(&mut self, prompt: &Msg, state: Option<&Snapshot>, clock: Option<(f64, f64)>) -> Result<Response, BotError>;
     fn end(&mut self, _result: &serde_json::Map<String, Value>) {}
     /// The last response's search, if it searched.
     fn search_info(&mut self) -> Option<SearchInfo> {
         None
     }
-    /// The nodes the searches of the following decisions may use (None: the agent's own limit).
+    /// The nodes the searches of the following decisions may use (None: the bot's own limit).
     fn set_node_limit(&mut self, _nodes: Option<u64>) {}
 }
 
@@ -465,31 +466,31 @@ fn result_of(winner: Option<u32>, reason: Value) -> serde_json::Map<String, Valu
     r
 }
 
-/// Plays a game between two agents, filling `record.responses` and `record.result`.
+/// Plays a game between two bots, filling `record.responses` and `record.result`.
 ///
-/// An agent loses immediately if it fails (e.g. a forfeit or a crashed engine), runs out of time
+/// A bot loses immediately if it fails (e.g. a forfeit or a crashed bot), runs out of time
 /// on its clock, or - with `illegal_is_loss` - sends a response the core rejects. Otherwise
 /// invalid responses are asked again.
 pub fn play(
     record: &mut GameRecord,
-    agents: &mut [&mut dyn Agent; 2],
+    bots: &mut [&mut dyn Bot; 2],
     observers: &mut [&mut dyn Observer],
     opts: &mut PlayOptions,
 ) -> Result<(), GameError> {
     let mut duel = record.setup(None)?;
-    for (p, agent) in agents.iter_mut().enumerate() {
+    for (p, bot) in bots.iter_mut().enumerate() {
         let info = init_info(record, &duel, p as u32);
-        if let Err(e) = agent.start(p as u32, &info) {
-            // (an engine that cannot start loses, as one that cannot respond)
+        if let Err(e) = bot.start(p as u32, &info) {
+            // (a bot that cannot start loses, as one that cannot respond)
             let reason = match e {
-                AgentError::Forfeit(r) => r,
-                AgentError::Failed(r) => format!("agent_error: {r}"),
+                BotError::Forfeit(r) => r,
+                BotError::Failed(r) => format!("bot_error: {r}"),
             };
             record.result = result_of(Some(1 - p as u32), json!(reason));
             return Ok(());
         }
     }
-    record.agents = agents.iter().map(|a| a.name()).collect();
+    record.bots = bots.iter().map(|a| a.name()).collect();
     duel.ocg_start_duel();
     let mut prompt: Option<Msg> = None;
     let (mut decisions, mut turns, mut retries) = (0usize, 0u32, 0u32);
@@ -513,9 +514,9 @@ pub fn play(
                 }
                 continue;
             }
-            for (p, agent) in agents.iter_mut().enumerate() {
+            for (p, bot) in bots.iter_mut().enumerate() {
                 if let Some(o) = filter_message(m, p as u32) {
-                    agent.observe(&o);
+                    bot.observe(&o);
                 }
             }
             match m {
@@ -556,25 +557,25 @@ pub fn play(
             let response = if is_hidden_prompt(&p) {
                 auto_response()
             } else {
-                let agent = &mut agents[player as usize];
-                let state = agent.wants_state().then(|| viewer_view(&mut duel, player));
-                agent.respond(&filter_prompt(&p, player), state.as_ref(), clock)?
+                let bot = &mut bots[player as usize];
+                let state = bot.wants_state().then(|| viewer_view(&mut duel, player));
+                bot.respond(&filter_prompt(&p, player), state.as_ref(), clock)?
             };
-            let core = to_core_response(&p, player, &response).map_err(|e| AgentError::Failed(format!("InvalidResponse: {e}")))?;
-            let raw = encode(&p, &core).map_err(|e| AgentError::Failed(format!("InvalidResponse: {e}")))?;
-            let info = if is_hidden_prompt(&p) { None } else { agents[player as usize].search_info() };
+            let core = to_core_response(&p, player, &response).map_err(|e| BotError::Failed(format!("InvalidResponse: {e}")))?;
+            let raw = encode(&p, &core).map_err(|e| BotError::Failed(format!("InvalidResponse: {e}")))?;
+            let info = if is_hidden_prompt(&p) { None } else { bots[player as usize].search_info() };
             Ok((response, raw, info))
         })();
         let t_used = t_move.elapsed().as_secs_f64();
         time_used[player as usize] += t_used;
         let (response, raw, info) = match answered {
             Ok(x) => x,
-            Err(AgentError::Forfeit(reason)) => {
+            Err(BotError::Forfeit(reason)) => {
                 result = Some(result_of(Some(1 - player), json!(reason)));
                 break;
             }
-            Err(AgentError::Failed(e)) => {
-                result = Some(result_of(Some(1 - player), json!(format!("agent_error: {e}"))));
+            Err(BotError::Failed(e)) => {
+                result = Some(result_of(Some(1 - player), json!(format!("bot_error: {e}"))));
                 break;
             }
         };
@@ -608,8 +609,8 @@ pub fn play(
     result.insert("script_errors".into(), json!(duel.logs.iter().filter(|l| l.0 == 0).count()));
     result.insert("time".into(), json!(time_used));
     record.result = result.clone();
-    for agent in agents.iter_mut() {
-        agent.end(&result);
+    for bot in bots.iter_mut() {
+        bot.end(&result);
     }
     Ok(())
 }

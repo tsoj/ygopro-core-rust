@@ -1,6 +1,6 @@
 //! Python's `random.Random` (MT19937 with CPython's seeding and its algorithms for getrandbits,
 //! random, shuffle, choice, sample, ...): a game record, the card creation order and the random
-//! agent's choices then come out exactly as with the Python package.
+//! bot's choices then come out exactly as with the Python package.
 
 const N: usize = 624;
 const M: usize = 397;

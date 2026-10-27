@@ -1,18 +1,19 @@
-# Engine protocol, version 1
+# Bot protocol, version 1
 
-This document specifies how the arbiter (`ygo-arbiter`) and an engine communicate.
+This document specifies how the arbiter (`ygo-arbiter`) and a bot communicate.
 
 ## Terms
 
 | Term | Meaning |
 |---|---|
-| arbiter | The program that runs the duel and starts the engines. |
-| engine | A program that plays one side of a duel. |
-| message | A line from the arbiter to the engine. It always has the member `"type"`. |
-| reply | A line from the engine to the arbiter. It has no member `"type"`. |
-| player | The side the engine plays in a game: 0 or 1. |
+| arbiter | The program that runs the duel and starts the bots. |
+| bot | A program that plays one side of a duel. |
+| engine | The program that applies the rules of the duel: ygopro-core-rust. The arbiter uses it. |
+| message | A line from the arbiter to the bot. It always has the member `"type"`. |
+| reply | A line from the bot to the arbiter. It has no member `"type"`. |
+| player | The side the bot plays in a game: 0 or 1. |
 | prompt | A question of the duel to the player, for example "select a card". |
-| response | The answer of the engine to a prompt. |
+| response | The answer of the bot to a prompt. |
 | observation | A duel event that the player can see, for example a card draw. |
 
 Card codes, locations, positions, phases and other numbers have the values of ygopro-core
@@ -20,35 +21,35 @@ Card codes, locations, positions, phases and other numbers have the values of yg
 
 ## Transport
 
-1. The arbiter starts the engine as a child process.
-2. The arbiter writes messages to the standard input of the engine.
-3. The engine writes replies to its standard output.
+1. The arbiter starts the bot as a child process.
+2. The arbiter writes messages to the standard input of the bot.
+3. The bot writes replies to its standard output.
 4. Each message and each reply is one JSON object on one line, in UTF-8, with a line feed at the end.
-5. The engine must flush its standard output after each reply.
-6. The engine must not write other lines to its standard output.
-7. The engine can write logs to its standard error. The arbiter does not read them.
+5. The bot must flush its standard output after each reply.
+6. The bot must not write other lines to its standard output.
+7. The bot can write logs to its standard error. The arbiter does not read them.
 
 ## Compatibility
 
 Later versions of this protocol can add message types and members. To stay compatible:
 
-1. The engine must ignore a message with an unknown type. It must not reply to it.
-2. The engine must ignore unknown members in a message.
+1. The bot must ignore a message with an unknown type. It must not reply to it.
+2. The bot must ignore unknown members in a message.
 3. The arbiter ignores unknown members in a reply.
 
 ## Process lifetime
 
-1. Before the match, the arbiter starts each engine once. It reads the identity and checks the
-   options. Then it stops the engine.
-2. For each game, the arbiter starts a new engine process.
-3. At the end of a game, the arbiter sends `quit`. If the engine does not stop within 5 seconds, the
+1. Before the match, the arbiter starts each bot once. It reads the identity and checks the
+   options. Then it stops the bot.
+2. For each game, the arbiter starts a new bot process.
+3. At the end of a game, the arbiter sends `quit`. If the bot does not stop within 5 seconds, the
    arbiter kills it.
-4. The engine must stop when its standard input closes.
+4. The bot must stop when its standard input closes.
 
 ## Sequence
 
 ```
-arbiter                                  engine
+arbiter                                  bot
   hello                         ->
                                 <-       {"id": ..., "options": [...]}
   setoption (zero or more)      ->
@@ -62,8 +63,8 @@ arbiter                                  engine
   quit                          ->
 ```
 
-The engine must reply to `hello` and to `isready` within 30 seconds. If it does not, the arbiter
-stops with an error. This time is not on the clock of the engine.
+The bot must reply to `hello` and to `isready` within 30 seconds. If it does not, the arbiter
+stops with an error. This time is not on the clock of the bot.
 
 ## Messages
 
@@ -73,21 +74,21 @@ stops with an error. This time is not on the clock of the engine.
 {"type": "hello", "protocol": 1}
 ```
 
-`protocol` is the version of this protocol. If the engine cannot use this version, it must write the
+`protocol` is the version of this protocol. If the bot cannot use this version, it must write the
 reason to its standard error and stop.
 
-The engine replies with its identity and its options:
+The bot replies with its identity and its options:
 
 ```json
-{"id": {"name": "my-engine", "author": "A. Author", "version": "2.1"},
+{"id": {"name": "my-bot", "author": "A. Author", "version": "2.1"},
  "options": [{"type": "spin", "name": "Hash", "default": 64, "min": 1, "max": 4096}]}
 ```
 
 | Member | Meaning |
 |---|---|
-| `id.name` | The name of the engine. Required. |
+| `id.name` | The name of the bot. Required. |
 | other members of `id` | Optional. Their values are strings, for example `author` or `version`. |
-| `options` | The options of the engine. Optional. Each option is one object (see the next table). |
+| `options` | The options of the bot. Optional. Each option is one object (see the next table). |
 
 | Option type | Other members | Valid values |
 |---|---|---|
@@ -103,13 +104,13 @@ The engine replies with its identity and its options:
 ```
 
 1. The arbiter sends `setoption` only after `hello` and before `isready`.
-2. The arbiter sends `setoption` only for an option that the engine declared.
+2. The arbiter sends `setoption` only for an option that the bot declared.
 3. The arbiter sends only valid values. The type of `value` is the JSON type of the option: boolean,
    integer or string.
 4. Options that the arbiter does not set keep their default values.
-5. The engine does not reply.
+5. The bot does not reply.
 
-To set an option, give the arbiter `--option ENGINE.NAME=VALUE`, for example
+To set an option, give the arbiter `--option BOT.NAME=VALUE`, for example
 `--option new.Hash=256`.
 
 ### isready
@@ -118,7 +119,7 @@ To set an option, give the arbiter `--option ENGINE.NAME=VALUE`, for example
 {"type": "isready"}
 ```
 
-The engine prepares for play, for example it loads its data. Then it replies:
+The bot prepares for play, for example it loads its data. Then it replies:
 
 ```json
 {"ready": true}
@@ -137,14 +138,14 @@ The arbiter sends `init` at the start of each game.
 
 | Member | Meaning |
 |---|---|
-| `player` | The player of the engine: 0 or 1. Player 0 starts the duel. |
-| `deck` | The deck list of the engine. The order of `main` is not the order of the cards in the deck. |
-| `extra_order` | The card codes of the Extra Deck of the engine, in their order in the duel. |
+| `player` | The player of the bot: 0 or 1. Player 0 starts the duel. |
+| `deck` | The deck list of the bot. The order of `main` is not the order of the cards in the deck. |
+| `extra_order` | The card codes of the Extra Deck of the bot, in their order in the duel. |
 | `opponent_deck_size` | The number of cards in the Main Deck of the opponent. |
 | `opponent_extra_size` | The number of cards in the Extra Deck of the opponent. |
 | `config` | The duel settings: the duel flags of ygopro-core, the start Life Points, the number of cards in the start hand, the number of cards to draw each turn. |
 
-The engine does not reply.
+The bot does not reply.
 
 ### prompt
 
@@ -160,17 +161,17 @@ The arbiter sends `prompt` when the player must make a decision.
 | `obs` | The observations since the last prompt, in duel order. See [Observations](#observations). |
 | `prompt` | The prompt. See [Prompts and responses](#prompts-and-responses). |
 | `state` | What the player can see of the duel now. See [State](#state). |
-| `clock` | Only with a time control. The seconds that the engine has for this decision (`remaining`) and the seconds that it gets after each decision (`increment`). |
-| `nodes` | Only with NPS-adjusted node limits (`--nps-nodes`). The node limit for this decision. An engine without a search can ignore it. |
+| `clock` | Only with a time control. The seconds that the bot has for this decision (`remaining`) and the seconds that it gets after each decision (`increment`). |
+| `nodes` | Only with NPS-adjusted node limits (`--nps-nodes`). The node limit for this decision. A bot without a search can ignore it. |
 
-The engine replies with a response:
+The bot replies with a response:
 
 ```json
 {"response": {"kind": "activate", "index": 2},
  "info": {"value": 0.31, "depth": 9, "nodes": 18250, "secs": 1.42}}
 ```
 
-`info` is optional. It describes the search of the engine for this decision: its value, its depth,
+`info` is optional. It describes the search of the bot for this decision: its value, its depth,
 the number of nodes and the seconds. The arbiter writes `info` to the game record. The arbiter uses
 `nodes` and `secs` for NPS-adjusted node limits (`--nps-nodes`).
 
@@ -186,12 +187,12 @@ The arbiter sends `end` when the game is over.
 | Member of `result` | Meaning |
 |---|---|
 | `winner` | The player that won, or `null` for a draw. |
-| `reason` | A number: the win reason of the duel. Or a string: `time_forfeit`, `illegal_response`, `agent_error: ...` (the engine failed), `turn_limit`, `decision_limit`, `retry_limit`, `ended`. |
+| `reason` | A number: the win reason of the duel. Or a string: `time_forfeit`, `illegal_response`, `bot_error: ...` (the bot failed), `turn_limit`, `decision_limit`, `retry_limit`, `ended`. |
 | `turns`, `decisions`, `retries` | Counts for the game. |
 | `script_errors` | The number of card script errors in the duel. |
 | `time` | The seconds that each player used. |
 
-The engine does not reply.
+The bot does not reply.
 
 ### quit
 
@@ -199,7 +200,7 @@ The engine does not reply.
 {"type": "quit"}
 ```
 
-The engine stops. It does not reply.
+The bot stops. It does not reply.
 
 ## Observations
 
@@ -232,7 +233,7 @@ A prompt is a selection message of ygopro-core for the player: its type starts w
 The arbiter sorts the option lists of a prompt: by the place of the card, then by the card code,
 then by the effect description. Numbers to announce are sorted by value. The order of the core could
 show hidden information. An index in a response refers to the
-list as the engine received it. A negative index counts from the end of the list.
+list as the bot received it. A negative index counts from the end of the list.
 
 A response is a JSON object. Its members depend on the prompt type:
 
@@ -256,8 +257,8 @@ A response is a JSON object. Its members depend on the prompt type:
 
 `yes`, `cancel` and `finish` can also be 0 or 1.
 
-If a response does not have the necessary members, or if an index is out of range, the engine loses
-the game (`agent_error`). If the duel does not accept the response, the engine loses the game
+If a response does not have the necessary members, or if an index is out of range, the bot loses
+the game (`bot_error`). If the duel does not accept the response, the bot loses the game
 (`illegal_response`).
 
 ## State
@@ -278,16 +279,16 @@ hidden card, the object has only `position`, `owner`, `counters`, `overlays`, `e
 
 ## Time
 
-1. Without a time control, the prompt has no `clock`. The engine has no time limit.
+1. Without a time control, the prompt has no `clock`. The bot has no time limit.
 2. With a time control, each player has a clock (Fischer). The arbiter measures the time from the
    prompt to the response.
 3. The arbiter subtracts this time from the clock. Then it adds the increment.
-4. If the clock is below zero, the engine loses the game (`time_forfeit`).
-5. If no response comes within the remaining time plus 10 seconds, the engine also loses the game
+4. If the clock is below zero, the bot loses the game (`time_forfeit`).
+5. If no response comes within the remaining time plus 10 seconds, the bot also loses the game
    (`time_forfeit`).
 
-## Reference engine
+## Reference bot
 
-`ygo-random-engine` (`src/bin/ygo-random-engine.rs`) is a complete engine. It gives random valid
-responses. Its option `Seed` (`spin`) sets its random numbers. The Rust crate gives an engine its
-side of the protocol in `ygo_arbiter::engine::serve`.
+`ygo-random-bot` (`src/bin/ygo-random-bot.rs`) is a complete bot. It gives random valid
+responses. Its option `Seed` (`spin`) sets its random numbers. The Rust crate gives a bot its
+side of the protocol in `ygo_arbiter::bot::serve`.

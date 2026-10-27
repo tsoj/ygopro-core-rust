@@ -1,7 +1,7 @@
-//! Engine-vs-engine matches in the spirit of fastchess.
+//! Bot-vs-bot matches in the spirit of fastchess.
 //!
 //! An "opening" is a pair of decks plus a seed (which fixes both starting deck orders and the
-//! core's RNG). Every opening is played twice with the engines swapping seats, so both engines
+//! core's RNG). Every opening is played twice with the bots swapping seats, so both bots
 //! get exactly the same draws with the same deck. Results are W/D/L, an Elo estimate with a 95%
 //! interval from the pentanomial statistics of the game pairs, and optionally a sequential
 //! probability ratio test (GSPRT) between two Elo hypotheses.
@@ -11,44 +11,44 @@ use std::sync::Mutex;
 
 use serde_json::{Value, json};
 
-use crate::game::{Agent, AgentError, Clock, Deck, DuelConfig, GameError, GameRecord, PlayOptions, SearchInfo, new_record, play};
-use crate::protocol::{EngineProcess, shlex_split};
+use crate::game::{Bot, BotError, Clock, Deck, DuelConfig, GameError, GameRecord, PlayOptions, SearchInfo, new_record, play};
+use crate::protocol::{BotProcess, shlex_split};
 
-/// An engine: a command speaking the engine protocol, and the options to set (name and value as
+/// A bot: a command speaking the bot protocol, and the options to set (name and value as
 /// text).
 #[derive(Debug, Clone)]
-pub struct EngineSpec {
+pub struct BotSpec {
     pub name: String,
     pub command: String,
     pub options: Vec<(String, String)>,
 }
 
-impl EngineSpec {
+impl BotSpec {
     /// NAME=COMMAND
-    pub fn parse(text: &str) -> Option<EngineSpec> {
+    pub fn parse(text: &str) -> Option<BotSpec> {
         let (name, cmd) = text.split_once('=')?;
-        (!cmd.is_empty()).then(|| EngineSpec { name: name.into(), command: cmd.into(), options: Vec::new() })
+        (!cmd.is_empty()).then(|| BotSpec { name: name.into(), command: cmd.into(), options: Vec::new() })
     }
 
-    /// The engine as a process (started, its options set, ready).
-    pub fn start(&self) -> Result<EngineProcess, AgentError> {
-        EngineProcess::start(&shlex_split(&self.command), &self.name, &self.options)
+    /// The bot as a process (started, its options set, ready).
+    pub fn start(&self) -> Result<BotProcess, BotError> {
+        BotProcess::start(&shlex_split(&self.command), &self.name, &self.options)
     }
 }
 
-/// A fresh engine process (one per game: games stay independent, and an engine's memory does not
+/// A fresh bot process (one per game: games stay independent, and a bot's memory does not
 /// grow over a match).
-pub fn get_engine(spec: &EngineSpec) -> Result<Box<dyn Agent>, AgentError> {
+pub fn get_bot(spec: &BotSpec) -> Result<Box<dyn Bot>, BotError> {
     Ok(Box::new(spec.start()?))
 }
 
-/// An NPS-adjusted node limit (`--nps-nodes`): engine b (the base) searches `nodes` per decision,
-/// engine a that many times the ratio of their nodes per second, both measured over the match's
+/// An NPS-adjusted node limit (`--nps-nodes`): bot b (the base) searches `nodes` per decision,
+/// bot a that many times the ratio of their nodes per second, both measured over the match's
 /// searches so far (their own seconds: without the reconstruction); the ratio is 1 until both have
 /// searched NPS_MIN_SECS.
 pub struct NpsNodes {
     pub nodes: u64,
-    /// per engine (a, b): the nodes and seconds searched
+    /// per bot (a, b): the nodes and seconds searched
     searched: Mutex<[(u64, f64); 2]>,
 }
 
@@ -59,7 +59,7 @@ impl NpsNodes {
         NpsNodes { nodes, searched: Mutex::new([(0, 0.0); 2]) }
     }
 
-    /// The engines' nodes per second so far (a, b; 0: none yet).
+    /// The bots' nodes per second so far (a, b; 0: none yet).
     pub fn nps(&self) -> [f64; 2] {
         let s = self.searched.lock().unwrap();
         s.map(|(n, t)| if t > 0.0 { n as f64 / t } else { 0.0 })
@@ -74,7 +74,7 @@ impl NpsNodes {
         (s[0].0 as f64 / s[0].1) / (s[1].0 as f64 / s[1].1)
     }
 
-    /// The node limit of engine `side` (0: a, 1: b).
+    /// The node limit of bot `side` (0: a, 1: b).
     pub fn limit(&self, side: usize) -> u64 {
         if side == 1 { self.nodes } else { ((self.nodes as f64 * self.ratio()).round() as u64).max(1) }
     }
@@ -88,24 +88,24 @@ impl NpsNodes {
     }
 }
 
-/// An engine, with `nps` under an NPS-adjusted node limit: its limit set before each decision, its
+/// A bot, with `nps` under an NPS-adjusted node limit: its limit set before each decision, its
 /// searches counted (and the limits it had, for the record).
 struct NpsLimited<'a> {
-    inner: Box<dyn Agent>,
+    inner: Box<dyn Bot>,
     nps: Option<&'a NpsNodes>,
     side: usize,
     info: Option<SearchInfo>,
     limits: (u64, u64),
 }
 
-impl Agent for NpsLimited<'_> {
+impl Bot for NpsLimited<'_> {
     fn name(&self) -> String {
         self.inner.name()
     }
     fn wants_state(&self) -> bool {
         self.inner.wants_state()
     }
-    fn start(&mut self, player: u32, init: &crate::game::InitInfo) -> Result<(), AgentError> {
+    fn start(&mut self, player: u32, init: &crate::game::InitInfo) -> Result<(), BotError> {
         self.inner.start(player, init)
     }
     fn observe(&mut self, msg: &crate::messages::Msg) {
@@ -116,7 +116,7 @@ impl Agent for NpsLimited<'_> {
         prompt: &crate::messages::Msg,
         state: Option<&crate::state::Snapshot>,
         clock: Option<(f64, f64)>,
-    ) -> Result<crate::actions::Response, AgentError> {
+    ) -> Result<crate::actions::Response, BotError> {
         let Some(nps) = self.nps else {
             let r = self.inner.respond(prompt, state, clock);
             self.info = self.inner.search_info();
@@ -146,7 +146,7 @@ pub struct Opening {
     pub decks: Vec<Deck>,
 }
 
-/// The openings of a book (ygoai-book-test), in order: those whose less winning seat
+/// The openings of a book (bot-book-test), in order: those whose less winning seat
 /// won at least `book_min` test games.
 pub fn load_book(path: &Path, book_min: i64) -> std::io::Result<Vec<Opening>> {
     load_book_lines(path, book_min, usize::MAX)
@@ -189,16 +189,16 @@ pub struct GameResult {
 }
 
 /// Plays the opening twice with swapped seats; returns the results from a's point of view. With
-/// `nps`, the engines search under its node limits (the result records each seat's mean limit:
+/// `nps`, the bots search under its node limits (the result records each seat's mean limit:
 /// "node_limits").
-pub fn play_opening(opening: &Opening, a: &EngineSpec, b: &EngineSpec, tc: Option<(f64, f64)>, max_turns: u32, nps: Option<&NpsNodes>) -> Result<Vec<GameResult>, String> {
+pub fn play_opening(opening: &Opening, a: &BotSpec, b: &BotSpec, tc: Option<(f64, f64)>, max_turns: u32, nps: Option<&NpsNodes>) -> Result<Vec<GameResult>, String> {
     let mut out = Vec::new();
     for a_seat in 0..2u32 {
         let mut record = new_record(&opening.decks, opening.seed, &DuelConfig::default());
-        let engine = |spec: &EngineSpec, side: usize| -> Result<NpsLimited, String> {
-            Ok(NpsLimited { inner: get_engine(spec).map_err(|e| format!("{e:?}"))?, nps, side, info: None, limits: (0, 0) })
+        let bot = |spec: &BotSpec, side: usize| -> Result<NpsLimited, String> {
+            Ok(NpsLimited { inner: get_bot(spec).map_err(|e| format!("{e:?}"))?, nps, side, info: None, limits: (0, 0) })
         };
-        let (mut ea, mut eb) = (engine(a, 0)?, engine(b, 1)?);
+        let (mut ea, mut eb) = (bot(a, 0)?, bot(b, 1)?);
         let mut opts = PlayOptions {
             max_turns,
             clocks: tc.map(|(base, inc)| [Clock::new(base, inc), Clock::new(base, inc)]),

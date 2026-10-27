@@ -4,7 +4,7 @@ A port of [edo9300/ygopro-core](https://github.com/edo9300/ygopro-core), the Yu-
 used by EDOPro, to Rust. It includes all card scripts from
 [ProjectIgnis/CardScripts](https://github.com/ProjectIgnis/CardScripts), translated from Lua to Rust.
 
-It was written so that duel states can be copied cheaply, for game-tree search and other AI use.
+It was written so that duel states can be copied cheaply, for game-tree search in bots.
 A `Duel` is plain data and implements `Clone`. Cards and effects are copy-on-write, so a copy costs
 a reference count per card and effect (about 5 µs for a duel in progress) instead of forking a
 process or serializing a Lua state.
@@ -36,7 +36,7 @@ Shueisha, Konami, edo9300 or Project Ignis.
   the same duels (same seed, decks and responses), and every message and every query result is
   compared byte for byte. The tests include random games over
   every card, games with decks built around rarely used cards, and about 57,000 recorded games of
-  search and policy agents. 13,540 of the 13,542 translated cards have been activated or summoned in
+  search and policy bots. 13,540 of the 13,542 translated cards have been activated or summoned in
   such games with both engines agreeing. Known differences that come from bugs in the C++ core are
   listed in `tools/known_core_failures.txt`.
 - **Speed:** about 5× faster than the C++ core with Lua on random games, and much faster on
@@ -107,7 +107,7 @@ so most code written against `libocgcore` carries over.
 ## Differences from upstream ygopro-core
 
 The port reproduces ygopro-core **with a patch** from the project it was written for, not unmodified
-upstream. The patch was made for an AI arbiter that must not leak hidden information and for
+upstream. The patch was made for an arbiter of bot matches that must not leak hidden information and for
 reconstructing duels from one player's observations. That needs games that are deterministic and
 whose visible behavior never depends on hidden cards or on the order cards were created in. So the
 Rust engine differs from upstream ygopro-core in these ways:

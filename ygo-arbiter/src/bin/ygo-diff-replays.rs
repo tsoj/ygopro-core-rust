@@ -1,5 +1,5 @@
 //! Recorded games (ygo-arbiter's records) as `ygo-diff --replay` files (`game::diff_replay`): the
-//! engines' decisions reach game states random play rarely does, and ygo-diff plays them on the
+//! bots' decisions reach game states random play rarely does, and ygo-diff plays them on the
 //! Rust engine and on the C++ core (tools/replay_records.py).
 //!
 //!   ygo-diff-replays RECORDS.jsonl OUTDIR [--every K] [--first N] [--jobs J]

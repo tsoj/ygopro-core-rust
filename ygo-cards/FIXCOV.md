@@ -9,7 +9,7 @@ You work in a git worktree. MAIN=/home/tsoj/Dokumente/Projects/yugioh_AI_2 is th
 your worktree lacks `external/` and `build/` (read them from MAIN: Lua scripts in
 MAIN/external/CardScripts/official/c<CODE>.lua and utility.lua/proc_*.lua there, the C++ core in
 MAIN/ygopro-core-rust/oracle/ygopro-core/). The failing games are files in MAIN/build/coverage_fails/ (random play) or
-MAIN/build/replay_fails/ (recorded games of the Python agents, replayed with `ygo-diff --replay`),
+MAIN/build/replay_fails/ (recorded games of bots, replayed with `ygo-diff --replay`),
 named in your task; the first line of each is the ygo-diff command, the rest its output.
 
 Reproduce one (from your worktree's ygopro-core-rust/ directory, in the foreground):

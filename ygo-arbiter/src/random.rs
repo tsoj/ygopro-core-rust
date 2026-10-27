@@ -1,5 +1,5 @@
 //! Random valid responses to any prompt (with Python's random numbers: [`crate::pyrandom`]): the
-//! reference engine (bin ygo-random-engine) plays them, and engines can fall back on them.
+//! reference bot (bin ygo-random-bot) plays them, and bots can fall back on them.
 
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
@@ -7,7 +7,7 @@ use std::sync::{Mutex, OnceLock};
 use ygo_core::constants::*;
 
 use crate::actions::{DeclCard, Response, available_places, battle_options, check_sum, idle_options, is_declarable};
-use crate::game::{Agent, AgentError, card_db};
+use crate::game::{Bot, BotError, card_db};
 use crate::messages::Msg;
 use crate::pyrandom::PyRandom;
 use crate::state::Snapshot;
@@ -90,9 +90,9 @@ pub fn random_sum_selection(m: &Msg, rng: &mut PyRandom, budget: usize) -> Optio
 }
 
 /// A uniformly-ish random valid response to a prompt.
-pub fn random_response(m: &Msg, rng: &mut PyRandom, cancel_prob: f64) -> Result<Response, AgentError> {
+pub fn random_response(m: &Msg, rng: &mut PyRandom, cancel_prob: f64) -> Result<Response, BotError> {
     use Msg::*;
-    let fail = |t: &str| AgentError::Failed(format!("InvalidResponse: no random response for {t}"));
+    let fail = |t: &str| BotError::Failed(format!("InvalidResponse: no random response for {t}"));
     Ok(match m {
         SelectIdlecmd { .. } => rng.choice(&idle_options(m)).clone(),
         SelectBattlecmd { .. } => rng.choice(&battle_options(m)).clone(),
@@ -200,29 +200,29 @@ pub fn random_response(m: &Msg, rng: &mut PyRandom, cancel_prob: f64) -> Result<
 }
 
 /// Picks uniformly random valid responses.
-pub struct RandomAgent {
+pub struct RandomBot {
     rng: PyRandom,
 }
 
-impl RandomAgent {
-    pub fn new(seed: i64) -> RandomAgent {
-        RandomAgent { rng: PyRandom::new(seed as i128) }
+impl RandomBot {
+    pub fn new(seed: i64) -> RandomBot {
+        RandomBot { rng: PyRandom::new(seed as i128) }
     }
 }
 
-impl Agent for RandomAgent {
+impl Bot for RandomBot {
     fn name(&self) -> String {
         "random".into()
     }
-    fn respond(&mut self, prompt: &Msg, _state: Option<&Snapshot>, _clock: Option<(f64, f64)>) -> Result<Response, AgentError> {
+    fn respond(&mut self, prompt: &Msg, _state: Option<&Snapshot>, _clock: Option<(f64, f64)>) -> Result<Response, BotError> {
         random_response(prompt, &mut self.rng, 0.05)
     }
 }
 
 /// A random one of `opts` (Python's random.choice, which fails on an empty list).
-pub fn pick<T: Clone>(rng: &mut PyRandom, opts: &[T]) -> Result<T, AgentError> {
+pub fn pick<T: Clone>(rng: &mut PyRandom, opts: &[T]) -> Result<T, BotError> {
     if opts.is_empty() {
-        return Err(AgentError::Failed("IndexError: Cannot choose from an empty sequence".into()));
+        return Err(BotError::Failed("IndexError: Cannot choose from an empty sequence".into()));
     }
     Ok(rng.choice(opts).clone())
 }

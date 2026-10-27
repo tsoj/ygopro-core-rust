@@ -22,11 +22,10 @@ import sqlite3
 import subprocess
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(HERE, "..", "..")
-sys.path.insert(0, HERE)
-import deck_plan  # noqa: E402
-import translatable  # noqa: E402
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import common  # noqa: E402
+
+ROOT = common.ROOT
 
 OUT = os.path.join(ROOT, "build", "gen_decks.jsonl")
 COV = os.path.join(ROOT, "build", "coverage.json")
@@ -79,9 +78,8 @@ def main():
     args = sys.argv[1:]
     per_card = int(args[args.index("--per-card") + 1]) if "--per-card" in args else 2
     copies = int(args[args.index("--copies") + 1]) if "--copies" in args else 3
-    binary = os.path.join(ROOT, "rust", "target", "release", "ygo-diff")
-    done = set(int(x) for x in subprocess.run([binary, "--list-cards"], capture_output=True, text=True, check=True).stdout.split())
-    alias = deck_plan.load_alias()
+    done = set(int(x) for x in subprocess.run([common.YGO_DIFF, "--list-cards"], capture_output=True, text=True, check=True).stdout.split())
+    alias = common.load_alias()
     targets = set()
     if "--codes" in args:
         targets |= {int(x) for x in args[args.index("--codes") + 1].split(",")}
@@ -94,11 +92,11 @@ def main():
     targets = {c for c in targets if c in done}
     # the fully translated human decks (book)
     decks = {}
-    for line in open(deck_plan.BOOK):
+    for line in open(common.BOOK):
         for d in json.loads(line)["decks"]:
             if d["name"] in decks:
                 continue
-            if all(deck_plan.script_code(c, alias) in done or not translatable.script_path(deck_plan.script_code(c, alias)) for c in d["main"] + d["extra"]):
+            if all(common.script_code(c, alias) in done or not common.script_path(common.script_code(c, alias)) for c in d["main"] + d["extra"]):
                 decks[d["name"]] = d
     cards = load_cards()
     in_decks = {c for d in decks.values() for c in d["main"] + d["extra"]}

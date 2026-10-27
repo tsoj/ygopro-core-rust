@@ -13,9 +13,9 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import deck_plan  # noqa: E402
+import common  # noqa: E402
 
-ROOT = deck_plan.ROOT
+ROOT = common.ROOT
 FAILS = os.environ.get("TRIAGE_DIR") or os.path.join(ROOT, "build", "coverage_fails")
 
 
@@ -55,14 +55,14 @@ def suspects(path):
 
 
 def main():
-    alias = deck_plan.load_alias()
+    alias = common.load_alias()
     votes = collections.Counter()
     files = collections.defaultdict(list)
     none = 0
     for f in sorted(os.listdir(FAILS)):
         if not f.startswith("mismatch_"):
             continue
-        s = {deck_plan.script_code(c, alias) for c in suspects(os.path.join(FAILS, f))}
+        s = {common.script_code(c, alias) for c in suspects(os.path.join(FAILS, f))}
         if not s:
             none += 1
         for c in s:

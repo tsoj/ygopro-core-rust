@@ -2,7 +2,7 @@
 # Replay a coverage mismatch (build/coverage_fails/<file>, or a recorded game's build/replay_fails/<file>) with the Rust engine of this checkout:
 # builds ygo-diff with only the cards of the two decks (YGO_CARDS_ONLY: a small, fast build, in
 # target/repro so the full target/release binary stays) and
-# plays the failing game. Run from rust/.
+# plays the failing game. Run from ygopro-core-rust/.
 #   tools/repro.sh <mismatch file> [extra ygo-diff args, e.g. -v]
 set -e
 f=$1

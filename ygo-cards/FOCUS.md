@@ -8,7 +8,7 @@ Build decks and find games in which each of your cards IS used, so that it gets 
 You work in a git worktree. MAIN=/home/tsoj/Dokumente/Projects/yugioh_AI_2 is the main checkout.
 Card scripts (Lua): MAIN/external/CardScripts/official/c<CODE>.lua; card data (names, texts, types):
 the SQLite files MAIN/external/BabelCDB/*.cdb (tables `datas`, `texts`). A card can be used in a deck
-if MAIN/rust/ygo-cards/src/cards/c<CODE>.rs exists or the card has no script (vanilla monster).
+if MAIN/ygopro-core-rust/ygo-cards/src/cards/c<CODE>.rs exists or the card has no script (vanilla monster).
 
 1. Read each card's Lua and text: what does it need (materials, a Ritual Spell, a field spell,
    cards in the GY, a battle, the opponent doing something, ...)?
@@ -17,9 +17,9 @@ if MAIN/rust/ygo-cards/src/cards/c<CODE>.rs exists or the card has no script (va
    your card and what makes it usable (searchers, enablers, the right types/levels/materials). Deck b:
    an opponent that lets it happen (e.g. plain vanilla monsters if the card needs a battle or a monster
    to target; spells/traps to destroy if it needs them).
-3. Build ygo-diff with only those decks' cards (from your worktree's rust/ directory, foreground):
+3. Build ygo-diff with only those decks' cards (from your worktree's ygopro-core-rust/ directory, foreground):
    `YGO_CARDS_ONLY="$(python3 tools/deck_codes.py A.ydk B.ydk)" CARGO_TARGET_DIR=target/repro cargo build --release -p ygo-diff`
-   (copy MAIN/rust/tools/deck_codes.py, deck_plan.py, translatable.py into your rust/tools/ if missing;
+   (copy MAIN/ygopro-core-rust/tools/deck_codes.py and common.py into your ygopro-core-rust/tools/ if missing;
    never run cargo without YGO_CARDS_ONLY).
 4. Play: `YGO_ROOT=MAIN ./target/repro/release/ygo-diff --decks A.ydk,B.ydk --games 30 --seed S --focus CODE`
    `--focus` makes the random player use your card whenever a question offers it (summon, activate,
@@ -29,8 +29,8 @@ if MAIN/rust/ygo-cards/src/cards/c<CODE>.rs exists or the card has no script (va
    `--no-shuffle` keeps the .ydk order, the last card on top, which `coverage.py focus` uses for your
    decks: you may order a deck so the needed cards are drawn early.)
 5. If a game mismatches (the output shows the first differing message), find the cause like
-   rust/ygo-cards/FIXCOV.md describes (`-v` prints the decisions); fix it if it is a card file
-   (rust/ygo-cards/src/cards/c*.rs, do not commit); if it is in the library or core, stop on that
+   ygo-cards/FIXCOV.md describes (`-v` prints the decisions); fix it if it is a card file
+   (ygo-cards/src/cards/c*.rs, do not commit); if it is in the library or core, stop on that
    card and report the evidence.
 
 The decks are replayed regularly by `tools/coverage.py focus`: per pair `<CODE>_a.ydk` (or a
@@ -54,10 +54,10 @@ start of a game and let focus play take over afterwards:
    first), then one `resp HEX` line per decision.
 2. Find a game that gets close; keep its header and its `resp` lines up to the decision that went
    wrong, and change that response (and the following ones) to what you want. Responses are the bytes
-   the core reads (`OCG_DuelSetResponse`): see `random_response` in MAIN/rust/ygo-diff/src/question.rs
+   the core reads (`OCG_DuelSetResponse`): see `random_response` in MAIN/ygopro-core-rust/ygo-diff/src/question.rs
    for each message's format (e.g. IDLECMD: i32 `(index << 16) | kind`, little-endian; selections:
    i32 count then i32 indices, or the formats there). The questions are documented in
-   MAIN/external/ygopro-core (processor/playerop code) as well.
+   MAIN/ygopro-core-rust/oracle/ygopro-core (processor/playerop code) as well.
 3. Check: `ygo-diff --replay FILE --replay-prefix --games 1 --seed S --focus CODES -v`: the scripted
    responses are used first (a wrong one shows up as an error / retry message from the core: the
    game then mismatches or stalls), then focus play continues. With `--replay-prefix` the replay is

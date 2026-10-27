@@ -4,9 +4,9 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import deck_plan  # noqa: E402
+import common  # noqa: E402
 
-alias = deck_plan.load_alias()
+alias = common.load_alias()
 codes = set()
 args = sys.argv[1:]
 if args and args[0] == "--replay":  # a ygo-diff --replay file
@@ -14,12 +14,12 @@ if args and args[0] == "--replay":  # a ygo-diff --replay file
         if l.startswith("card "):
             c = int(l.split()[3])
             codes.add(c)
-            codes.add(deck_plan.script_code(c, alias))
+            codes.add(common.script_code(c, alias))
     args = []
 for p in args:
     for l in open(p):
         if l.strip().isdigit():
             c = int(l)
             codes.add(c)
-            codes.add(deck_plan.script_code(c, alias))
+            codes.add(common.script_code(c, alias))
 print(" ".join(map(str, sorted(codes))))

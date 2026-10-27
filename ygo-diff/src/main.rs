@@ -86,7 +86,7 @@ struct Args {
     dump_replay: Option<String>,
 }
 
-/// A recorded game (e.g. of the Python agents, converted by tools/record_to_replay.py): the duel
+/// A recorded game (e.g. of the agents, converted by the project's ygoai-diff-replays): the duel
 /// setup and the responses, which both engines get instead of random ones. Text lines:
 /// `seed a b c d`, `config flags start_lp start_hand draw_per_turn`, `card player location code`
 /// (in creation order: card ids follow it), `order player location id...` (then the pile is put

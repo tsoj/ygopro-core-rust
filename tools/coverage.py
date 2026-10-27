@@ -9,7 +9,6 @@ a mismatch is saved to build/coverage_fails/ with its decks and seed (to reprodu
   tools/coverage.py run [--jobs 30] [--games N] [--timeout 120]
   tools/coverage.py focus [--games N]    # the deck pairs of build/focus_decks, with --focus
   tools/coverage.py status [--list N]   # coverage of the translated cards (--list: N least played)
-  tools/coverage.py import              # add the pair tests' coverage (build/pair_results)
 """
 import concurrent.futures
 import json
@@ -22,15 +21,14 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import deck_plan  # noqa: E402
-import translatable  # noqa: E402
+import common  # noqa: E402
 
-ROOT = deck_plan.ROOT
+ROOT = common.ROOT
 COV = os.path.join(ROOT, "build", "coverage.json")
 FAILS = os.path.join(ROOT, "build", "coverage_fails")
 DECKS = os.path.join(ROOT, "build", "coverage_decks")
 BIN = os.path.join(ROOT, "build", "coverage_bin", "ygo-diff")
-CARDS = deck_plan.CARDS
+CARDS = common.CARDS
 
 
 def translated():
@@ -60,7 +58,7 @@ def book_decks(alias, done):
     have a translated script (or need none)."""
     decks = {}
     gen = os.path.join(ROOT, "build", "gen_decks.jsonl")  # tools/gen_decks.py
-    lines = list(open(deck_plan.BOOK)) + (list(open(gen)) if os.path.exists(gen) else [])
+    lines = list(open(common.BOOK)) + (list(open(gen)) if os.path.exists(gen) else [])
     for line in lines:
         for d in json.loads(line)["decks"]:
             if d["name"] in decks:
@@ -68,8 +66,8 @@ def book_decks(alias, done):
             cards = set()
             ok = True
             for c in d["main"] + d["extra"]:
-                s = deck_plan.script_code(c, alias)
-                if translatable.script_path(s):
+                s = common.script_code(c, alias)
+                if common.script_path(s):
                     if s not in done:
                         ok = False
                         break
@@ -101,7 +99,7 @@ def parse_cov(text, alias):
     for line in text.splitlines():
         m = COVLINE.match(line)
         if m:
-            c = deck_plan.script_code(int(m[1]), alias)
+            c = common.script_code(int(m[1]), alias)
             a, s = out.get(c, (0, 0))
             out[c] = (a + int(m[2]), s + int(m[3]))
     return out
@@ -127,8 +125,8 @@ def run(args):
     os.makedirs(DECKS, exist_ok=True)
     os.makedirs(os.path.dirname(BIN), exist_ok=True)
     # a snapshot of the binary: rebuilds during the run do not change it
-    shutil.copy2(os.path.join(ROOT, "rust", "target", "release", "ygo-diff"), BIN)
-    alias = deck_plan.load_alias()
+    shutil.copy2(common.YGO_DIFF, BIN)
+    alias = common.load_alias()
     # the cards of the snapshot (the source tree can have newer ones)
     done = set(int(x) for x in subprocess.run([BIN, "--list-cards"], capture_output=True, text=True, check=True).stdout.split())
     decks = book_decks(alias, done)
@@ -222,15 +220,15 @@ FOCUS = os.path.join(ROOT, "build", "focus_decks")
 def focus(args):
     """The deck pairs of build/focus_decks (<CODE>_a.ydk, <CODE>_b.ydk; written by the focus agents,
     and scripted starts <CODE>_<x>.replay,
-    see rust/ygo-cards/FOCUS.md), each played with `--focus CODE` (the player uses that card whenever
+    see ygo-cards/FOCUS.md), each played with `--focus CODE` (the player uses that card whenever
     it can): cards random play never reaches."""
     jobs = int(args[args.index("--jobs") + 1]) if "--jobs" in args else 24
     per = int(args[args.index("--games") + 1]) if "--games" in args else 10
     timeout = int(args[args.index("--timeout") + 1]) if "--timeout" in args else 120
     os.makedirs(FAILS, exist_ok=True)
     os.makedirs(os.path.dirname(BIN), exist_ok=True)
-    shutil.copy2(os.path.join(ROOT, "rust", "target", "release", "ygo-diff"), BIN)
-    alias = deck_plan.load_alias()
+    shutil.copy2(common.YGO_DIFF, BIN)
+    alias = common.load_alias()
     done = set(int(x) for x in subprocess.run([BIN, "--list-cards"], capture_output=True, text=True, check=True).stdout.split())
     pairs = []
     for f in sorted(os.listdir(FOCUS)):
@@ -243,8 +241,8 @@ def focus(args):
             for p in (pa, pb):
                 for l in open(p):
                     if l.strip().isdigit():
-                        c = deck_plan.script_code(int(l), alias)
-                        if translatable.script_path(c):
+                        c = common.script_code(int(l), alias)
+                        if common.script_path(c):
                             if c not in done:
                                 ok = False
                             cards.add(c)
@@ -261,8 +259,8 @@ def focus(args):
             for l in open(pa):
                 w = l.split()
                 if w and w[0] == "card":
-                    c = deck_plan.script_code(int(w[3]), alias)
-                    if translatable.script_path(c):
+                    c = common.script_code(int(w[3]), alias)
+                    if common.script_path(c):
                         ok &= c in done
                         cards.add(c)
                     if w[1] == "0":
@@ -320,27 +318,5 @@ def status(args):
             print(c, cov.get(c, [0, 0, 0, 0]))
 
 
-def import_pairs(args):
-    alias = deck_plan.load_alias()
-    cov = load_cov()
-    res = os.path.join(ROOT, "build", "pair_results")
-    n = 0
-    for f in sorted(os.listdir(res)):
-        text = open(os.path.join(res, f), errors="ignore").read()
-        m = re.search(r"^(\d+)/(\d+) games identical", text, re.M)
-        if not m or m[1] != m[2]:
-            continue
-        games = int(m[1])
-        pc = parse_cov(text, alias)
-        for c, (act, summ) in pc.items():
-            e = entry(cov, c)
-            e[0] += games
-            e[1] += act
-            e[2] += summ
-        n += 1
-    save_cov(cov)
-    print(f"imported {n} pair results")
-
-
 if __name__ == "__main__":
-    {"run": run, "focus": focus, "status": status, "import": import_pairs}[sys.argv[1]](sys.argv[2:])
+    {"run": run, "focus": focus, "status": status}[sys.argv[1]](sys.argv[2:])

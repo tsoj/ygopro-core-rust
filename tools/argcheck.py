@@ -14,10 +14,11 @@ import os
 import re
 import sys
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import CARDS as RS, ROOT  # noqa: E402
+
 LUA = os.path.join(ROOT, "external", "CardScripts", "official")
 EXT = os.path.join(ROOT, "lua_fixes")
-RS = os.path.join(ROOT, "rust", "ygo-cards", "src", "cards")
 
 # Lua name -> (Rust name, index of the player argument in the Lua call, in the Rust call after `d`)
 FUNCS = {

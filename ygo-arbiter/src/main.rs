@@ -37,7 +37,6 @@ struct Args {
     concurrency: usize,
     records: Option<PathBuf>,
     book: Option<PathBuf>,
-    book_min: i64,
     shuffle: Option<u64>,
     pool: usize,
     nps_nodes: Option<u64>,
@@ -48,7 +47,7 @@ fn usage(msg: &str) -> ! {
     eprintln!("ygo-arbiter: {msg}");
     eprintln!(
         "usage: ygo-arbiter --bot NAME=COMMAND --bot NAME=COMMAND --book BOOK [-n N] [--tc BASE+INC] \
-         [--sprt ELO0 ELO1] [--alpha A] [--beta B] [-c J] [--records PATH] [--book-min N] [--shuffle SEED] [--pool N] [--max-turns N] [--nps-nodes N] [--resume RECORDS] [--option BOT.NAME=VALUE ...]"
+         [--sprt ELO0 ELO1] [--alpha A] [--beta B] [-c J] [--records PATH] [--shuffle SEED] [--pool N] [--max-turns N] [--nps-nodes N] [--resume RECORDS] [--option BOT.NAME=VALUE ...]"
     );
     std::process::exit(2)
 }
@@ -107,7 +106,6 @@ fn parse_args() -> Args {
         concurrency: std::thread::available_parallelism().map_or(1, |n| n.get()),
         records: None,
         book: None,
-        book_min: 2,
         shuffle: None,
         pool: usize::MAX,
         nps_nodes: None,
@@ -151,8 +149,6 @@ fn parse_args() -> Args {
             "-c" | "--concurrency" => a.concurrency = num(next(&mut i, &arg), &arg) as usize,
             "--records" => a.records = Some(next(&mut i, &arg).into()),
             "--book" => a.book = Some(next(&mut i, &arg).into()),
-            "--book-min" => a.book_min = num(next(&mut i, &arg), &arg) as i64,
-            // (only the book's first N lines: the eval's training pairs come from later ones)
             "--pool" => a.pool = num(next(&mut i, &arg), &arg) as usize,
             "--resume" => a.resume = Some(next(&mut i, &arg).into()),
             "--nps-nodes" => a.nps_nodes = Some(num(next(&mut i, &arg), &arg) as u64),
@@ -193,7 +189,7 @@ fn main() {
             }
         }
     }
-    let mut openings: Vec<Opening> = load_book(args.book.as_ref().unwrap(), args.book_min, args.pool, usize::MAX).unwrap_or_else(|e| usage(&format!("book: {e}")));
+    let mut openings: Vec<Opening> = load_book(args.book.as_ref().unwrap(), args.pool, usize::MAX).unwrap_or_else(|e| usage(&format!("book: {e}")));
     if let Some(seed) = args.shuffle {
         shuffle(&mut openings, seed);
         println!("book shuffled with seed {seed}");

@@ -149,25 +149,21 @@ pub struct Opening {
 }
 
 /// The openings of a book (README.md: "Opening books"), in order: of its first `lines` lines, at
-/// most `limit` openings, those in which each seat won at least `book_min` test games. The error
-/// names the first line that is not a valid opening.
-pub fn load_book(path: &Path, book_min: i64, lines: usize, limit: usize) -> Result<Vec<Opening>, String> {
+/// most `limit`. The error names the first line that is not a valid opening.
+pub fn load_book(path: &Path, lines: usize, limit: usize) -> Result<Vec<Opening>, String> {
     let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let mut out = Vec::new();
     for (i, line) in text.lines().enumerate().filter(|(_, l)| !l.trim().is_empty()).take(lines) {
         if out.len() >= limit {
             break;
         }
-        let (opening, wins) = parse_opening(line).map_err(|e| format!("{} line {}: {e}", path.display(), i + 1))?;
-        if wins >= book_min {
-            out.push(opening);
-        }
+        out.push(parse_opening(line).map_err(|e| format!("{} line {}: {e}", path.display(), i + 1))?);
     }
     Ok(out)
 }
 
-/// An opening of a book, and the fewer test wins of its two seats (i64::MAX without "wins").
-fn parse_opening(line: &str) -> Result<(Opening, i64), String> {
+/// An opening of a book.
+fn parse_opening(line: &str) -> Result<Opening, String> {
     let d: Value = serde_json::from_str(line).map_err(|e| e.to_string())?;
     let seed = d.get("seed").and_then(Value::as_i64).ok_or("no integer \"seed\"")?;
     let decks: Vec<Deck> = serde_json::from_value(d.get("decks").cloned().ok_or("no \"decks\"")?).map_err(|e| format!("decks: {e}"))?;
@@ -177,14 +173,7 @@ fn parse_opening(line: &str) -> Result<(Opening, i64), String> {
     for (p, deck) in decks.iter().enumerate() {
         check_deck(deck).map_err(|e| format!("deck {p}: {e}"))?;
     }
-    let wins = match d.get("wins") {
-        None => i64::MAX,
-        Some(w) => match w.as_array().map(|a| a.iter().map(Value::as_i64).collect::<Option<Vec<_>>>()) {
-            Some(Some(w)) if w.len() == 2 => w[0].min(w[1]),
-            _ => return Err(format!("\"wins\" is {w}, not two integers")),
-        },
-    };
-    Ok((Opening { seed, decks }, wins))
+    Ok(Opening { seed, decks })
 }
 
 /// Whether a deck is legal: 40 to 60 cards in the Main Deck, at most 15 in the Extra Deck, each card

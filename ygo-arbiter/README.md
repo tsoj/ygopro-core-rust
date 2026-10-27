@@ -50,7 +50,6 @@ A match goes like this:
 | `-n N` | The number of openings (default 100). The match has 2N games. |
 | `--shuffle SEED` | Shuffle the openings with this seed first. Without it, the arbiter uses the first openings of the book. |
 | `--pool N` | Use only the first N lines of the book. |
-| `--book-min N` | Use only openings in which each seat won at least N test games (`wins`; default 2). |
 | `--tc BASE+INC` | Time control: BASE seconds, plus INC seconds after each decision. Without it, there is no clock. |
 | `--max-turns N` | A game is a draw after N turns (default 100). |
 | `--sprt ELO0 ELO1` | Stop when the SPRT accepts H0 (Elo ELO0) or H1 (Elo ELO1). `--alpha` and `--beta` set the error rates (default 0.05). |
@@ -65,14 +64,13 @@ An opening book is a text file with one opening on each line. An opening is two 
 Empty lines are ignored.
 
 ```json
-{"seed": 4207, "decks": [{"name": "Blue-Eyes", "main": [89631139, 89631139, 89631139, ...], "extra": [...]}, {"name": "Dark Magician", "main": [...], "extra": [...]}], "wins": [6, 4]}
+{"seed": 4207, "decks": [{"name": "Blue-Eyes", "main": [89631139, 89631139, 89631139, ...], "extra": [...]}, {"name": "Dark Magician", "main": [...], "extra": [...]}]}
 ```
 
 | Member | Required | Meaning |
 |---|---|---|
 | `seed` | yes | An integer. It sets the order of both Main Decks and both Extra Decks, which copy of a card is where, and the random numbers of the duel (coin tosses, dice). Both games of an opening use it, so each seat gets the same draws in both games. |
 | `decks` | yes | Exactly two decks: the deck of player 0, then the deck of player 1. Player 0 starts the duel. |
-| `wins` | no | Two integers: the wins of player 0 and player 1 in test games. `--book-min` uses them (see below). |
 
 Other members are ignored.
 
@@ -96,15 +94,12 @@ arbiter stops with the line number and the problem, for example
 Which openings a match uses:
 
 1. The arbiter reads the first `--pool` lines (default: all).
-2. It removes the openings in which a seat won fewer than `--book-min` test games. An opening without
-   `wins` is never removed. With the default `--book-min 2`, an opening with `"wins": [1, 9]` is
-   removed; use `--book-min 0` to keep all openings.
-3. With `--shuffle SEED`, it shuffles the openings that are left.
-4. It plays the first `-n` of them.
+2. With `--shuffle SEED`, it shuffles them.
+3. It plays the first `-n` of them.
 
 A good book has openings that neither seat wins too often: the game result then shows the
-difference between the bots, not between the decks or seats. `wins` from test games with two equal
-bots can show these openings.
+difference between the bots, not between the decks or seats. Test games between two equal bots can
+find these openings before you write the book.
 
 To make a book from `.ydk` files (`#main` and `#extra` sections with one card code on each line):
 

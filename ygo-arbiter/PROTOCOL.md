@@ -48,19 +48,22 @@ Later versions of this protocol can add message types and members. To stay compa
 
 ## Sequence
 
+Each line is a JSON object. This document names a message by its type: "the message `hello`" is
+the line `{"type": "hello", ...}`. A game has this sequence of lines (`...` stands for more
+members):
+
 ```
-arbiter                                  bot
-  hello                         ->
-                                <-       {"id": ..., "options": [...]}
-  setoption (zero or more)      ->
-  isready                       ->
-                                <-       {"ready": true}
-  init                          ->
-  prompt                        ->
-                                <-       {"response": ...}
-  (more prompts)
-  end                           ->
-  quit                          ->
+arbiter -> bot:  {"type": "hello", "protocol": 1}
+bot -> arbiter:  {"id": {"name": "my-bot"}, "options": [...]}
+arbiter -> bot:  {"type": "setoption", "name": "Hash", "value": 256}    (zero or more)
+arbiter -> bot:  {"type": "isready"}
+bot -> arbiter:  {"ready": true}
+arbiter -> bot:  {"type": "init", "player": 0, ...}
+arbiter -> bot:  {"type": "prompt", "obs": [...], "prompt": {...}, ...}
+bot -> arbiter:  {"response": {...}}
+                 (more prompts and responses)
+arbiter -> bot:  {"type": "end", "obs": [...], "result": {...}}
+arbiter -> bot:  {"type": "quit"}
 ```
 
 The bot must reply to `hello` and to `isready` within 30 seconds. If it does not, the arbiter

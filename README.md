@@ -109,59 +109,9 @@ for `libocgcore` works.
 
 ## Running bot matches
 
-`ygo-arbiter` plays matches between two bots, like fastchess for chess engines. A bot is a program
-that speaks the bot protocol: JSON lines on its standard input and output
-(`ygo-arbiter/PROTOCOL.md`). The arbiter gives each bot only what its player may see.
-
-```sh
-cargo build --release -p ygo-arbiter
-YGO_ROOT=/path/to/data ./target/release/ygo-arbiter \
-    --bot "new=/path/to/my-bot --my-flag" \
-    --bot "base=./target/release/ygo-random-bot" \
-    --book book.jsonl -n 100 --tc 10+0.1 -c 8 --records games.jsonl
-```
-
-The arbiter reads the card databases from `$YGO_ROOT/external/BabelCDB`. Without `YGO_ROOT`, it uses
-the folder that contains this repository.
-
-A match goes like this:
-
-1. The arbiter starts each bot once. It prints the bot's identity and checks the options you set.
-2. It takes openings from the book. It plays each opening twice: the bots change seats, and each
-   seat keeps its deck. So each bot plays each deck once, with the same draws.
-3. It starts a new bot process for each game.
-4. After each pair of games, it prints the score of the first bot:
-   `games 40: +20 =0 -20  elo -0.0 +/- 98.9  penta [4, 0, 12, 0, 4]`. `penta` counts the pairs by
-   their score, from 0 to 2 in steps of 0.5. With `--sprt`, the line also shows the LLR.
-
-| Option | Meaning |
-|---|---|
-| `--bot NAME=COMMAND` | A bot: its name, and the command that starts it. Give exactly two. The first is the one the score is for. |
-| `--option NAME.OPTION=VALUE` | Set an option that the bot declares (`PROTOCOL.md`), for example `--option new.Hash=256`. |
-| `--book FILE` | The opening book. Required. |
-| `-n N` | The number of openings (default 100). The match has 2N games. |
-| `--shuffle SEED` | Shuffle the openings with this seed first. Without it, the arbiter takes the first openings of the book. |
-| `--pool N` | Use only the first N lines of the book. |
-| `--book-min N` | Use only openings in which each seat won at least N test games (`wins`; default 2). |
-| `--tc BASE+INC` | Time control: BASE seconds, plus INC seconds after each decision. Without it, there is no clock. |
-| `--max-turns N` | A game is a draw after N turns (default 100). |
-| `--sprt ELO0 ELO1` | Stop when the SPRT accepts H0 (Elo ELO0) or H1 (Elo ELO1). `--alpha` and `--beta` set the error rates (default 0.05). |
-| `-c N` | The number of games at the same time (default: the number of CPU threads). |
-| `--records FILE` | Write each game to FILE, as one JSON line: the decks, the seeds, all responses and the result. |
-| `--resume FILE` | Continue a stopped match. FILE is its `--records` file; its finished pairs count. |
-| `--nps-nodes N` | A node limit for each decision: the second bot searches N nodes, the first N times the ratio of their speeds (nodes per second). |
-
-An opening book has one JSON object per line:
-
-```json
-{"seed": 4207, "decks": [{"name": "Deck A", "main": [89631139, ...], "extra": [...]}, {"name": "Deck B", "main": [...], "extra": [...]}], "wins": [6, 4]}
-```
-
-| Member | Meaning |
-|---|---|
-| `seed` | Sets both deck orders and the random numbers of the duel. |
-| `decks` | The decks of player 0 and player 1, as card codes. Player 0 starts. |
-| `wins` | Optional. The wins of each seat in test games, for `--book-min`. |
+`ygo-arbiter` plays matches between Yu-Gi-Oh! bots, like fastchess for chess engines. A bot is any
+program that speaks the bot protocol. `ygo-arbiter/README.md` tells how to run a match and how an
+opening book looks; `ygo-arbiter/PROTOCOL.md` specifies the protocol.
 
 ## Differences from upstream ygopro-core
 

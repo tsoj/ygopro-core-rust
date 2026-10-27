@@ -24,7 +24,7 @@ use std::sync::{Arc, mpsc};
 use std::time::Instant;
 
 use ygo_arbiter::game::BotError;
-use ygo_arbiter::matchrun::{BotSpec, MatchStats, NpsNodes, Opening, load_book_lines, play_opening, sprt_bounds};
+use ygo_arbiter::matchrun::{BotSpec, MatchStats, NpsNodes, Opening, load_book, play_opening, sprt_bounds};
 
 struct Args {
     bots: Vec<BotSpec>,
@@ -193,7 +193,7 @@ fn main() {
             }
         }
     }
-    let mut openings: Vec<Opening> = load_book_lines(args.book.as_ref().unwrap(), args.book_min, args.pool).unwrap_or_else(|e| usage(&format!("book: {e}")));
+    let mut openings: Vec<Opening> = load_book(args.book.as_ref().unwrap(), args.book_min, args.pool, usize::MAX).unwrap_or_else(|e| usage(&format!("book: {e}")));
     if let Some(seed) = args.shuffle {
         shuffle(&mut openings, seed);
         println!("book shuffled with seed {seed}");

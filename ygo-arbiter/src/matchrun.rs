@@ -6,12 +6,14 @@
 //! interval from the pentanomial statistics of the game pairs, and optionally a sequential
 //! probability ratio test (GSPRT) between two Elo hypotheses.
 
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
 
 use serde_json::{Value, json};
+use ygo_core::constants::{TYPE_FUSION, TYPE_LINK, TYPE_SYNCHRO, TYPE_XYZ};
 
-use crate::game::{Bot, BotError, Clock, Deck, DuelConfig, GameError, GameRecord, PlayOptions, SearchInfo, new_record, play};
+use crate::game::{Bot, BotError, Clock, Deck, DuelConfig, GameError, GameRecord, PlayOptions, SearchInfo, card_db, new_record, play};
 use crate::protocol::{BotProcess, shlex_split};
 
 /// A bot: a command speaking the bot protocol, and the options to set (name and value as
@@ -146,39 +148,70 @@ pub struct Opening {
     pub decks: Vec<Deck>,
 }
 
-/// The openings of a book (bot-book-test), in order: those whose less winning seat
-/// won at least `book_min` test games.
-pub fn load_book(path: &Path, book_min: i64) -> std::io::Result<Vec<Opening>> {
-    load_book_lines(path, book_min, usize::MAX)
-}
-
-/// The openings among the book's first `lines` lines.
-pub fn load_book_lines(path: &Path, book_min: i64, lines: usize) -> std::io::Result<Vec<Opening>> {
+/// The openings of a book (README.md: "Opening books"), in order: of its first `lines` lines, at
+/// most `limit` openings, those in which each seat won at least `book_min` test games. The error
+/// names the first line that is not a valid opening.
+pub fn load_book(path: &Path, book_min: i64, lines: usize, limit: usize) -> Result<Vec<Opening>, String> {
+    let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let mut out = Vec::new();
-    for line in std::fs::read_to_string(path)?.lines().filter(|l| !l.trim().is_empty()).take(lines) {
-        let d: Value = serde_json::from_str(line)?;
-        let wins = d["wins"].as_array().map(|w| w.iter().filter_map(|x| x.as_i64()).min().unwrap_or(0)).unwrap_or(i64::MAX);
-        if wins >= book_min {
-            out.push(Opening { seed: d["seed"].as_i64().unwrap_or(0), decks: serde_json::from_value(d["decks"].clone())? });
-        }
-    }
-    Ok(out)
-}
-
-/// The first `limit` openings of the book (only their lines are parsed).
-pub fn load_book_head(path: &Path, book_min: i64, limit: usize) -> std::io::Result<Vec<Opening>> {
-    let mut out = Vec::new();
-    for line in std::fs::read_to_string(path)?.lines().filter(|l| !l.trim().is_empty()) {
+    for (i, line) in text.lines().enumerate().filter(|(_, l)| !l.trim().is_empty()).take(lines) {
         if out.len() >= limit {
             break;
         }
-        let d: Value = serde_json::from_str(line)?;
-        let wins = d["wins"].as_array().map(|w| w.iter().filter_map(|x| x.as_i64()).min().unwrap_or(0)).unwrap_or(i64::MAX);
+        let (opening, wins) = parse_opening(line).map_err(|e| format!("{} line {}: {e}", path.display(), i + 1))?;
         if wins >= book_min {
-            out.push(Opening { seed: d["seed"].as_i64().unwrap_or(0), decks: serde_json::from_value(d["decks"].clone())? });
+            out.push(opening);
         }
     }
     Ok(out)
+}
+
+/// An opening of a book, and the fewer test wins of its two seats (i64::MAX without "wins").
+fn parse_opening(line: &str) -> Result<(Opening, i64), String> {
+    let d: Value = serde_json::from_str(line).map_err(|e| e.to_string())?;
+    let seed = d.get("seed").and_then(Value::as_i64).ok_or("no integer \"seed\"")?;
+    let decks: Vec<Deck> = serde_json::from_value(d.get("decks").cloned().ok_or("no \"decks\"")?).map_err(|e| format!("decks: {e}"))?;
+    if decks.len() != 2 {
+        return Err(format!("{} decks instead of 2", decks.len()));
+    }
+    for (p, deck) in decks.iter().enumerate() {
+        check_deck(deck).map_err(|e| format!("deck {p}: {e}"))?;
+    }
+    let wins = match d.get("wins") {
+        None => i64::MAX,
+        Some(w) => match w.as_array().map(|a| a.iter().map(Value::as_i64).collect::<Option<Vec<_>>>()) {
+            Some(Some(w)) if w.len() == 2 => w[0].min(w[1]),
+            _ => return Err(format!("\"wins\" is {w}, not two integers")),
+        },
+    };
+    Ok((Opening { seed, decks }, wins))
+}
+
+/// Whether a deck is legal: 40 to 60 cards in the Main Deck, at most 15 in the Extra Deck, each card
+/// in the card database and in the right one of them, at most 3 copies of a card (an alternate
+/// artwork counts as its original).
+pub fn check_deck(deck: &Deck) -> Result<(), String> {
+    let db = card_db();
+    if !(40..=60).contains(&deck.main.len()) {
+        return Err(format!("{} cards in the Main Deck (40 to 60)", deck.main.len()));
+    }
+    if deck.extra.len() > 15 {
+        return Err(format!("{} cards in the Extra Deck (at most 15)", deck.extra.len()));
+    }
+    let mut copies: HashMap<u32, u32> = HashMap::new();
+    for (&code, extra) in deck.main.iter().map(|c| (c, false)).chain(deck.extra.iter().map(|c| (c, true))) {
+        let Some(card) = db.cards.get(&code) else { return Err(format!("card {code} is not in the card database")) };
+        if (card.type_ & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK) != 0) != extra {
+            return Err(format!("card {code} belongs in the {}", if extra { "Main Deck" } else { "Extra Deck" }));
+        }
+        let original = if card.alias != 0 && card.alias.abs_diff(code) < 10 { card.alias } else { code };
+        let n = copies.entry(original).or_default();
+        *n += 1;
+        if *n > 3 {
+            return Err(format!("more than 3 copies of card {original}"));
+        }
+    }
+    Ok(())
 }
 
 /// One game of a match: the record and a's score.

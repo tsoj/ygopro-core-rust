@@ -223,7 +223,7 @@ pub fn run_until_prompt(duel: &mut Duel, pending_prompt: Option<&Msg>) -> Result
             return Ok(Step { messages: msgs, prompt: Some(p.clone()), ended: false });
         }
     }
-    if std::env::var_os("YGOAI_DEBUG_BROKEN").is_some() {
+    if std::env::var_os("YGO_DEBUG_BROKEN").is_some() {
         // (the field's cards: player, location, sequence, code)
         let field: Vec<_> = duel.ext_get_all_cards().into_iter().filter(|e| e[4] != 0 && e[1] & 0xc != 0).map(|e| (e[0], e[1], e[2], e[4])).collect();
         eprintln!("no prompt after {MAX_PROCESS_CALLS} process calls: turn {:?}, field {field:?}, {} messages, last {:?}", duel.ext_get_info(), msgs.len(), msgs.last());

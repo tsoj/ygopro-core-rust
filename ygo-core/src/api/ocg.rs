@@ -29,6 +29,11 @@ pub struct QueryInfo {
     pub overlay_seq: u32,
 }
 
+/// Units one `ocg_process` call may run (normal calls run at most a few thousand).
+pub const MAX_PROCESS_UNITS: usize = 1_000_000;
+/// The longest unit queue (normally tens of units).
+pub const MAX_QUEUED_UNITS: usize = 10_000;
+
 impl Duel {
     /// `OCG_ExtSetLocationOrderById` (core_ext/ocgext.cpp): puts the cards of a pile (Deck, hand,
     /// Extra Deck without its face-up part, GY, banished) in the order of their card ids. False
@@ -82,11 +87,20 @@ impl Duel {
         self.emplace_process(units::Startup { step: 0 });
     }
 
-    /// `OCG_DuelProcess`: runs until there are messages, a question or the end.
+    /// `OCG_DuelProcess`: runs until there are messages, a question or the end. A duel that runs
+    /// more than `MAX_PROCESS_UNITS` units in one call, or queues more than `MAX_QUEUED_UNITS`,
+    /// loops without end: it ends (logged as an error) instead of running out of time or memory.
     pub fn ocg_process(&mut self) -> Status {
         self.buff.clear();
         self.script_steps = 0;
+        let mut units = 0;
         loop {
+            units += 1;
+            if units > MAX_PROCESS_UNITS || self.core.units.len() > MAX_QUEUED_UNITS {
+                self.handle_message("the duel loops without end: ended", 0);
+                self.core.units.clear();
+                return Status::End;
+            }
             let flag = self.process();
             self.generate_buffer();
             if !self.buff.is_empty() || flag != Status::Continue {

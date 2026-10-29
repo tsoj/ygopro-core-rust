@@ -17,7 +17,6 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     let e2 = effect::create_effect(d, c);
     effect::set_type(d, e2, EFFECT_TYPE_FIELD);
     effect::set_code(d, e2, EFFECT_IMMUNE_EFFECT);
-    effect::set_condition(d, e2, Some(lua_fn(unacon)));
     // aux.TargetBoolFunction(Card.IsSetCard,SET_ICE_BARRIER)
     effect::set_target(d, e2, Some(effect_card_fn(|d, _e, x| card::is_set_card(d, x, &[SET_ICE_BARRIER as u16]))));
     effect::set_range(d, e2, LOCATION_SZONE);
@@ -89,19 +88,20 @@ fn unacon(d: &mut Duel, a: Args) -> bool {
     let tp = effect::get_handler_player(d, a.e(0));
     duel::is_existing_matching_card(d, Some(&unafilter), tp, LOCATION_MZONE, 0, 3, NO_EX)
 }
-/// `s.unaval(e,te)`
+/// `s.unaval(e,te)` (lua_fixes: the count of `s.unacon` checked last, not as the condition)
 fn unaval(d: &mut Duel, a: Args) -> bool {
     // local tc=te:GetOwner()
     let te = a.e(1);
     let e = a.e(0);
     let tc = effect::get_owner(d, te).nil();
-    // return tc:IsSpecialSummoned() and tc:IsSummonLocation(LOCATION_EXTRA) and te:GetOwnerPlayer()~=e:GetHandlerPlayer()
-    //     and te:IsMonsterEffect() and te:IsActivated() and te:GetActivateLocation()==LOCATION_MZONE
-    if !card::is_special_summoned(d, tc) || !card::is_summon_location(d, tc, LOCATION_EXTRA) {
-        return false;
-    }
-    if effect::get_owner_player(d, te) == effect::get_handler_player(d, e) {
-        return false;
-    }
-    effect::is_monster_effect(d, te) && effect::is_activated(d, te) && effect::get_activate_location(d, te) == LOCATION_MZONE
+    // return te:IsMonsterEffect() and te:IsActivated() and te:GetActivateLocation()==LOCATION_MZONE
+    //     and tc:IsSpecialSummoned() and tc:IsSummonLocation(LOCATION_EXTRA) and te:GetOwnerPlayer()~=e:GetHandlerPlayer()
+    //     and s.unacon(e)
+    effect::is_monster_effect(d, te)
+        && effect::is_activated(d, te)
+        && effect::get_activate_location(d, te) == LOCATION_MZONE
+        && card::is_special_summoned(d, tc)
+        && card::is_summon_location(d, tc, LOCATION_EXTRA)
+        && effect::get_owner_player(d, te) != effect::get_handler_player(d, e)
+        && unacon(d, a)
 }

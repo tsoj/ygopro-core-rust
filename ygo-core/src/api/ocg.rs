@@ -140,7 +140,9 @@ impl Duel {
             None => Vec::new(),
             Some(c) => {
                 c.get_infos(self, info.flags);
-                self.query_buffer.clone()
+                // (the buffer itself: nothing reads it after a query, and copies of the duel
+                // would copy it)
+                std::mem::take(&mut self.query_buffer)
             }
         }
     }
@@ -175,7 +177,7 @@ impl Duel {
             out.extend_from_slice(&self.query_buffer);
             self.query_buffer = out;
         }
-        self.query_buffer.clone()
+        std::mem::take(&mut self.query_buffer)
     }
 
     /// `OCG_DuelQueryField`
@@ -220,7 +222,6 @@ impl Duel {
             q.extend_from_slice(&ts.to_le_bytes());
             q.extend_from_slice(&self.effect(peffect).description.to_le_bytes());
         }
-        self.query_buffer = q.clone();
         q
     }
 }

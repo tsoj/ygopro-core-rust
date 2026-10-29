@@ -464,16 +464,42 @@ pub fn sort_by_less<T: Copy, F: Fn(T, T) -> bool>(v: &mut [T], less: F) {
     });
 }
 
+/// `card_public_sort` as a key: the cards in the order of their keys are in the order of
+/// `card_public_sort` (each step of it is a field: the controller in turn order, the location, the
+/// sequence (Xyz materials: their card's, then their own; piles from the top), the location of an
+/// Xyz material's card, the card id).
+fn public_sort_key(d: &Duel, c: CardId) -> (u8, u8, u32, u32, u8, u32) {
+    let x = d.card(c);
+    let target = x.overlay_target.map(|o| d.card(o));
+    let cp = target.map_or(x.current.controler, |t| t.current.controler);
+    let player = if cp == PLAYER_NONE as u8 {
+        2
+    } else if d.infos.turn_player == 0 {
+        cp
+    } else {
+        1 - cp
+    };
+    let loc = x.current.location;
+    let (seq, then) = if loc as u32 & LOCATION_OVERLAY != 0 {
+        (target.map_or(0, |t| t.current.sequence), x.current.sequence)
+    } else if loc as u32 & (LOCATION_DECK | LOCATION_EXTRA | LOCATION_GRAVE | LOCATION_REMOVED) != 0 {
+        (u32::MAX - x.current.sequence, 0)
+    } else {
+        (x.current.sequence, 0)
+    };
+    let target_loc = if loc as u32 & LOCATION_OVERLAY != 0 { target.map_or(0, |t| t.current.location) } else { 0 };
+    (player, loc, seq, then, target_loc, x.cardid)
+}
+
 /// `card::public_order`: the cards of a set in public order.
 pub fn public_order(d: &Duel, cset: &CardSet) -> Vec<CardId> {
-    if cset.is_empty() {
-        return Vec::new();
+    if cset.len() <= 1 {
+        return cset.to_vec();
     }
-    let mut cv = cset.to_vec();
-    if cv.len() > 1 {
-        sort_by_less(&mut cv, |a, b| card_public_sort(d, a, b));
-    }
-    cv
+    // (equal keys, if any, in the set's order: as a stable sort)
+    let mut keyed: Vec<_> = cset.iter().map(|c| (public_sort_key(d, c), c)).collect();
+    keyed.sort_unstable_by_key(|&(k, c)| (k, c.0));
+    keyed.into_iter().map(|x| x.1).collect()
 }
 
 fn query_insert_u32(buf: &mut Vec<u8>, query: u32, value: u32) {

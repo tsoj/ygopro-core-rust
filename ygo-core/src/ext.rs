@@ -8,10 +8,10 @@
 //!
 //! The state lives in the duel (`Duel::ext`), so a copy of a duel copies it too.
 
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::constants::*;
-use crate::duel::Duel;
+use crate::duel::{Deque, Duel};
 use crate::types::*;
 use crate::units::Unit;
 
@@ -31,13 +31,13 @@ pub struct ForcedLoc {
 /// The queued forcings (`State` of ocgext.cpp; `ext_clear_forced` resets all of it).
 #[derive(Clone, Debug)]
 pub struct ExtState {
-    forced_ints: [VecDeque<i32>; FORCED_KIND_COUNT],
+    forced_ints: [Deque<i32>; FORCED_KIND_COUNT],
     /// [player][0 = deck, 1 = hand, 2 = extra]: wanted order by card id (may be empty) and by
     /// code (the fallback)
-    forced_shuffles: [[VecDeque<(Vec<u32>, Vec<u32>)>; 3]; 2],
-    forced_random_selects: VecDeque<Vec<ForcedLoc>>,
+    forced_shuffles: [[Deque<(Vec<u32>, Vec<u32>)>; 3]; 2],
+    forced_random_selects: Deque<Vec<ForcedLoc>>,
     /// (ids, codes)
-    forced_set_card_shuffles: VecDeque<(Vec<u32>, Vec<u32>)>,
+    forced_set_card_shuffles: Deque<(Vec<u32>, Vec<u32>)>,
     /// (player, card code, effect description) whose cost/target checks are skipped
     forced_activatable: BTreeSet<(u8, u32, u64)>,
     /// (card code, effect description) of mandatory triggers only the forcing made activatable
@@ -57,8 +57,8 @@ impl Default for ExtState {
         ExtState {
             forced_ints: Default::default(),
             forced_shuffles: Default::default(),
-            forced_random_selects: VecDeque::new(),
-            forced_set_card_shuffles: VecDeque::new(),
+            forced_random_selects: Deque::default(),
+            forced_set_card_shuffles: Deque::default(),
             forced_activatable: BTreeSet::new(),
             forced_used: BTreeSet::new(),
             forced_match: BTreeSet::new(),

@@ -80,6 +80,9 @@ struct Args {
     no_shuffle: bool,
     /// `--rust-only`: no core, no comparison (to profile and benchmark the Rust engine)
     rust_only: bool,
+    /// `--digest` (with `--rust-only`): print a hash of each game's messages, statuses and queried
+    /// states, to compare two builds of the engine
+    digest: bool,
     /// `--replay-prefix`: when the replay's responses run out, keep playing (focus/random)
     replay_prefix: bool,
     /// `--dump-replay FILE`: write each game as a `--replay` file (FILE, or FILE.<game> for several)
@@ -154,7 +157,7 @@ fn load_ydk(path: &str) -> Deck {
 }
 
 fn parse_args() -> Args {
-    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None, focus: vec![], no_shuffle: false, rust_only: false, replay_prefix: false, dump_replay: None };
+    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None, focus: vec![], no_shuffle: false, rust_only: false, digest: false, replay_prefix: false, dump_replay: None };
     let argv: Vec<String> = std::env::args().collect();
     let mut i = 1;
     while i < argv.len() {
@@ -194,6 +197,7 @@ fn parse_args() -> Args {
             }
             "--no-shuffle" => a.no_shuffle = true,
             "--rust-only" => a.rust_only = true,
+            "--digest" => a.digest = true,
             "--focus" => {
                 a.focus = argv[i + 1].split(',').map(|x| x.parse().unwrap()).collect();
                 i += 1;
@@ -204,7 +208,7 @@ fn parse_args() -> Args {
                 i += 1;
             }
             "-h" | "--help" => {
-                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [--focus a,b] [--no-shuffle] [--rust-only] [--replay-prefix] [--dump-replay FILE] [-v] [--bench-clone]");
+                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [--focus a,b] [--no-shuffle] [--rust-only [--digest]] [--replay-prefix] [--dump-replay FILE] [-v] [--bench-clone]");
                 std::process::exit(0);
             }
             "-v" | "--verbose" => a.verbose = true,
@@ -341,6 +345,8 @@ struct Outcome {
     turns: usize,
     /// Skipped at the core's script budget (see `core_ffi::SCRIPT_BUDGET_EXCEEDED`)
     budget: bool,
+    /// (`--digest`) the hash of the game so far
+    digest: u64,
 }
 
 fn run_core(d: &mut CoreDuel) -> (Vec<Vec<u8>>, i32) {
@@ -548,7 +554,7 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
         c.start();
     }
     r.ocg_start_duel();
-    let mut out = Outcome { record: cache::Record::default(), cov: Default::default(), decisions: 0, core_time: Duration::ZERO, rust_time: Duration::ZERO, ended: false, turns: 0, budget: false };
+    let mut out = Outcome { record: cache::Record::default(), cov: Default::default(), decisions: 0, core_time: Duration::ZERO, rust_time: Duration::ZERO, ended: false, turns: 0, budget: false, digest: cache::FNV0 };
     core_ffi::SCRIPT_BUDGET_EXCEEDED.store(false, std::sync::atomic::Ordering::Relaxed);
     let mut history: Vec<Vec<u8>> = vec![];
     loop {
@@ -577,6 +583,12 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
         out.rust_time += t.elapsed();
         let Some(c) = core.as_mut() else {
             if args.rust_only {
+                if args.digest {
+                    let state = rust_state_hash(&mut r);
+                    for x in [cache::hash_msgs(&mr), sr as u64, state] {
+                        cache::fnv(&mut out.digest, &x.to_le_bytes());
+                    }
+                }
                 let (more, resp) = after_step(game, args, db, codes, &mut r, &mut rng, &mut out, &mr, sr, &mut dump)?;
                 if !more {
                     return Ok(out);
@@ -842,6 +854,9 @@ fn main() {
                 tr += o.rust_time;
                 if args.verbose {
                     eprintln!("game {g}: {} decisions, {} turns, ended {}", o.decisions, o.turns, o.ended);
+                }
+                if args.digest {
+                    println!("digest {g} {:016x} {} decisions", o.digest, o.decisions);
                 }
             }
             Err(e) => {

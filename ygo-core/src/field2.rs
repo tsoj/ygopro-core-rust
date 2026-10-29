@@ -195,7 +195,10 @@ impl Duel {
             _ => return,
         };
         for (i, c) in list.into_iter().enumerate() {
-            self.card_mut(c).current.sequence = i as u32;
+            // (written only on a change: a write copies a card shared with another duel)
+            if self.card(c).current.sequence != i as u32 {
+                self.card_mut(c).current.sequence = i as u32;
+            }
         }
     }
     pub fn swap_deck_and_grave(&mut self, playerid: u8) {

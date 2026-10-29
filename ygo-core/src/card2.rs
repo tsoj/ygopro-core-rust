@@ -552,9 +552,11 @@ impl CardId {
                 remove_matching(d, &[EFFECT_UPDATE_DEFENSE, EFFECT_SET_DEFENSE, EFFECT_SET_DEFENSE_FINAL]);
             }
             d.card_mut(self).single_effect.insert(ecode, peffect);
+            d.count_card_effect(ecode, true);
             cont = CONT_SINGLE;
         } else if etype & EFFECT_TYPE_EQUIP != 0 {
             d.card_mut(self).equip_effect.insert(ecode, peffect);
+            d.count_card_effect(ecode, true);
             cont = CONT_EQUIP;
             match self.cc(d).equiping_target {
                 Some(t) => check_target = CardSet::from_card(t),
@@ -562,6 +564,7 @@ impl CardId {
             }
         } else if etype & EFFECT_TYPE_TARGET != 0 {
             d.card_mut(self).target_effect.insert(ecode, peffect);
+            d.count_card_effect(ecode, true);
             cont = CONT_TARGET;
             if !self.cc(d).effect_target_cards.is_empty() {
                 check_target = self.cc(d).effect_target_cards.clone();
@@ -570,6 +573,7 @@ impl CardId {
             }
         } else if etype & EFFECT_TYPE_XMATERIAL != 0 {
             d.card_mut(self).xmaterial_effect.insert(ecode, peffect);
+            d.count_card_effect(ecode, true);
             cont = CONT_XMATERIAL;
             match self.cc(d).overlay_target {
                 Some(t) => check_target = CardSet::from_card(t),
@@ -680,17 +684,23 @@ impl CardId {
         let etype = d.effect(peffect).type_ as u32;
         match cont {
             CONT_SINGLE => {
-                d.card_mut(self).single_effect.remove_any(peffect);
+                if let Some(code) = d.card_mut(self).single_effect.remove_any(peffect) {
+                    d.count_card_effect(code, false);
+                }
             }
             CONT_EQUIP => {
-                d.card_mut(self).equip_effect.remove_any(peffect);
+                if let Some(code) = d.card_mut(self).equip_effect.remove_any(peffect) {
+                    d.count_card_effect(code, false);
+                }
                 match self.cc(d).equiping_target {
                     Some(t) => check_target = CardSet::from_card(t),
                     None => check_target.clear(),
                 }
             }
             CONT_TARGET => {
-                d.card_mut(self).target_effect.remove_any(peffect);
+                if let Some(code) = d.card_mut(self).target_effect.remove_any(peffect) {
+                    d.count_card_effect(code, false);
+                }
                 if !self.cc(d).effect_target_cards.is_empty() {
                     check_target = self.cc(d).effect_target_cards.clone();
                 } else {
@@ -698,7 +708,9 @@ impl CardId {
                 }
             }
             CONT_XMATERIAL => {
-                d.card_mut(self).xmaterial_effect.remove_any(peffect);
+                if let Some(code) = d.card_mut(self).xmaterial_effect.remove_any(peffect) {
+                    d.count_card_effect(code, false);
+                }
                 match self.cc(d).overlay_target {
                     Some(t) => check_target = CardSet::from_card(t),
                     None => check_target.clear(),
@@ -1314,6 +1326,13 @@ impl CardId {
         c.effect_target_cards.clear();
     }
     pub fn filter_effect(self, d: &mut Duel, code: u32, eset: &mut Vec<EffectId>, sort: bool) {
+        // (no card and no aura has an effect under the code: nothing to filter)
+        if !d.card_effect_may_exist(code) && !d.field_effects.aura_effect.may_have(code) {
+            if sort {
+                sort_effects_by_id(d, eset);
+            }
+            return;
+        }
         for pe in self.cc(d).single_effect.range(code) {
             if pe.is_available(d) && (!d.effect(pe).is_flag(EFFECT_FLAG_SINGLE_RANGE) || self.is_affect_by_effect(d, Some(pe))) {
                 eset.push(pe);
@@ -1390,12 +1409,19 @@ impl CardId {
     pub fn filter_immune_effect(self, d: &mut Duel) {
         // (as the C++, the list is cleared first and filled as it goes: the `is_target` checks below
         // can ask whether this card is immune, e.g. through its type, and see the partial list)
-        d.card_mut(self).immune_effect.clear();
+        // (written only on a change: a write copies a card shared with another duel)
+        if !self.cc(d).immune_effect.is_empty() {
+            d.card_mut(self).immune_effect.clear();
+        }
         let single: Vec<_> = self.cc(d).single_effect.range(EFFECT_IMMUNE_EFFECT);
-        d.card_mut(self).immune_effect.extend(single);
+        if !single.is_empty() {
+            d.card_mut(self).immune_effect.extend(single);
+        }
         for pc in public_order(d, &self.cc(d).equiping_cards) {
             let v: Vec<_> = d.card(pc).equip_effect.range(EFFECT_IMMUNE_EFFECT);
-            d.card_mut(self).immune_effect.extend(v);
+            if !v.is_empty() {
+                d.card_mut(self).immune_effect.extend(v);
+            }
         }
         for pc in public_order(d, &self.cc(d).effect_target_owner) {
             for pe in d.card(pc).target_effect.range(EFFECT_IMMUNE_EFFECT) {
@@ -1417,9 +1443,11 @@ impl CardId {
                 d.card_mut(self).immune_effect.push(pe);
             }
         }
-        let mut imm = std::mem::take(&mut d.card_mut(self).immune_effect);
-        sort_effects_by_id(d, &mut imm);
-        d.card_mut(self).immune_effect = imm;
+        if self.cc(d).immune_effect.len() > 1 {
+            let mut imm = std::mem::take(&mut d.card_mut(self).immune_effect);
+            sort_effects_by_id(d, &mut imm);
+            d.card_mut(self).immune_effect = imm;
+        }
     }
     pub fn filter_disable_related_cards(self, d: &mut Duel) {
         let mut own = Vec::new();

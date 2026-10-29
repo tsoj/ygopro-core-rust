@@ -424,11 +424,75 @@ pub struct ActionValue {
 /// `processor::action_counter_t` (an unordered_map by counter id)
 pub type ActionCounter = Vec<(u32, ActionValue)>;
 
+/// A `VecDeque` whose copy does not run when it is empty (`VecDeque::clone` costs even then, and
+/// the processor holds about 30 of them, mostly empty, copied with each copy of the duel).
+#[derive(Debug)]
+pub struct Deque<T>(pub VecDeque<T>);
+
+impl<T> Default for Deque<T> {
+    fn default() -> Self {
+        Deque(VecDeque::new())
+    }
+}
+
+impl<T: Clone> Clone for Deque<T> {
+    fn clone(&self) -> Self {
+        if self.0.is_empty() { Deque::default() } else { Deque(self.0.clone()) }
+    }
+}
+
+impl<T> std::ops::Deref for Deque<T> {
+    type Target = VecDeque<T>;
+    fn deref(&self) -> &VecDeque<T> {
+        &self.0
+    }
+}
+
+impl<T> std::ops::DerefMut for Deque<T> {
+    fn deref_mut(&mut self) -> &mut VecDeque<T> {
+        &mut self.0
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Deque<T> {
+    type Item = &'a T;
+    type IntoIter = std::collections::vec_deque::Iter<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
+impl<T> IntoIterator for Deque<T> {
+    type Item = T;
+    type IntoIter = std::collections::vec_deque::IntoIter<T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl<T> From<Vec<T>> for Deque<T> {
+    fn from(v: Vec<T>) -> Self {
+        Deque(v.into())
+    }
+}
+
+impl<T> From<Deque<T>> for Vec<T> {
+    fn from(d: Deque<T>) -> Self {
+        d.0.into()
+    }
+}
+
+impl<T> FromIterator<T> for Deque<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        Deque(iter.into_iter().collect())
+    }
+}
+
 /// `processor` (the `core` of the field).
 #[derive(Clone, Debug, Default)]
 pub struct Processor {
-    pub units: VecDeque<Unit>,
-    pub subunits: VecDeque<Unit>,
+    pub units: Deque<Unit>,
+    pub subunits: Deque<Unit>,
     pub reserved: Option<Unit>,
     pub just_sent_cards: CardSet,
     pub select_cards: Vec<CardId>,
@@ -443,34 +507,34 @@ pub struct Processor {
     pub select_effects: Vec<Option<EffectId>>,
     pub select_options: Vec<u64>,
     pub must_select_cards: Vec<CardId>,
-    pub point_event: VecDeque<Event>,
-    pub instant_event: VecDeque<Event>,
-    pub queue_event: VecDeque<Event>,
-    pub delayed_activate_event: VecDeque<Event>,
-    pub full_event: VecDeque<Event>,
-    pub single_event: VecDeque<Event>,
-    pub solving_event: VecDeque<Event>,
-    pub sub_solving_event: VecDeque<Event>,
-    pub select_chains: VecDeque<Chain>,
+    pub point_event: Deque<Event>,
+    pub instant_event: Deque<Event>,
+    pub queue_event: Deque<Event>,
+    pub delayed_activate_event: Deque<Event>,
+    pub full_event: Deque<Event>,
+    pub single_event: Deque<Event>,
+    pub solving_event: Deque<Event>,
+    pub sub_solving_event: Deque<Event>,
+    pub select_chains: Deque<Chain>,
     pub current_chain: Vec<Chain>,
     pub real_chain_count: i32,
-    pub tpchain: VecDeque<Chain>,
-    pub ntpchain: VecDeque<Chain>,
-    pub ignition_priority_chains: VecDeque<Chain>,
-    pub continuous_chain: VecDeque<Chain>,
-    pub solving_continuous: VecDeque<Chain>,
-    pub sub_solving_continuous: VecDeque<Chain>,
-    pub delayed_continuous_tp: VecDeque<Chain>,
-    pub delayed_continuous_ntp: VecDeque<Chain>,
-    pub desrep_chain: VecDeque<Chain>,
-    pub new_fchain: VecDeque<Chain>,
-    pub new_fchain_s: VecDeque<Chain>,
-    pub new_ochain: VecDeque<Chain>,
-    pub new_ochain_s: VecDeque<Chain>,
-    pub new_fchain_b: VecDeque<Chain>,
-    pub new_ochain_b: VecDeque<Chain>,
-    pub new_ochain_h: VecDeque<Chain>,
-    pub new_chains: VecDeque<Chain>,
+    pub tpchain: Deque<Chain>,
+    pub ntpchain: Deque<Chain>,
+    pub ignition_priority_chains: Deque<Chain>,
+    pub continuous_chain: Deque<Chain>,
+    pub solving_continuous: Deque<Chain>,
+    pub sub_solving_continuous: Deque<Chain>,
+    pub delayed_continuous_tp: Deque<Chain>,
+    pub delayed_continuous_ntp: Deque<Chain>,
+    pub desrep_chain: Deque<Chain>,
+    pub new_fchain: Deque<Chain>,
+    pub new_fchain_s: Deque<Chain>,
+    pub new_ochain: Deque<Chain>,
+    pub new_ochain_s: Deque<Chain>,
+    pub new_fchain_b: Deque<Chain>,
+    pub new_ochain_b: Deque<Chain>,
+    pub new_ochain_h: Deque<Chain>,
+    pub new_chains: Deque<Chain>,
     /// `std::set<std::pair<effect*, tevent>>`
     pub delayed_quick_tmp: Vec<(EffectId, Event)>,
     pub delayed_quick: Vec<(EffectId, Event)>,
@@ -590,7 +654,7 @@ pub struct Processor {
     pub flipsummon_counter: ActionCounter,
     pub attack_counter: ActionCounter,
     pub chain_counter: ActionCounter,
-    pub recover_damage_reserve: VecDeque<Unit>,
+    pub recover_damage_reserve: Deque<Unit>,
     pub dec_count_reserve: Vec<EffectId>,
     // (patch)
     pub refreshing_condition: Option<EffectId>,

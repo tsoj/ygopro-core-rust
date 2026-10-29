@@ -1,12 +1,8 @@
 # Deck pairs (build/deck_pairs) whose failure is in libocgcore.so itself, not in the Rust port.
 # pair  reason
 444  result depends on Lua GC/allocation (Preparation of Rites)
-471  core segfault in field::process(BattleCommand) (null card)
 712  core reads a freed reason_effect (Time Magic Hammer), undefined behaviour
 16318 core reads a freed reason_effect (EVENT_MOVE of Triamid Kingolem: re is a reused Group), games identical
-907  core segfault in field::process(BattleCommand) (null card)
-912  core segfault in field::process(BattleCommand) (null card)
-1125 core segfault in field::process(BattleCommand) after game 80, all 80 games identical
 
 # coverage timeouts (core-side: exponential Lua group checks in libocgcore, e.g. deck 616951_Avengers_of_Albaz; gdb shows nested interpreter::check_matching)
 timeout_788082766701810558 timeout_2656450371764849079 timeout_4788083369942057766 timeout_6228222193507110843
@@ -14,5 +10,7 @@ timeout_788082766701810558 timeout_2656450371764849079 timeout_47880833699420577
 # replays: Time Magic Hammer (10960419) return at the 5th Standby differs: core-side reason_effect use-after-free (as pair 712)
 replay boot1_844
 
-# coverage: libocgcore segfault in field::process(BattleCommand), as pair 471
-crash_1502655763474649407 (Skull Servants DM vs Yugi Waking the Dragons)
+# Fixed 2026-10-29 (now regress/suite.txt cases): pairs 471 907 912 1125 and coverage crash_1502655763474649407,
+# the segfault in field::process(BattleCommand): Last Turn's forced battle during an attack (oracle patch);
+# pairs 2394 9294 15254 16976 exceed the core's script budget only (Alba System - Dogmatikalamity), the Rust engine
+# plays them in ~1 s

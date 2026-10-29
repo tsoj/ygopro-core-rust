@@ -111,7 +111,7 @@ impl Duel {
                     pe.set_active_type(self);
                 }
                 let h = self.effect(pe).handler.unwrap();
-                let ot = self.card(h).overlay_target;
+                let ot = self.card(h).overlay_target();
                 self.effect_mut(pe).active_handler = ot;
                 clit.chain_count = self.core.current_chain.len() as u8 + 1;
                 clit.target_cards = None;
@@ -771,7 +771,7 @@ impl Duel {
                 let ptype = self.effect(pe).type_ as u32;
                 if self.card(pcard).data.type_ & TYPE_EQUIP != 0
                     && ptype & EFFECT_TYPE_ACTIVATE != 0
-                    && self.card(pcard).equiping_target.is_none()
+                    && self.card(pcard).equiping_target().is_none()
                     && pcard.is_has_relation_chain(self, pe, cait.chain_id)
                 {
                     self.card_mut(pcard).set_status(STATUS_LEAVE_CONFIRMED, true);
@@ -960,14 +960,7 @@ impl Duel {
         }
         // (the effects in scan order with their ids; sorted by (id, scan index), as a stable sort
         // by id would)
-        let effects = match &self.condition_scan {
-            Some(effects) => effects.clone(),
-            None => {
-                let effects = Rc::new(self.scan_conditions());
-                self.condition_scan = Some(effects.clone());
-                effects
-            }
-        };
+        let effects = self.conditional_effects();
         let scan: Vec<(u32, EffectId)> = effects.iter().map(|&e| (self.effect(e).id, e)).collect();
         let order = sorted_order(&effects, &scan);
         let mut last = None;
@@ -983,31 +976,6 @@ impl Duel {
         self.core.refreshing_condition = None;
     }
 
-    /// The effects whose conditions `refresh_effect_conditions` checks, in scan order: those with a
-    /// condition among the auras, then by card its single and field effects, its equip effects
-    /// while it equips a card, its target effects while it targets cards and its Xyz material
-    /// effects while it is a material.
-    fn scan_conditions(&self) -> Vec<EffectId> {
-        let mut scan = Vec::new();
-        let add = |c: &crate::duel::EffectContainer, out: &mut Vec<EffectId>| {
-            out.extend(c.items.iter().map(|&(_, e)| e).filter(|&e| self.effect(e).condition.is_some()));
-        };
-        add(&self.field_effects.aura_effect, &mut scan);
-        for c in &self.cards {
-            add(&c.single_effect, &mut scan);
-            add(&c.field_effect, &mut scan);
-            if c.equiping_target.is_some() {
-                add(&c.equip_effect, &mut scan);
-            }
-            if !c.effect_target_cards.is_empty() {
-                add(&c.target_effect, &mut scan);
-            }
-            if c.overlay_target.is_some() {
-                add(&c.xmaterial_effect, &mut scan);
-            }
-        }
-        scan
-    }
     /// The effects offered as options in public order: by description.
     pub fn sort_select_options(&mut self) {
         let mut from = 0;

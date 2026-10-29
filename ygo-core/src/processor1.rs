@@ -1484,11 +1484,11 @@ impl Duel {
         let events: Vec<Event> = self.core.single_event.iter().cloned().collect();
         for ev in &events {
             let starget = ev.trigger_card.unwrap();
-            for pe in self.card(starget).single_effect.range(ev.event_code) {
+            for pe in self.card(starget).single_effect().range(ev.event_code) {
                 self.process_single_event_effect(pe, ev, &mut tpl, &mut ntpl);
             }
             for mat in self.card(starget).xyz_materials.clone() {
-                for pe in self.card(mat).xmaterial_effect.range(ev.event_code) {
+                for pe in self.card(mat).xmaterial_effect().range(ev.event_code) {
                     if self.effect(pe).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                         continue;
                     }

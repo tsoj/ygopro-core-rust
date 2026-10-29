@@ -549,7 +549,7 @@ impl Duel {
         match arg.step {
             0 => {
                 for c in public_order(self, &materials) {
-                    if self.card(c).overlay_target.is_none() {
+                    if self.card(c).overlay_target().is_none() {
                         c.enable_field_effect(self, false);
                     }
                 }
@@ -566,7 +566,7 @@ impl Duel {
             1 => {
                 let mut des = CardSet::new();
                 let mut from_grave = CardSet::new();
-                let mut cv: Vec<CardId> = materials.iter().filter(|&c| self.card(c).overlay_target != Some(target)).collect();
+                let mut cv: Vec<CardId> = materials.iter().filter(|&c| self.card(c).overlay_target() != Some(target)).collect();
                 if !send_to_grave {
                     let prev_size = cv.len();
                     for c in public_order(self, &materials) {
@@ -604,7 +604,7 @@ impl Duel {
                     if self.card(c).unique_code != 0 {
                         self.remove_unique_card(c);
                     }
-                    if self.card(c).equiping_target.is_some() {
+                    if self.card(c).equiping_target().is_some() {
                         c.unequip(self);
                     }
                     for eq in public_order(self, &self.card(c).equiping_cards) {
@@ -616,7 +616,7 @@ impl Duel {
                     let loc = c.get_info_location(self);
                     let m = self.new_message(MSG_MOVE);
                     self.msg(m).u32(code).loc(loc);
-                    if let Some(ot) = self.card(c).overlay_target {
+                    if let Some(ot) = self.card(c).overlay_target() {
                         ot.xyz_remove(self, c);
                     } else {
                         self.remove_card(c);

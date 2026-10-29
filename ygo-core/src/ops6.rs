@@ -582,7 +582,7 @@ impl Duel {
                     self.add_param(Value::Bool(true));
                     self.add_param(Value::effect(oreason));
                     self.add_param(Value::Int(sumplayer as i64));
-                    let cond = self.effect(peff).condition.clone();
+                    let cond = self.effect(peff).condition().clone();
                     if self.check_condition(cond.as_ref(), 5) {
                         self.core.select_effects.push(Some(peff));
                         let d = self.effect(peff).description;

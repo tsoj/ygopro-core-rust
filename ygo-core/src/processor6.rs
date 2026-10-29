@@ -234,7 +234,7 @@ impl Duel {
                         if cur != r && c.is_capable_change_control(self) {
                             self.core.control_adjust_set[p].insert(c);
                             if let Some(pe) = pe {
-                                if self.effect(pe).type_ as u32 & EFFECT_TYPE_SINGLE == 0 || self.effect(pe).condition.is_some() {
+                                if self.effect(pe).type_ as u32 & EFFECT_TYPE_SINGLE == 0 || self.effect(pe).condition().is_some() {
                                     let h = pe.get_handler(self);
                                     reason_cards.insert(h);
                                 }
@@ -280,8 +280,8 @@ impl Duel {
                                 if c.is_affected_by_effect(self, EFFECT_REMOVE_BRAINWASHING).is_none() {
                                     continue;
                                 }
-                                for pe in self.card(c).single_effect.range(EFFECT_SET_CONTROL) {
-                                    if self.effect(pe).condition.is_none() {
+                                for pe in self.card(c).single_effect().range(EFFECT_SET_CONTROL) {
+                                    if self.effect(pe).condition().is_none() {
                                         let h = self.effect(pe).handler.unwrap();
                                         h.remove_effect(self, pe);
                                     }
@@ -324,7 +324,7 @@ impl Duel {
                 for _ in 0..2 {
                     for i in 0..5 {
                         if let Some(c) = self.player[p as usize].list_szone[i] {
-                            if let Some(et) = self.card(c).equiping_target {
+                            if let Some(et) = self.card(c).equiping_target() {
                                 if c.is_affected_by_effect_t(self, EFFECT_EQUIP_LIMIT, Some(et)).is_none() {
                                     destroy_set.insert(c);
                                 }

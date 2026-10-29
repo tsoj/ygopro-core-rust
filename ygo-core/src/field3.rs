@@ -1273,7 +1273,7 @@ impl Duel {
         }
         let chain_id = ch.chain_id;
         let pcard = ch.triggering_effect.unwrap().get_handler(self);
-        for pe in self.card(pcard).single_effect.range(EFFECT_DISABLE_CHAIN) {
+        for pe in self.card(pcard).single_effect().range(EFFECT_DISABLE_CHAIN) {
             if pe.get_value(self, 0) == chain_id as i64 {
                 self.effect_mut(pe).reset_flag |= RESET_CHAIN;
                 return true;
@@ -1359,7 +1359,7 @@ impl Duel {
             self.core.select_chains.clear();
             self.core.select_options.clear();
         }
-        for (code, fe) in self.card(phandler).field_effect.items.clone() {
+        for (code, fe) in self.card(phandler).field_effect().items.clone() {
             if self.effect(fe).type_ as u32 & (EFFECT_TYPE_TRIGGER_F | EFFECT_TYPE_TRIGGER_O | EFFECT_TYPE_QUICK_O) == 0 {
                 continue;
             }
@@ -1402,7 +1402,7 @@ impl Duel {
             return false;
         }
         let phandler = peffect.get_handler(self);
-        for (code, fe) in self.card(phandler).field_effect.items.clone() {
+        for (code, fe) in self.card(phandler).field_effect().items.clone() {
             if self.effect(fe).type_ as u32 & (EFFECT_TYPE_TRIGGER_F | EFFECT_TYPE_TRIGGER_O | EFFECT_TYPE_QUICK_O) == 0 {
                 continue;
             }

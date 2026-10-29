@@ -35,7 +35,8 @@ pub struct Effect {
     pub card_type: u32,
     pub active_type: u32,
     pub label_object: Value,
-    pub condition: Option<LuaFn>,
+    // (private: the condition scan is kept by `EffectId::set_condition`)
+    condition: Option<LuaFn>,
     pub cost: Option<LuaFn>,
     pub target: Option<LuaFn>,
     /// The value when it is a number (`EFFECT_FLAG_FUNC_VALUE` not set).
@@ -55,6 +56,10 @@ pub struct Effect {
 }
 
 impl Effect {
+    #[inline]
+    pub fn condition(&self) -> &Option<LuaFn> {
+        &self.condition
+    }
     pub fn new() -> Self {
         Effect {
             deleted: false,
@@ -169,6 +174,10 @@ impl EffectId {
     #[inline]
     fn fx(self, d: &Duel) -> &Effect {
         d.effect(self)
+    }
+    pub fn set_condition(self, d: &mut Duel, f: Option<LuaFn>) {
+        d.effect_mut(self).condition = f;
+        d.condition_scan_changed();
     }
     pub fn is_flag(self, d: &Duel, f: u32) -> bool {
         d.effect(self).is_flag(f)
@@ -431,7 +440,7 @@ impl EffectId {
                     if d.card(handler).is_position(POS_FACEUP) != 0 {
                         return false;
                     }
-                    if d.card(handler).equiping_target.is_some() {
+                    if d.card(handler).equiping_target().is_some() {
                         return false;
                     }
                     if htype & (TYPE_FIELD | TYPE_PENDULUM) == 0 && limit_zone && zone & (1u32 << d.card(handler).current.sequence) == 0 {
@@ -1096,7 +1105,7 @@ impl EffectId {
         }
         if fx.type_ as u32 & EFFECT_TYPE_XMATERIAL != 0 {
             let h = d.card(fx.handler.unwrap());
-            return if h.overlay_target.is_some() { h.overlay_target } else { h.pre_overlay_target };
+            return if h.overlay_target().is_some() { h.overlay_target() } else { h.pre_overlay_target };
         }
         None
     }
@@ -1141,7 +1150,7 @@ impl EffectId {
     pub fn in_range(self, d: &Duel, pcard: CardId) -> bool {
         let fx = self.fx(d);
         if fx.type_ as u32 & EFFECT_TYPE_XMATERIAL != 0 {
-            return d.card(fx.handler.unwrap()).overlay_target.is_some();
+            return d.card(fx.handler.unwrap()).overlay_target().is_some();
         }
         let mut real_range = fx.range as u32;
         if fx.range as u32 & (LOCATION_MMZONE | LOCATION_EMZONE) != 0 {
@@ -1161,7 +1170,7 @@ impl EffectId {
     pub fn in_range_chain(self, d: &Duel, ch: &Chain) -> bool {
         let fx = self.fx(d);
         if fx.type_ as u32 & EFFECT_TYPE_XMATERIAL != 0 {
-            return d.card(fx.handler.unwrap()).overlay_target.is_some();
+            return d.card(fx.handler.unwrap()).overlay_target().is_some();
         }
         fx.range & ch.triggering_location != 0
     }

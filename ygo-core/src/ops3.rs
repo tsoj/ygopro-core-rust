@@ -22,7 +22,7 @@ impl Duel {
                 for c in public_order(self, &set) {
                     c.filter_disable_related_cards(self);
                     let cc = self.card(c);
-                    let mut change = !(cc.overlay_target.is_some()
+                    let mut change = !(cc.overlay_target().is_some()
                         || cc.current.controler == playerid
                         || cc.current.controler == PLAYER_NONE as u8
                         || cc.current.location as u32 != LOCATION_MZONE);
@@ -169,7 +169,7 @@ impl Duel {
                 for (set, p) in [(&s1, p1), (&s2, p2)] {
                     for c in public_order(self, set) {
                         let cc = self.card(c);
-                        if cc.overlay_target.is_some() || cc.current.controler != p || cc.current.location as u32 != LOCATION_MZONE {
+                        if cc.overlay_target().is_some() || cc.current.controler != p || cc.current.location as u32 != LOCATION_MZONE {
                             return false;
                         }
                         if !c.is_capable_change_control(self) {
@@ -637,9 +637,8 @@ impl Duel {
                     arg.step = 2;
                     return false;
                 }
-                if let Some(et) = self.card(equip_card).equiping_target {
-                    self.card_mut(equip_card).effect_target_cards.remove(et);
-                    self.condition_scan_changed();
+                if let Some(et) = self.card(equip_card).equiping_target() {
+                    equip_card.remove_effect_target(self, et);
                     self.card_mut(et).effect_target_owner.remove(equip_card);
                     equip_card.unequip(self);
                     equip_card.enable_field_effect(self, false);
@@ -684,8 +683,7 @@ impl Duel {
                     e.reset_flag = RESET_EVENT + 0x17e0000;
                     equip_card.add_effect(self, pe);
                 }
-                self.card_mut(equip_card).effect_target_cards.insert(target);
-                self.condition_scan_changed();
+                equip_card.insert_effect_target(self, target);
                 self.card_mut(target).effect_target_owner.insert(equip_card);
                 if !is_step {
                     if self.card(equip_card).is_position(POS_FACEUP) != 0 {
@@ -696,7 +694,7 @@ impl Duel {
                     let (re, rp) = (self.core.reason_effect, self.core.reason_player);
                     self.raise_single_event(target, Some(&cset), EVENT_EQUIP, re, 0, rp, PLAYER_NONE as u8, 0);
                     self.raise_event(cset, EVENT_EQUIP, re, 0, rp, PLAYER_NONE as u8, 0);
-                    let ht = match self.card(target).overlay_target {
+                    let ht = match self.card(target).overlay_target() {
                         Some(o) => self.card(o).current.controler,
                         None => self.card(target).current.controler,
                     };

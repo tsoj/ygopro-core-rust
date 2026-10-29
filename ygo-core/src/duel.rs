@@ -418,7 +418,8 @@ pub struct GrantEffects {
 /// `field_effect`
 #[derive(Clone, Debug, Default)]
 pub struct FieldEffect {
-    pub aura_effect: EffectContainer,
+    // (private: the condition scan is kept by `Duel::file_aura` / `unfile_aura`)
+    aura_effect: EffectContainer,
     pub ignition_effect: EffectContainer,
     pub activate_effect: EffectContainer,
     pub trigger_o_effect: EffectContainer,
@@ -777,10 +778,10 @@ pub struct Duel {
     pub stat_temp: Vec<crate::card::StatTemp>,
     /// The number of effects filed under each code below `CARD_EFFECT_CODES` in the cards' single,
     /// equip, target and Xyz material effects (`CardId::filter_effect` skips a code no card has)
-    pub card_effect_count: [u16; CARD_EFFECT_CODES],
+    card_effect_count: [u16; CARD_EFFECT_CODES],
     /// `refresh_effect_conditions`' scan (the effects with a condition, in scan order), kept until
     /// what it depends on changes (`condition_scan_changed`)
-    pub condition_scan: Option<Rc<Vec<EffectId>>>,
+    condition_scan: Option<Rc<Vec<EffectId>>>,
     pub assumes: Vec<CardId>,
     /// Effects added while copying effects that are not copyable (`duel::uncopy`).
     pub uncopy: Vec<EffectId>,
@@ -835,18 +836,66 @@ pub struct Duel {
     pub logs: Vec<(u32, String)>,
 }
 
+impl FieldEffect {
+    #[inline]
+    pub fn aura_effect(&self) -> &EffectContainer {
+        &self.aura_effect
+    }
+}
+
 impl Duel {
     /// Counts an effect filed under `code` in a card's single, equip, target or Xyz material
-    /// effects (`filed`), or removed from them.
-    pub fn count_card_effect(&mut self, code: u32, filed: bool) {
+    /// effects (`filed`), or removed from them (only `CardId::file_effect` / `unfile_effect`).
+    pub(crate) fn count_card_effect(&mut self, code: u32, filed: bool) {
         if let Some(n) = self.card_effect_count.get_mut(code as usize) {
             *n = if filed { *n + 1 } else { *n - 1 };
         }
     }
     /// Marks `refresh_effect_conditions`' scan as outdated: an effect was filed or removed, a
     /// condition set, or an equip, target or Xyz material relation changed.
-    pub fn condition_scan_changed(&mut self) {
+    pub(crate) fn condition_scan_changed(&mut self) {
         self.condition_scan = None;
+    }
+    /// The effects whose conditions `refresh_effect_conditions` checks, in scan order: those with a
+    /// condition among the auras, then by card its single and field effects, its equip effects
+    /// while it equips a card, its target effects while it targets cards and its Xyz material
+    /// effects while it is a material. Kept until what it depends on changes.
+    pub fn conditional_effects(&mut self) -> Rc<Vec<EffectId>> {
+        if let Some(effects) = &self.condition_scan {
+            return effects.clone();
+        }
+        let mut scan = Vec::new();
+        let add = |c: &EffectContainer, out: &mut Vec<EffectId>| {
+            out.extend(c.items.iter().map(|&(_, e)| e).filter(|&e| self.effect(e).condition().is_some()));
+        };
+        add(self.field_effects.aura_effect(), &mut scan);
+        for c in &self.cards {
+            add(c.single_effect(), &mut scan);
+            add(c.field_effect(), &mut scan);
+            if c.equiping_target().is_some() {
+                add(c.equip_effect(), &mut scan);
+            }
+            if !c.effect_target_cards().is_empty() {
+                add(c.target_effect(), &mut scan);
+            }
+            if c.overlay_target().is_some() {
+                add(c.xmaterial_effect(), &mut scan);
+            }
+        }
+        let effects = Rc::new(scan);
+        self.condition_scan = Some(effects.clone());
+        effects
+    }
+    /// Files the aura `e` under `code`.
+    pub fn file_aura(&mut self, code: u32, e: EffectId) {
+        self.field_effects.aura_effect.insert(code, e);
+        self.condition_scan_changed();
+    }
+    /// Removes the aura `e`: the code it was filed under, if it was there.
+    pub fn unfile_aura(&mut self, e: EffectId) -> Option<u32> {
+        let code = self.field_effects.aura_effect.remove_any(e);
+        self.condition_scan_changed();
+        code
     }
     /// Whether a card may have an effect under `code` in its single, equip, target or Xyz
     /// material effects (false: none has).

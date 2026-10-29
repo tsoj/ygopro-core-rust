@@ -93,7 +93,7 @@ pub fn reset_flag_effect(d: &mut Duel, p: u8, code: u32) {
         return;
     }
     let code = flag_code(code);
-    for e in d.field_effects.aura_effect.range(code) {
+    for e in d.field_effects.aura_effect().range(code) {
         if d.effect_exists(e) && d.effect(e).code == code && e.is_target_player(d, p) {
             d.remove_effect(e);
         }
@@ -840,7 +840,7 @@ pub fn equip_complete(d: &mut Duel) {
         if d.card(c).is_position(POS_FACEUP) != 0 {
             c.enable_field_effect(d, true);
         }
-        if let Some(t) = d.card(c).equiping_target {
+        if let Some(t) = d.card(c).equiping_target() {
             etargets.insert(t);
         }
     }
@@ -1988,7 +1988,7 @@ pub fn clear_operation_info(d: &mut Duel, ct: u32) {
 /// `Duel.Overlay(target, materials, send_materials_to_grave = false)`
 pub fn overlay(d: &mut Duel, target: CardId, materials: impl Into<CardSet>, send_materials_to_grave: bool) {
     check_action_permission(d);
-    if d.card(target).overlay_target.is_some() {
+    if d.card(target).overlay_target().is_some() {
         crate::lua::lua_error("Attempt to overlay materials to a card that is an overlay material.");
     }
     let mats: CardSet = materials.into();
@@ -2536,7 +2536,7 @@ fn is_player_can_procedure_summon_group_impl(d: &mut Duel, p: u8, summon_type: u
         d.add_param(Value::Bool(true));
         d.add_param(Value::effect(oreason));
         d.add_param(Value::Int(p as i64));
-        let cond = d.effect(peff).condition.clone();
+        let cond = d.effect(peff).condition().clone();
         let ok = d.check_condition(cond.as_ref(), 5);
         d.core.reason_effect = oreason;
         d.core.reason_player = op;
@@ -2661,8 +2661,8 @@ pub fn majestic_copy(d: &mut Duel, c: CardId, ccard: CardId, reset: Option<(u32,
     if resv & RESET_PHASE != 0 && resv & (RESET_SELF_TURN | RESET_OPPO_TURN) == 0 {
         resv |= RESET_SELF_TURN | RESET_OPPO_TURN;
     }
-    let mut effs = d.card(ccard).single_effect.all();
-    effs.extend(d.card(ccard).field_effect.all());
+    let mut effs = d.card(ccard).single_effect().all();
+    effs.extend(d.card(ccard).field_effect().all());
     for pe in effs {
         let e = d.effect(pe);
         if e.type_ as u32 & 0x7c == 0 && !e.is_flag2(EFFECT_FLAG2_MAJESTIC_MUST_COPY) {

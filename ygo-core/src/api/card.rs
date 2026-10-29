@@ -582,7 +582,7 @@ pub fn get_equip_count(d: &Duel, c: CardId) -> usize {
     d.card(c).equiping_cards.len()
 }
 pub fn get_equip_target(d: &Duel, c: CardId) -> Option<CardId> {
-    d.card(c).equiping_target
+    d.card(c).equiping_target()
 }
 pub fn get_previous_equip_target(d: &Duel, c: CardId) -> Option<CardId> {
     d.note_read(c, 16384);
@@ -609,7 +609,7 @@ pub fn get_overlay_count(d: &Duel, c: CardId) -> usize {
     d.card(c).xyz_materials.len()
 }
 pub fn get_overlay_target(d: &Duel, c: CardId) -> Option<CardId> {
-    d.card(c).overlay_target
+    d.card(c).overlay_target()
 }
 pub fn check_remove_overlay_card(d: &mut Duel, c: CardId, playerid: u8, count: u16, reason: u32) -> bool {
     if playerid > 1 {
@@ -654,17 +654,17 @@ pub fn set_card_target(d: &mut Duel, c: CardId, ocard: CardId) {
     c.add_card_target(d, ocard);
 }
 pub fn get_card_target(d: &Duel, c: CardId) -> Group {
-    d.card(c).effect_target_cards.clone()
+    d.card(c).effect_target_cards().clone()
 }
 pub fn get_first_card_target(d: &Duel, c: CardId) -> Option<CardId> {
-    let t = &d.card(c).effect_target_cards;
+    let t = &d.card(c).effect_target_cards();
     if t.is_empty() { None } else { crate::card::public_order(d, t).first().copied() }
 }
 pub fn get_card_target_count(d: &Duel, c: CardId) -> usize {
-    d.card(c).effect_target_cards.len()
+    d.card(c).effect_target_cards().len()
 }
 pub fn is_has_card_target(d: &Duel, c: CardId, rcard: CardId) -> bool {
-    d.card(c).effect_target_cards.contains(rcard)
+    d.card(c).effect_target_cards().contains(rcard)
 }
 pub fn cancel_card_target(d: &mut Duel, c: CardId, rcard: CardId) {
     c.cancel_card_target(d, rcard);
@@ -676,12 +676,12 @@ pub fn get_owner_target_count(d: &Duel, c: CardId) -> usize {
     d.card(c).effect_target_owner.len()
 }
 pub fn get_activate_effect(d: &Duel, c: CardId) -> Vec<EffectId> {
-    d.card(c).field_effect.all().into_iter().filter(|&e| d.effect(e).type_ as u32 & EFFECT_TYPE_ACTIVATE != 0).collect()
+    d.card(c).field_effect().all().into_iter().filter(|&e| d.effect(e).type_ as u32 & EFFECT_TYPE_ACTIVATE != 0).collect()
 }
 /// `c:CheckActivateEffect(neglect_con, neglect_cost, copy_info)`: the effect, and with
 /// `copy_info` (unless it is a free chain effect) the event it would respond to.
 pub fn check_activate_effect(d: &mut Duel, c: CardId, neglect_con: bool, neglect_cost: bool, copy_info: bool) -> Option<(EffectId, Option<crate::duel::Event>)> {
-    for peffect in d.card(c).field_effect.all() {
+    for peffect in d.card(c).field_effect().all() {
         if d.effect(peffect).type_ as u32 & EFFECT_TYPE_ACTIVATE == 0 {
             continue;
         }
@@ -778,13 +778,13 @@ pub fn register_flag_effect(d: &mut Duel, c: CardId, code: u32, reset: u32, flag
 }
 pub fn get_flag_effect(d: &Duel, c: CardId, code: u32) -> usize {
     d.note_read(c, 1024);
-    d.card(c).single_effect.range(flag_code(code)).len()
+    d.card(c).single_effect().range(flag_code(code)).len()
 }
 pub fn reset_flag_effect(d: &mut Duel, c: CardId, code: u32) {
     c.reset(d, flag_code(code), RESET_CODE);
 }
 pub fn set_flag_effect_label(d: &mut Duel, c: CardId, code: u32, lab: u32) -> bool {
-    match d.card(c).single_effect.range(flag_code(code)).first() {
+    match d.card(c).single_effect().range(flag_code(code)).first() {
         None => false,
         Some(&e) => {
             d.effect_mut(e).label = vec![lab as i64];
@@ -795,7 +795,7 @@ pub fn set_flag_effect_label(d: &mut Duel, c: CardId, code: u32, lab: u32) -> bo
 /// `c:GetFlagEffectLabel(code)`: one label per flag effect (empty: Lua nil).
 pub fn get_flag_effect_label(d: &Duel, c: CardId, code: u32) -> Vec<i64> {
     d.note_read(c, 1024);
-    d.card(c).single_effect.range(flag_code(code)).into_iter().map(|e| d.effect(e).label.first().copied().unwrap_or(0)).collect()
+    d.card(c).single_effect().range(flag_code(code)).into_iter().map(|e| d.effect(e).label.first().copied().unwrap_or(0)).collect()
 }
 pub fn create_relation(d: &mut Duel, c: CardId, rcard: CardId, reset: u32) {
     c.create_relation(d, rcard, reset);

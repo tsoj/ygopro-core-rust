@@ -440,7 +440,7 @@ impl Duel {
             return false;
         }
         let (ca, cb) = (self.card(a), self.card(b));
-        if ca.overlay_target.is_some() || cb.overlay_target.is_some() {
+        if ca.overlay_target().is_some() || cb.overlay_target().is_some() {
             return false;
         }
         if ca.owner != cb.owner || ca.current.controler != cb.current.controler || ca.current.location != cb.current.location {
@@ -452,8 +452,8 @@ impl Duel {
         if loc & (LOCATION_MZONE | LOCATION_SZONE) != 0 {
             if self.card(a).is_position(POS_FACEDOWN) == 0
                 || self.card(b).is_position(POS_FACEDOWN) == 0
-                || ca.equiping_target.is_some()
-                || cb.equiping_target.is_some()
+                || ca.equiping_target().is_some()
+                || cb.equiping_target().is_some()
                 || !ca.equiping_cards.is_empty()
                 || !cb.equiping_cards.is_empty()
             {
@@ -590,7 +590,7 @@ impl Duel {
     /// top, 1 bottom; location 0 takes it out of play.
     pub fn ext_place_card(&mut self, id: u32, con: u8, location: u32, sequence: u32, position: u32) -> bool {
         let Some(pcard) = self.card_by_id(id) else { return false };
-        if con > 1 || (location == 0 && self.card(pcard).current.location == 0 && self.card(pcard).overlay_target.is_none()) {
+        if con > 1 || (location == 0 && self.card(pcard).current.location == 0 && self.card(pcard).overlay_target().is_none()) {
             return false;
         }
         if location == LOCATION_MZONE || location == LOCATION_SZONE {
@@ -614,11 +614,11 @@ impl Duel {
         ok
     }
     fn ext_place_card_inner(&mut self, pcard: CardId, con: u8, location: u32, sequence: u32, position: u32) -> bool {
-        if let Some(t) = self.card(pcard).overlay_target {
+        if let Some(t) = self.card(pcard).overlay_target() {
             t.xyz_remove(self, pcard);
         } else if self.card(pcard).current.location != 0 {
             pcard.enable_field_effect(self, false);
-            if self.card(pcard).equiping_target.is_some() {
+            if self.card(pcard).equiping_target().is_some() {
                 pcard.unequip(self);
             }
             for eq in self.card(pcard).equiping_cards.clone().iter() {

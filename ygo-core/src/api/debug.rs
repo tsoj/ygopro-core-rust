@@ -34,8 +34,7 @@ pub fn pre_equip(d: &mut Duel, equip_card: CardId, target: CardId) -> bool {
         return false;
     }
     equip_card.equip(d, target, false);
-    d.card_mut(equip_card).effect_target_cards.insert(target);
-    d.condition_scan_changed();
+    equip_card.insert_effect_target(d, target);
     d.card_mut(target).effect_target_owner.insert(equip_card);
     true
 }

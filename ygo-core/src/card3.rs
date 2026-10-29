@@ -13,8 +13,8 @@ impl CardId {
     }
 
     pub fn fusion_check(self, d: &mut Duel, fusion_m: Option<&Group>, cg: Option<&Group>, chkf: u64) -> bool {
-        for pe in self.c3(d).single_effect.range(EFFECT_FUSION_MATERIAL) {
-            let Some(cond) = d.effect(pe).condition.clone() else { continue };
+        for pe in self.c3(d).single_effect().range(EFFECT_FUSION_MATERIAL) {
+            let Some(cond) = d.effect(pe).condition().clone() else { continue };
             d.add_param(Value::Effect(pe));
             d.add_param(fusion_m.map_or(Value::Nil, |g| Value::Group(g.clone())));
             d.add_param(cg.map_or(Value::Nil, |g| Value::Group(g.clone())));
@@ -34,8 +34,8 @@ impl CardId {
         false
     }
     pub fn fusion_filter_valid(self, d: &mut Duel, fusion_m: Option<&Group>, cg: Option<&Group>, chkf: u64, eset: &mut Vec<EffectId>) {
-        for pe in self.c3(d).single_effect.range(EFFECT_FUSION_MATERIAL) {
-            let Some(cond) = d.effect(pe).condition.clone() else { continue };
+        for pe in self.c3(d).single_effect().range(EFFECT_FUSION_MATERIAL) {
+            let Some(cond) = d.effect(pe).condition().clone() else { continue };
             d.add_param(Value::Effect(pe));
             d.add_param(fusion_m.map_or(Value::Nil, |g| Value::Group(g.clone())));
             d.add_param(cg.map_or(Value::Nil, |g| Value::Group(g.clone())));
@@ -388,7 +388,7 @@ impl CardId {
         false
     }
     pub fn filter_spsummon_procedure(self, d: &mut Duel, playerid: u8, peset: &mut Vec<EffectId>, summon_type: u32) {
-        for pe in self.c3(d).field_effect.range(EFFECT_SPSUMMON_PROC) {
+        for pe in self.c3(d).field_effect().range(EFFECT_SPSUMMON_PROC) {
             let (topos, toplayer);
             if d.effect(pe).is_flag(EFFECT_FLAG_SPSUM_PARAM) {
                 topos = d.effect(pe).s_range as u8;
@@ -426,7 +426,7 @@ impl CardId {
         }
     }
     pub fn filter_spsummon_procedure_g(self, d: &mut Duel, playerid: u8, peset: &mut Vec<EffectId>) {
-        for pe in self.c3(d).field_effect.range(EFFECT_SPSUMMON_PROC_G) {
+        for pe in self.c3(d).field_effect().range(EFFECT_SPSUMMON_PROC_G) {
             if !pe.is_available(d) || !pe.check_count_limit(d, playerid) {
                 continue;
             }
@@ -437,7 +437,7 @@ impl CardId {
             let op = d.core.reason_player;
             d.core.reason_effect = Some(pe);
             d.core.reason_player = self.c3(d).current.controler;
-            let cond = d.effect(pe).condition.clone();
+            let cond = d.effect(pe).condition().clone();
             d.add_param(Value::Effect(pe));
             d.add_param(Value::Card(self));
             if d.check_condition(cond.as_ref(), 2) {
@@ -463,7 +463,7 @@ impl CardId {
             d.add_param(Value::Int(d.core.forced_summon_maxc as i64));
             param_count += 2;
         }
-        let cond = d.effect(peffect).condition.clone();
+        let cond = d.effect(peffect).condition().clone();
         let result = d.check_condition(cond.as_ref(), param_count);
         d.core.reason_effect = oreason;
         d.core.reason_player = op;
@@ -481,7 +481,7 @@ impl CardId {
         d.add_param(Value::Int(zone as i64));
         d.add_param(Value::Int(releasable as i64));
         d.add_param(Value::effect(exeffect));
-        let cond = d.effect(peffect).condition.clone();
+        let cond = d.effect(peffect).condition().clone();
         let result = d.check_condition(cond.as_ref(), 6);
         d.core.reason_effect = oreason;
         d.core.reason_player = op;
@@ -805,7 +805,7 @@ impl CardId {
     }
     pub fn is_destructable(self, d: &Duel) -> bool {
         let c = self.c3(d);
-        c.overlay_target.is_none() && c.current.location as u32 & (LOCATION_GRAVE | LOCATION_REMOVED) == 0
+        c.overlay_target().is_none() && c.current.location as u32 & (LOCATION_GRAVE | LOCATION_REMOVED) == 0
     }
     pub fn is_destructable_by_battle(self, d: &mut Duel, pcard: Option<CardId>) -> bool {
         self.is_affected_by_effect_t(d, EFFECT_INDESTRUCTABLE_BATTLE, pcard).is_none()
@@ -926,7 +926,7 @@ impl CardId {
     }
     pub fn is_releasable_by_summon(self, d: &mut Duel, playerid: u8, pcard: CardId) -> bool {
         let c = self.c3(d);
-        if c.is_status(STATUS_SUMMONING) || c.overlay_target.is_some() || c.current.location as u32 & (LOCATION_GRAVE | LOCATION_REMOVED) != 0 {
+        if c.is_status(STATUS_SUMMONING) || c.overlay_target().is_some() || c.current.location as u32 & (LOCATION_GRAVE | LOCATION_REMOVED) != 0 {
             return false;
         }
         if !d.is_player_can_release(playerid, self, REASON_SUMMON) {
@@ -942,7 +942,7 @@ impl CardId {
     }
     pub fn is_releasable_by_nonsummon(self, d: &mut Duel, playerid: u8, reason: u32) -> bool {
         let c = self.c3(d);
-        if c.is_status(STATUS_SUMMONING) || c.overlay_target.is_some() || c.current.location as u32 & (LOCATION_GRAVE | LOCATION_REMOVED) != 0 {
+        if c.is_status(STATUS_SUMMONING) || c.overlay_target().is_some() || c.current.location as u32 & (LOCATION_GRAVE | LOCATION_REMOVED) != 0 {
             return false;
         }
         if c.current.location as u32 == LOCATION_HAND && c.data.type_ & (TYPE_SPELL | TYPE_TRAP) != 0 {

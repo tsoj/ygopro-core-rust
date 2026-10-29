@@ -395,7 +395,7 @@ impl Duel {
                 }
                 let code = self.card(target).data.code;
                 let from = target.get_info_location(self);
-                if let Some(o) = self.card(target).overlay_target {
+                if let Some(o) = self.card(target).overlay_target() {
                     o.xyz_remove(self, target);
                 }
                 let tseq = self.card(target).temp.sequence;
@@ -423,7 +423,7 @@ impl Duel {
                         self.send_to(CardSet::from_iter(mats), None, REASON_LOST_TARGET + REASON_RULE, PLAYER_NONE as u8, PLAYER_NONE as u8, LOCATION_GRAVE as u16, 0, POS_FACEUP as u8, false);
                     }
                 }
-                if self.card(target).previous.location as u32 == LOCATION_SZONE && self.card(target).equiping_target.is_some() {
+                if self.card(target).previous.location as u32 == LOCATION_SZONE && self.card(target).equiping_target().is_some() {
                     target.unequip(self);
                 }
                 if self.card(target).current.location as u32 == LOCATION_MZONE {
@@ -707,7 +707,7 @@ impl Duel {
                                 pc.unequip(self);
                             }
                         }
-                        if self.card(pcard).equiping_target.is_some() {
+                        if self.card(pcard).equiping_target().is_some() {
                             pcard.unequip(self);
                         }
                     }

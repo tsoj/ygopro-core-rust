@@ -423,12 +423,10 @@ impl Duel {
             TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK
         }
     }
-    fn field_effect_container(&mut self, e: EffectId) -> Option<&mut crate::duel::EffectContainer> {
+    /// The container of an effect with an action type (the auras are filed by `file_aura`).
+    fn action_effect_container(&mut self, e: EffectId) -> Option<&mut crate::duel::EffectContainer> {
         let t = self.effect(e).type_ as u32;
         let fe = &mut self.field_effects;
-        if t & EFFECT_TYPE_ACTIONS == 0 {
-            return Some(&mut fe.aura_effect);
-        }
         if t & EFFECT_TYPE_IGNITION != 0 {
             Some(&mut fe.ignition_effect)
         } else if t & EFFECT_TYPE_TRIGGER_O != 0 && t & EFFECT_TYPE_FIELD != 0 {
@@ -463,14 +461,15 @@ impl Duel {
         let otype = self.card(owner).data.type_;
         self.effect_mut(peffect).card_type = otype;
         let (code, typ) = (self.effect(peffect).code, self.effect(peffect).type_ as u32);
-        if let Some(cont) = self.field_effect_container(peffect) {
+        if typ & EFFECT_TYPE_ACTIONS == 0 {
+            self.file_aura(code, peffect);
+        } else if let Some(cont) = self.action_effect_container(peffect) {
             if cont.contains(peffect) {
                 // (the indexer holds each effect once: emplace into the container happened before
                 // in C++ too, but the indexer emplace keeps the first entry)
             }
             cont.insert(code, peffect);
         }
-        self.condition_scan_changed();
         if typ & EFFECT_TYPE_ACTIONS == 0 {
             if code == EFFECT_SELF_TOGRAVE {
                 self.core.global_flag |= GLOBALFLAG_SELF_TOGRAVE;
@@ -530,7 +529,7 @@ impl Duel {
     pub fn is_field_effect_registered(&self, peffect: EffectId) -> bool {
         let fe = &self.field_effects;
         [
-            &fe.aura_effect,
+            &fe.aura_effect(),
             &fe.ignition_effect,
             &fe.trigger_o_effect,
             &fe.trigger_f_effect,
@@ -549,8 +548,7 @@ impl Duel {
         }
         let (typ, code) = (self.effect(peffect).type_ as u32, self.effect(peffect).code);
         if typ & EFFECT_TYPE_ACTIONS == 0 {
-            self.field_effects.aura_effect.remove_any(peffect);
-            self.condition_scan_changed();
+            self.unfile_aura(peffect);
             if code == EFFECT_SPSUMMON_COUNT_LIMIT {
                 self.field_effects.spsummon_count_eff.retain(|&x| x != peffect);
             }
@@ -701,7 +699,7 @@ impl Duel {
         }
     }
     pub fn filter_field_effect(&mut self, code: u32, eset: &mut Vec<EffectId>, sort: bool) {
-        for pe in self.field_effects.aura_effect.range(code) {
+        for pe in self.field_effects.aura_effect().range(code) {
             if pe.is_available(self) {
                 eset.push(pe);
             }
@@ -774,7 +772,7 @@ impl Duel {
         }
     }
     pub fn filter_player_effect(&mut self, playerid: u8, code: u32, eset: &mut Vec<EffectId>, sort: bool) {
-        for pe in self.field_effects.aura_effect.range(code) {
+        for pe in self.field_effects.aura_effect().range(code) {
             if pe.is_target_player(self, playerid) && pe.is_available(self) {
                 eset.push(pe);
             }
@@ -1024,7 +1022,7 @@ impl Duel {
         count as i32
     }
     pub fn is_player_affected_by_effect(&mut self, playerid: u8, code: u32) -> Option<EffectId> {
-        for pe in self.field_effects.aura_effect.range(code) {
+        for pe in self.field_effects.aura_effect().range(code) {
             if pe.is_target_player(self, playerid) && pe.is_available(self) {
                 return Some(pe);
             }
@@ -1032,7 +1030,7 @@ impl Duel {
         None
     }
     pub fn get_player_effect(&mut self, playerid: u8, code: u32, eset: &mut Vec<EffectId>) {
-        for pe in self.field_effects.aura_effect.all() {
+        for pe in self.field_effects.aura_effect().all() {
             if (code == 0 || self.effect(pe).code == code) && pe.is_target_player(self, playerid) && pe.is_available(self) {
                 eset.push(pe);
             }

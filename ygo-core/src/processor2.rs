@@ -128,7 +128,7 @@ impl Duel {
                     let op = self.core.reason_player;
                     self.core.reason_effect = Some(peff);
                     self.core.reason_player = self.card(c).current.controler;
-                    let cond = self.effect(peff).condition.clone();
+                    let cond = self.effect(peff).condition().clone();
                     self.add_param(Value::Effect(peff));
                     self.add_param(Value::Card(c));
                     if self.check_condition(cond.as_ref(), 2) {

@@ -7,13 +7,6 @@ use crate::duel::Duel;
 use crate::effect::sort_effects_by_id;
 use crate::types::*;
 
-/// Containers of `Card` that hold effects (the target of `indexer`).
-pub const CONT_SINGLE: u8 = 1;
-pub const CONT_EQUIP: u8 = 2;
-pub const CONT_TARGET: u8 = 3;
-pub const CONT_XMATERIAL: u8 = 4;
-pub const CONT_FIELD: u8 = 5;
-
 impl CardId {
     #[inline]
     fn cc<'a>(&self, d: &'a Duel) -> &'a Card {
@@ -328,13 +321,12 @@ impl CardId {
         cset.len() == full
     }
     pub fn equip(self, d: &mut Duel, target: CardId, send_msg: bool) {
-        if self.cc(d).equiping_target.is_some() {
+        if self.cc(d).equiping_target().is_some() {
             return;
         }
         d.card_mut(target).equiping_cards.insert(self);
-        d.card_mut(self).equiping_target = Some(target);
-        d.condition_scan_changed();
-        for e in self.cc(d).equip_effect.all() {
+        self.set_equiping_target(d, Some(target));
+        for e in self.cc(d).equip_effect().all() {
             if e.is_disable_related(d) {
                 d.add_to_disable_check_list(target);
             }
@@ -347,17 +339,15 @@ impl CardId {
         }
     }
     pub fn unequip(self, d: &mut Duel) {
-        let Some(target) = self.cc(d).equiping_target else { return };
-        for e in self.cc(d).equip_effect.all() {
+        let Some(target) = self.cc(d).equiping_target() else { return };
+        for e in self.cc(d).equip_effect().all() {
             if e.is_disable_related(d) {
                 d.add_to_disable_check_list(target);
             }
         }
         d.card_mut(target).equiping_cards.remove(self);
-        let c = d.card_mut(self);
-        c.pre_equip_target = Some(target);
-        c.equiping_target = None;
-        d.condition_scan_changed();
+        d.card_mut(self).pre_equip_target = Some(target);
+        self.set_equiping_target(d, None);
     }
     pub fn get_union_count(self, d: &mut Duel) -> i32 {
         let mut count = 0;
@@ -383,23 +373,22 @@ impl CardId {
         }
         d.card_mut(self).xyz_materials.push(mat);
         let n = d.card(self).xyz_materials.len() as u32;
+        mat.set_overlay_target(d, Some(self));
         {
             let m = d.card_mut(mat);
-            m.overlay_target = Some(self);
             m.pre_overlay_target = None;
             m.current.controler = PLAYER_NONE as u8;
             m.current.location = LOCATION_OVERLAY as u8;
             m.current.sequence = n - 1;
         }
-        d.condition_scan_changed();
-        for e in d.card(mat).xmaterial_effect.all() {
+        for e in d.card(mat).xmaterial_effect().all() {
             if d.effect(e).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                 d.add_effect(e, 2);
             }
         }
     }
     pub fn xyz_remove(self, d: &mut Duel, mat: CardId) {
-        if d.card(mat).overlay_target != Some(self) {
+        if d.card(mat).overlay_target() != Some(self) {
             return;
         }
         let seq = d.card(mat).current.sequence as usize;
@@ -416,14 +405,14 @@ impl CardId {
             m.current.controler = PLAYER_NONE as u8;
             m.current.location = 0;
             m.current.sequence = 0;
-            m.pre_overlay_target = m.overlay_target.take();
         }
-        d.condition_scan_changed();
+        let previous = mat.set_overlay_target(d, None);
+        d.card_mut(mat).pre_overlay_target = previous;
         let mats = d.card(self).xyz_materials.clone();
         for (i, c) in mats.into_iter().enumerate() {
             d.card_mut(c).current.sequence = i as u32;
         }
-        for e in d.card(mat).xmaterial_effect.all() {
+        for e in d.card(mat).xmaterial_effect().all() {
             if d.effect(e).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                 d.remove_effect(e);
             }
@@ -438,7 +427,7 @@ impl CardId {
         if self.cc(d).current.controler == PLAYER_NONE as u8 {
             return;
         }
-        for e in self.cc(d).field_effect.all() {
+        for e in self.cc(d).field_effect().all() {
             if self.field_effect_applies(d, e) {
                 d.add_effect(e, 2);
             }
@@ -455,7 +444,7 @@ impl CardId {
         if self.cc(d).current.controler == PLAYER_NONE as u8 {
             return;
         }
-        for e in self.cc(d).field_effect.all() {
+        for e in self.cc(d).field_effect().all() {
             if self.field_effect_applies(d, e) {
                 d.remove_effect(e);
             }
@@ -478,14 +467,14 @@ impl CardId {
         self.refresh_disable_status(d);
         if enabled {
             d.card_mut(self).set_status(STATUS_EFFECT_ENABLED, true);
-            for e in self.cc(d).single_effect.all() {
+            for e in self.cc(d).single_effect().all() {
                 if d.effect(e).is_flag(EFFECT_FLAG_SINGLE_RANGE) && e.in_range(d, self) {
                     let id = d.infos.field_id;
                     d.infos.field_id += 1;
                     d.effect_mut(e).id = id;
                 }
             }
-            for e in self.cc(d).field_effect.all() {
+            for e in self.cc(d).field_effect().all() {
                 if e.in_range(d, self) {
                     let id = d.infos.field_id;
                     d.infos.field_id += 1;
@@ -493,13 +482,13 @@ impl CardId {
                 }
             }
             if self.cc(d).current.location as u32 == LOCATION_SZONE {
-                for e in self.cc(d).equip_effect.all() {
+                for e in self.cc(d).equip_effect().all() {
                     let id = d.infos.field_id;
                     d.infos.field_id += 1;
                     d.effect_mut(e).id = id;
                 }
             }
-            for e in self.cc(d).target_effect.all() {
+            for e in self.cc(d).target_effect().all() {
                 if e.in_range(d, self) {
                     let id = d.infos.field_id;
                     d.infos.field_id += 1;
@@ -537,7 +526,7 @@ impl CardId {
         let cont;
         if etype & EFFECT_TYPE_SINGLE != 0 {
             let remove_matching = |d: &mut Duel, codes: &[u32]| {
-                for (code, rm) in d.card(self).single_effect.items.clone() {
+                for (code, rm) in d.card(self).single_effect().items.clone() {
                     if codes.contains(&code) && !d.effect(rm).is_flag(EFFECT_FLAG_SINGLE_RANGE) {
                         self.remove_effect(d, rm);
                     }
@@ -555,41 +544,36 @@ impl CardId {
             if ecode == EFFECT_SET_DEFENSE_FINAL && !single_range {
                 remove_matching(d, &[EFFECT_UPDATE_DEFENSE, EFFECT_SET_DEFENSE, EFFECT_SET_DEFENSE_FINAL]);
             }
-            d.card_mut(self).single_effect.insert(ecode, peffect);
-            d.count_card_effect(ecode, true);
+            self.file_effect(d, CONT_SINGLE, ecode, peffect);
             cont = CONT_SINGLE;
         } else if etype & EFFECT_TYPE_EQUIP != 0 {
-            d.card_mut(self).equip_effect.insert(ecode, peffect);
-            d.count_card_effect(ecode, true);
+            self.file_effect(d, CONT_EQUIP, ecode, peffect);
             cont = CONT_EQUIP;
-            match self.cc(d).equiping_target {
+            match self.cc(d).equiping_target() {
                 Some(t) => check_target = CardSet::from_card(t),
                 None => check_target.clear(),
             }
         } else if etype & EFFECT_TYPE_TARGET != 0 {
-            d.card_mut(self).target_effect.insert(ecode, peffect);
-            d.count_card_effect(ecode, true);
+            self.file_effect(d, CONT_TARGET, ecode, peffect);
             cont = CONT_TARGET;
-            if !self.cc(d).effect_target_cards.is_empty() {
-                check_target = self.cc(d).effect_target_cards.clone();
+            if !self.cc(d).effect_target_cards().is_empty() {
+                check_target = self.cc(d).effect_target_cards().clone();
             } else {
                 check_target.clear();
             }
         } else if etype & EFFECT_TYPE_XMATERIAL != 0 {
-            d.card_mut(self).xmaterial_effect.insert(ecode, peffect);
-            d.count_card_effect(ecode, true);
+            self.file_effect(d, CONT_XMATERIAL, ecode, peffect);
             cont = CONT_XMATERIAL;
-            match self.cc(d).overlay_target {
+            match self.cc(d).overlay_target() {
                 Some(t) => check_target = CardSet::from_card(t),
                 None => check_target.clear(),
             }
         } else if etype & EFFECT_TYPE_FIELD != 0 {
-            d.card_mut(self).field_effect.insert(ecode, peffect);
+            self.file_effect(d, CONT_FIELD, ecode, peffect);
             cont = CONT_FIELD;
         } else {
             return 0;
         }
-        d.condition_scan_changed();
         if ecode == EFFECT_SELF_TOGRAVE {
             d.core.global_flag |= GLOBALFLAG_SELF_TOGRAVE;
         } else if ecode == EVENT_DETACH_MATERIAL {
@@ -685,39 +669,30 @@ impl CardId {
     /// `card::remove_effect`
     pub fn remove_effect(self, d: &mut Duel, peffect: EffectId) {
         let Some(cont) = self.indexer_find(d, peffect) else { return };
-        d.condition_scan_changed();
         let mut check_target = CardSet::from_card(self);
         let etype = d.effect(peffect).type_ as u32;
         match cont {
             CONT_SINGLE => {
-                if let Some(code) = d.card_mut(self).single_effect.remove_any(peffect) {
-                    d.count_card_effect(code, false);
-                }
+                self.unfile_effect(d, CONT_SINGLE, peffect);
             }
             CONT_EQUIP => {
-                if let Some(code) = d.card_mut(self).equip_effect.remove_any(peffect) {
-                    d.count_card_effect(code, false);
-                }
-                match self.cc(d).equiping_target {
+                self.unfile_effect(d, CONT_EQUIP, peffect);
+                match self.cc(d).equiping_target() {
                     Some(t) => check_target = CardSet::from_card(t),
                     None => check_target.clear(),
                 }
             }
             CONT_TARGET => {
-                if let Some(code) = d.card_mut(self).target_effect.remove_any(peffect) {
-                    d.count_card_effect(code, false);
-                }
-                if !self.cc(d).effect_target_cards.is_empty() {
-                    check_target = self.cc(d).effect_target_cards.clone();
+                self.unfile_effect(d, CONT_TARGET, peffect);
+                if !self.cc(d).effect_target_cards().is_empty() {
+                    check_target = self.cc(d).effect_target_cards().clone();
                 } else {
                     check_target.clear();
                 }
             }
             CONT_XMATERIAL => {
-                if let Some(code) = d.card_mut(self).xmaterial_effect.remove_any(peffect) {
-                    d.count_card_effect(code, false);
-                }
-                match self.cc(d).overlay_target {
+                self.unfile_effect(d, CONT_XMATERIAL, peffect);
+                match self.cc(d).overlay_target() {
                     Some(t) => check_target = CardSet::from_card(t),
                     None => check_target.clear(),
                 }
@@ -727,7 +702,7 @@ impl CardId {
                 if peffect.is_available(d) && peffect.is_disable_related(d) {
                     d.update_disable_check_list(peffect);
                 }
-                d.card_mut(self).field_effect.remove_any(peffect);
+                self.unfile_effect(d, CONT_FIELD, peffect);
                 let fx = d.effect(peffect);
                 if peffect.in_range(d, self)
                     || (self.cc(d).current.controler != PLAYER_NONE as u8
@@ -893,7 +868,7 @@ impl CardId {
             if id & (leave | RESET_LEAVE | RESET_TOFIELD | RESET_TURN_SET) != 0 {
                 d.card_mut(self).battled_cards.clear();
                 self.reset_effect_count(d);
-                for e in self.cc(d).field_effect.range(EFFECT_DISABLE_FIELD) {
+                for e in self.cc(d).field_effect().range(EFFECT_DISABLE_FIELD) {
                     d.effect_mut(e).value = 0;
                 }
             }
@@ -903,11 +878,11 @@ impl CardId {
             if id & (RESET_TODECK | RESET_TOHAND | RESET_TOGRAVE | RESET_REMOVE | RESET_TEMP_REMOVE | RESET_LEAVE | RESET_TOFIELD | RESET_TURN_SET | RESET_CONTROL)
                 != 0
             {
-                for e in self.cc(d).field_effect.range(EFFECT_USE_EXTRA_MZONE) {
+                for e in self.cc(d).field_effect().range(EFFECT_USE_EXTRA_MZONE) {
                     let v = d.effect(e).value;
                     d.effect_mut(e).value = v & 0xffff;
                 }
-                for e in self.cc(d).field_effect.range(EFFECT_USE_EXTRA_SZONE) {
+                for e in self.cc(d).field_effect().range(EFFECT_USE_EXTRA_SZONE) {
                     let v = d.effect(e).value;
                     d.effect_mut(e).value = v & 0xffff;
                 }
@@ -936,7 +911,7 @@ impl CardId {
             if id & RESET_TURN_SET != 0 {
                 let (_, peffect) = self.refresh_control_status(d);
                 if let Some(pe) = peffect {
-                    if d.effect(pe).type_ as u32 & EFFECT_TYPE_SINGLE == 0 || d.effect(pe).condition.is_some() {
+                    if d.effect(pe).type_ as u32 & EFFECT_TYPE_SINGLE == 0 || d.effect(pe).condition().is_some() {
                         let ne = d.new_effect();
                         let peid = d.effect(pe).id;
                         let ctrl = self.cc(d).current.controler;
@@ -1279,10 +1254,9 @@ impl CardId {
         }
     }
     pub fn add_card_target(self, d: &mut Duel, pcard: CardId) {
-        d.card_mut(self).effect_target_cards.insert(pcard);
+        self.insert_effect_target(d, pcard);
         d.card_mut(pcard).effect_target_owner.insert(self);
-        d.condition_scan_changed();
-        for e in self.cc(d).target_effect.all() {
+        for e in self.cc(d).target_effect().all() {
             if e.is_disable_related(d) {
                 d.add_to_disable_check_list(pcard);
             }
@@ -1293,10 +1267,9 @@ impl CardId {
         d.msg(m).loc(a).loc(b);
     }
     pub fn cancel_card_target(self, d: &mut Duel, pcard: CardId) {
-        if d.card_mut(self).effect_target_cards.remove(pcard) {
+        if self.remove_effect_target(d, pcard) {
             d.card_mut(pcard).effect_target_owner.remove(self);
-            d.condition_scan_changed();
-            for e in self.cc(d).target_effect.all() {
+            for e in self.cc(d).target_effect().all() {
                 if e.is_disable_related(d) {
                     d.add_to_disable_check_list(pcard);
                 }
@@ -1309,61 +1282,58 @@ impl CardId {
     }
     pub fn clear_card_target(self, d: &mut Duel) {
         for pc in public_order(d, &self.cc(d).effect_target_owner) {
-            d.card_mut(pc).effect_target_cards.remove(self);
-            d.condition_scan_changed();
-            for e in d.card(pc).target_effect.all() {
+            pc.remove_effect_target(d, self);
+            for e in d.card(pc).target_effect().all() {
                 if e.is_disable_related(d) {
                     d.add_to_disable_check_list(self);
                 }
             }
         }
-        for pc in public_order(d, &self.cc(d).effect_target_cards) {
+        for pc in public_order(d, &self.cc(d).effect_target_cards()) {
             d.card_mut(pc).effect_target_owner.remove(self);
-            for e in self.cc(d).target_effect.all() {
+            for e in self.cc(d).target_effect().all() {
                 if e.is_disable_related(d) {
                     d.add_to_disable_check_list(pc);
                 }
             }
-            for (_, pe) in d.card(pc).single_effect.items.clone() {
+            for (_, pe) in d.card(pc).single_effect().items.clone() {
                 if d.effect(pe).owner == Some(self) && d.effect(pe).is_flag(EFFECT_FLAG_OWNER_RELATE) {
                     pc.remove_effect(d, pe);
                 }
             }
         }
-        let c = d.card_mut(self);
-        c.effect_target_owner.clear();
-        c.effect_target_cards.clear();
-        d.condition_scan_changed();
+        d.card_mut(self).effect_target_owner.clear();
+        self.clear_effect_targets(d);
     }
     pub fn filter_effect(self, d: &mut Duel, code: u32, eset: &mut Vec<EffectId>, sort: bool) {
         // (no card and no aura has an effect under the code: nothing to filter)
-        if !d.card_effect_may_exist(code) && !d.field_effects.aura_effect.may_have(code) {
+        if !d.card_effect_may_exist(code) && !d.field_effects.aura_effect().may_have(code) {
             if sort {
                 sort_effects_by_id(d, eset);
             }
             return;
         }
-        for pe in self.cc(d).single_effect.range(code) {
+        for pe in self.cc(d).single_effect().range(code) {
             if pe.is_available(d) && (!d.effect(pe).is_flag(EFFECT_FLAG_SINGLE_RANGE) || self.is_affect_by_effect(d, Some(pe))) {
                 eset.push(pe);
             }
         }
         for pc in public_order(d, &self.cc(d).equiping_cards) {
-            for pe in d.card(pc).equip_effect.range(code) {
+            for pe in d.card(pc).equip_effect().range(code) {
                 if pe.is_available(d) && self.is_affect_by_effect(d, Some(pe)) {
                     eset.push(pe);
                 }
             }
         }
         for pc in public_order(d, &self.cc(d).effect_target_owner) {
-            for pe in d.card(pc).target_effect.range(code) {
+            for pe in d.card(pc).target_effect().range(code) {
                 if pe.is_available(d) && pe.is_target(d, self) && self.is_affect_by_effect(d, Some(pe)) {
                     eset.push(pe);
                 }
             }
         }
         for pc in self.cc(d).xyz_materials.clone() {
-            for pe in d.card(pc).xmaterial_effect.range(code) {
+            for pe in d.card(pc).xmaterial_effect().range(code) {
                 if d.effect(pe).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                     continue;
                 }
@@ -1372,7 +1342,7 @@ impl CardId {
                 }
             }
         }
-        for pe in d.field_effects.aura_effect.range(code) {
+        for pe in d.field_effects.aura_effect().range(code) {
             if !d.effect(pe).is_flag(EFFECT_FLAG_PLAYER_TARGET) && pe.is_available(d) && pe.is_target(d, self) && self.is_affect_by_effect(d, Some(pe)) {
                 eset.push(pe);
             }
@@ -1382,7 +1352,7 @@ impl CardId {
         }
     }
     pub fn filter_single_effect(self, d: &mut Duel, code: u32, eset: &mut Vec<EffectId>, sort: bool) {
-        for pe in self.cc(d).single_effect.range(code) {
+        for pe in self.cc(d).single_effect().range(code) {
             if pe.is_available(d) && !d.effect(pe).is_flag(EFFECT_FLAG_SINGLE_RANGE) {
                 eset.push(pe);
             }
@@ -1392,19 +1362,19 @@ impl CardId {
         }
     }
     pub fn filter_single_continuous_effect(self, d: &mut Duel, code: u32, eset: &mut Vec<EffectId>, sort: bool) {
-        eset.extend(self.cc(d).single_effect.range(code));
+        eset.extend(self.cc(d).single_effect().range(code));
         for pc in public_order(d, &self.cc(d).equiping_cards) {
-            eset.extend(d.card(pc).equip_effect.range(code));
+            eset.extend(d.card(pc).equip_effect().range(code));
         }
         for pc in public_order(d, &self.cc(d).effect_target_owner) {
-            for pe in d.card(pc).target_effect.range(code) {
+            for pe in d.card(pc).target_effect().range(code) {
                 if pe.is_target(d, pc) {
                     eset.push(pe);
                 }
             }
         }
         for pc in self.cc(d).xyz_materials.clone() {
-            for pe in d.card(pc).xmaterial_effect.range(code) {
+            for pe in d.card(pc).xmaterial_effect().range(code) {
                 if d.effect(pe).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                     continue;
                 }
@@ -1423,32 +1393,32 @@ impl CardId {
         if !self.cc(d).immune_effect.is_empty() {
             d.card_mut(self).immune_effect.clear();
         }
-        let single = self.cc(d).single_effect.range(EFFECT_IMMUNE_EFFECT);
+        let single = self.cc(d).single_effect().range(EFFECT_IMMUNE_EFFECT);
         if !single.is_empty() {
             d.card_mut(self).immune_effect.extend(single);
         }
         for pc in public_order(d, &self.cc(d).equiping_cards) {
-            let v = d.card(pc).equip_effect.range(EFFECT_IMMUNE_EFFECT);
+            let v = d.card(pc).equip_effect().range(EFFECT_IMMUNE_EFFECT);
             if !v.is_empty() {
                 d.card_mut(self).immune_effect.extend(v);
             }
         }
         for pc in public_order(d, &self.cc(d).effect_target_owner) {
-            for pe in d.card(pc).target_effect.range(EFFECT_IMMUNE_EFFECT) {
+            for pe in d.card(pc).target_effect().range(EFFECT_IMMUNE_EFFECT) {
                 if pe.is_target(d, self) {
                     d.card_mut(self).immune_effect.push(pe);
                 }
             }
         }
         for pc in self.cc(d).xyz_materials.clone() {
-            for pe in d.card(pc).xmaterial_effect.range(EFFECT_IMMUNE_EFFECT) {
+            for pe in d.card(pc).xmaterial_effect().range(EFFECT_IMMUNE_EFFECT) {
                 if d.effect(pe).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                     continue;
                 }
                 d.card_mut(self).immune_effect.push(pe);
             }
         }
-        for pe in d.field_effects.aura_effect.range(EFFECT_IMMUNE_EFFECT) {
+        for pe in d.field_effects.aura_effect().range(EFFECT_IMMUNE_EFFECT) {
             if pe.is_target(d, self) {
                 d.card_mut(self).immune_effect.push(pe);
             }
@@ -1467,15 +1437,15 @@ impl CardId {
                 let t = d.effect(pe).type_ as u32;
                 if t & EFFECT_TYPE_FIELD != 0 {
                     d.update_disable_check_list(pe);
-                } else if t & EFFECT_TYPE_EQUIP != 0 && self.cc(d).equiping_target.is_some() {
-                    let et = self.cc(d).equiping_target.unwrap();
+                } else if t & EFFECT_TYPE_EQUIP != 0 && self.cc(d).equiping_target().is_some() {
+                    let et = self.cc(d).equiping_target().unwrap();
                     d.add_to_disable_check_list(et);
-                } else if t & EFFECT_TYPE_TARGET != 0 && !self.cc(d).effect_target_cards.is_empty() {
-                    for tc in public_order(d, &self.cc(d).effect_target_cards) {
+                } else if t & EFFECT_TYPE_TARGET != 0 && !self.cc(d).effect_target_cards().is_empty() {
+                    for tc in public_order(d, &self.cc(d).effect_target_cards()) {
                         d.add_to_disable_check_list(tc);
                     }
-                } else if t & EFFECT_TYPE_XMATERIAL != 0 && self.cc(d).overlay_target.is_some() {
-                    let ot = self.cc(d).overlay_target.unwrap();
+                } else if t & EFFECT_TYPE_XMATERIAL != 0 && self.cc(d).overlay_target().is_some() {
+                    let ot = self.cc(d).overlay_target().unwrap();
                     d.add_to_disable_check_list(ot);
                 }
             }
@@ -1485,30 +1455,30 @@ impl CardId {
     pub fn is_affected_by_effect(self, d: &mut Duel, code: u32) -> Option<EffectId> {
         d.note_read(self, 2048);
         // (no card and no aura has an effect under the code: none applies)
-        if !d.card_effect_may_exist(code) && !d.field_effects.aura_effect.may_have(code) {
+        if !d.card_effect_may_exist(code) && !d.field_effects.aura_effect().may_have(code) {
             return None;
         }
-        for pe in self.cc(d).single_effect.range(code) {
+        for pe in self.cc(d).single_effect().range(code) {
             if pe.is_available(d) && (!d.effect(pe).is_flag(EFFECT_FLAG_SINGLE_RANGE) || self.is_affect_by_effect(d, Some(pe))) {
                 return Some(pe);
             }
         }
         for pc in public_order(d, &self.cc(d).equiping_cards) {
-            for pe in d.card(pc).equip_effect.range(code) {
+            for pe in d.card(pc).equip_effect().range(code) {
                 if pe.is_available(d) && self.is_affect_by_effect(d, Some(pe)) {
                     return Some(pe);
                 }
             }
         }
         for pc in public_order(d, &self.cc(d).effect_target_owner) {
-            for pe in d.card(pc).target_effect.range(code) {
+            for pe in d.card(pc).target_effect().range(code) {
                 if pe.is_available(d) && pe.is_target(d, self) && self.is_affect_by_effect(d, Some(pe)) {
                     return Some(pe);
                 }
             }
         }
         for pc in self.cc(d).xyz_materials.clone() {
-            for pe in d.card(pc).xmaterial_effect.range(code) {
+            for pe in d.card(pc).xmaterial_effect().range(code) {
                 if d.effect(pe).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                     continue;
                 }
@@ -1517,7 +1487,7 @@ impl CardId {
                 }
             }
         }
-        for pe in d.field_effects.aura_effect.range(code) {
+        for pe in d.field_effects.aura_effect().range(code) {
             if !d.effect(pe).is_flag(EFFECT_FLAG_PLAYER_TARGET) && pe.is_target(d, self) && pe.is_available(d) && self.is_affect_by_effect(d, Some(pe)) {
                 return Some(pe);
             }
@@ -1528,10 +1498,10 @@ impl CardId {
     pub fn is_affected_by_effect_t(self, d: &mut Duel, code: u32, target: Option<CardId>) -> Option<EffectId> {
         d.note_read(self, 2048);
         // (no card and no aura has an effect under the code: none applies)
-        if !d.card_effect_may_exist(code) && !d.field_effects.aura_effect.may_have(code) {
+        if !d.card_effect_may_exist(code) && !d.field_effects.aura_effect().may_have(code) {
             return None;
         }
-        for pe in self.cc(d).single_effect.range(code) {
+        for pe in self.cc(d).single_effect().range(code) {
             if pe.is_available(d)
                 && (!d.effect(pe).is_flag(EFFECT_FLAG_SINGLE_RANGE) || self.is_affect_by_effect(d, Some(pe)))
                 && pe.get_value_card(d, target, 0) != 0
@@ -1540,7 +1510,7 @@ impl CardId {
             }
         }
         for pc in public_order(d, &self.cc(d).equiping_cards) {
-            for pe in d.card(pc).equip_effect.range(code) {
+            for pe in d.card(pc).equip_effect().range(code) {
                 if pe.is_available(d) && self.is_affect_by_effect(d, Some(pe)) && pe.get_value_card(d, target, 0) != 0 {
                     return Some(pe);
                 }
@@ -1548,7 +1518,7 @@ impl CardId {
         }
         // (the C++ goes through the equips twice, the second time skipping field effects)
         for pc in public_order(d, &self.cc(d).equiping_cards) {
-            for pe in d.card(pc).equip_effect.range(code) {
+            for pe in d.card(pc).equip_effect().range(code) {
                 if d.effect(pe).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                     continue;
                 }
@@ -1558,14 +1528,14 @@ impl CardId {
             }
         }
         for pc in public_order(d, &self.cc(d).effect_target_owner) {
-            for pe in d.card(pc).target_effect.range(code) {
+            for pe in d.card(pc).target_effect().range(code) {
                 if pe.is_available(d) && pe.is_target(d, self) && self.is_affect_by_effect(d, Some(pe)) && pe.get_value_card(d, target, 0) != 0 {
                     return Some(pe);
                 }
             }
         }
         for pc in self.cc(d).xyz_materials.clone() {
-            for pe in d.card(pc).xmaterial_effect.range(code) {
+            for pe in d.card(pc).xmaterial_effect().range(code) {
                 if d.effect(pe).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                     continue;
                 }
@@ -1574,7 +1544,7 @@ impl CardId {
                 }
             }
         }
-        for pe in d.field_effects.aura_effect.range(code) {
+        for pe in d.field_effects.aura_effect().range(code) {
             if !d.effect(pe).is_flag(EFFECT_FLAG_PLAYER_TARGET)
                 && pe.is_available(d)
                 && pe.is_target(d, self)
@@ -1587,7 +1557,7 @@ impl CardId {
         None
     }
     pub fn get_card_effect(self, d: &mut Duel, code: u32, eset: &mut Vec<EffectId>) {
-        for pe in self.cc(d).single_effect.all() {
+        for pe in self.cc(d).single_effect().all() {
             if (code == 0 || d.effect(pe).code == code)
                 && pe.is_available(d)
                 && (!d.effect(pe).is_flag(EFFECT_FLAG_SINGLE_RANGE) || self.is_affect_by_effect(d, Some(pe)))
@@ -1595,27 +1565,27 @@ impl CardId {
                 eset.push(pe);
             }
         }
-        for pe in self.cc(d).field_effect.all() {
+        for pe in self.cc(d).field_effect().all() {
             if (code == 0 || d.effect(pe).code == code) && self.is_affect_by_effect(d, Some(pe)) {
                 eset.push(pe);
             }
         }
         for pc in public_order(d, &self.cc(d).equiping_cards) {
-            for pe in d.card(pc).equip_effect.all() {
+            for pe in d.card(pc).equip_effect().all() {
                 if (code == 0 || d.effect(pe).code == code) && pe.is_available(d) && self.is_affect_by_effect(d, Some(pe)) {
                     eset.push(pe);
                 }
             }
         }
         for pc in public_order(d, &self.cc(d).effect_target_owner) {
-            for pe in d.card(pc).target_effect.range(code) {
+            for pe in d.card(pc).target_effect().range(code) {
                 if (code == 0 || d.effect(pe).code == code) && pe.is_available(d) && pe.is_target(d, self) && self.is_affect_by_effect(d, Some(pe)) {
                     eset.push(pe);
                 }
             }
         }
         for pc in self.cc(d).xyz_materials.clone() {
-            for pe in d.card(pc).xmaterial_effect.all() {
+            for pe in d.card(pc).xmaterial_effect().all() {
                 if d.effect(pe).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                     continue;
                 }
@@ -1624,7 +1594,7 @@ impl CardId {
                 }
             }
         }
-        for pe in d.field_effects.aura_effect.all() {
+        for pe in d.field_effects.aura_effect().all() {
             if (code == 0 || d.effect(pe).code == code)
                 && !d.effect(pe).is_flag(EFFECT_FLAG_PLAYER_TARGET)
                 && pe.is_target(d, self)

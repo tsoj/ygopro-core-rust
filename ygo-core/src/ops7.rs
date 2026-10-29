@@ -227,7 +227,7 @@ impl Duel {
                     }
                     self.card_mut(pcard).current.reason |= REASON_DESTROY;
                     let c = self.card(pcard);
-                    let ctrl = match c.overlay_target {
+                    let ctrl = match c.overlay_target() {
                         Some(o) => self.card(o).current.controler,
                         None => c.current.controler,
                     };
@@ -503,7 +503,7 @@ impl Duel {
     fn send_to_move(&mut self, ex: &mut SendToExargs, pcard: CardId, playerid: u8, dest: u8, seq: u8, position: Option<u32>) {
         let code = self.card(pcard).data.code;
         let from = pcard.get_info_location(self);
-        if let Some(o) = self.card(pcard).overlay_target {
+        if let Some(o) = self.card(pcard).overlay_target() {
             ex.detach.insert(o);
             o.xyz_remove(self, pcard);
         }
@@ -797,7 +797,7 @@ impl Duel {
                 let playerid = c.sendto_param.playerid & 0x7;
                 let dest = c.sendto_param.location;
                 let seq = c.sendto_param.sequence;
-                let control_player = match c.overlay_target {
+                let control_player = match c.overlay_target() {
                     Some(o) => self.card(o).current.controler,
                     None => c.current.controler,
                 };
@@ -993,7 +993,7 @@ impl Duel {
                 let set = self.group(g).clone();
                 for pcard in public_order(self, &set) {
                     let nloc = self.card(pcard).current.location as u32;
-                    if self.card(pcard).equiping_target.is_some() {
+                    if self.card(pcard).equiping_target().is_some() {
                         pcard.unequip(self);
                     }
                     let eqs = self.card(pcard).equiping_cards.clone();

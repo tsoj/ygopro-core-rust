@@ -152,8 +152,7 @@ pub fn set_hint_timing(d: &mut Duel, e: EffectId, vs: u32, vo: Option<u32>) {
     d.effect_mut(e).hint_timing = [vs, vo.unwrap_or(vs)];
 }
 pub fn set_condition(d: &mut Duel, e: EffectId, f: Option<LuaFn>) {
-    d.effect_mut(e).condition = f;
-    d.condition_scan_changed();
+    e.set_condition(d, f);
 }
 pub fn set_target(d: &mut Duel, e: EffectId, f: Option<LuaFn>) {
     d.effect_mut(e).target = f;
@@ -251,7 +250,7 @@ pub fn get_hint_timing(d: &Duel, e: EffectId) -> (u32, u32) {
     (fx.hint_timing[0], fx.hint_timing[1])
 }
 pub fn get_condition(d: &Duel, e: EffectId) -> Option<LuaFn> {
-    d.effect(e).condition.clone()
+    d.effect(e).condition().clone()
 }
 pub fn get_target(d: &Duel, e: EffectId) -> Option<LuaFn> {
     d.effect(e).target.clone()

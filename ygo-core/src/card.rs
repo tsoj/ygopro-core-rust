@@ -5,6 +5,13 @@ use crate::duel::{Duel, EffectContainer};
 use crate::effect::sort_effects_by_id;
 use crate::types::*;
 
+/// Containers of `Card` that hold effects (the target of `indexer`).
+pub const CONT_SINGLE: u8 = 1;
+pub const CONT_EQUIP: u8 = 2;
+pub const CONT_TARGET: u8 = 3;
+pub const CONT_XMATERIAL: u8 = 4;
+pub const CONT_FIELD: u8 = 5;
+
 /// `card_state`
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CardState {
@@ -244,9 +251,11 @@ pub struct Card {
     pub spsummon_counter_rst: [u16; 2],
     /// `std::map<uint32_t, uint64_t>`
     pub assume: Vec<(u32, u64)>,
-    pub equiping_target: Option<CardId>,
+    // (private, as the effect containers and `effect_target_cards`: the duel's indexes of them,
+    // `Duel::card_effect_may_exist` and the condition scan, are kept by the writers below)
+    equiping_target: Option<CardId>,
     pub pre_equip_target: Option<CardId>,
-    pub overlay_target: Option<CardId>,
+    overlay_target: Option<CardId>,
     pub pre_overlay_target: Option<CardId>,
     /// `relation_map` (card -> reset flags)
     pub relations: Vec<(CardId, u32)>,
@@ -260,13 +269,13 @@ pub struct Card {
     pub equiping_cards: CardSet,
     pub material_cards: CardSet,
     pub effect_target_owner: CardSet,
-    pub effect_target_cards: CardSet,
+    effect_target_cards: CardSet,
     pub xyz_materials: Vec<CardId>,
-    pub single_effect: EffectContainer,
-    pub field_effect: EffectContainer,
-    pub equip_effect: EffectContainer,
-    pub target_effect: EffectContainer,
-    pub xmaterial_effect: EffectContainer,
+    single_effect: EffectContainer,
+    field_effect: EffectContainer,
+    equip_effect: EffectContainer,
+    target_effect: EffectContainer,
+    xmaterial_effect: EffectContainer,
     /// `indexer`: the effects of the card and the container they are in (1..5 as above)
     pub indexer: Vec<(EffectId, u8)>,
     /// `effect_relation`
@@ -340,6 +349,38 @@ impl Card {
             relate_effect: Vec::new(),
             immune_effect: Vec::new(),
         }
+    }
+    #[inline]
+    pub fn equiping_target(&self) -> Option<CardId> {
+        self.equiping_target
+    }
+    #[inline]
+    pub fn overlay_target(&self) -> Option<CardId> {
+        self.overlay_target
+    }
+    #[inline]
+    pub fn effect_target_cards(&self) -> &CardSet {
+        &self.effect_target_cards
+    }
+    #[inline]
+    pub fn single_effect(&self) -> &EffectContainer {
+        &self.single_effect
+    }
+    #[inline]
+    pub fn field_effect(&self) -> &EffectContainer {
+        &self.field_effect
+    }
+    #[inline]
+    pub fn equip_effect(&self) -> &EffectContainer {
+        &self.equip_effect
+    }
+    #[inline]
+    pub fn target_effect(&self) -> &EffectContainer {
+        &self.target_effect
+    }
+    #[inline]
+    pub fn xmaterial_effect(&self) -> &EffectContainer {
+        &self.xmaterial_effect
     }
     #[inline]
     pub fn is_position(&self, pos: u32) -> u32 {
@@ -512,6 +553,63 @@ impl CardId {
     #[inline]
     fn c<'a>(&self, d: &'a Duel) -> &'a Card {
         d.card(*self)
+    }
+    /// Files `e` under `code` in the container `cont` (`CONT_SINGLE` .. `CONT_FIELD`).
+    pub fn file_effect(self, d: &mut Duel, cont: u8, code: u32, e: EffectId) {
+        let c = d.card_mut(self);
+        match cont {
+            CONT_SINGLE => c.single_effect.insert(code, e),
+            CONT_EQUIP => c.equip_effect.insert(code, e),
+            CONT_TARGET => c.target_effect.insert(code, e),
+            CONT_XMATERIAL => c.xmaterial_effect.insert(code, e),
+            _ => c.field_effect.insert(code, e),
+        }
+        if cont != CONT_FIELD {
+            d.count_card_effect(code, true);
+        }
+        d.condition_scan_changed();
+    }
+    /// Removes `e` from the container `cont`: the code it was filed under, if it was there.
+    pub fn unfile_effect(self, d: &mut Duel, cont: u8, e: EffectId) -> Option<u32> {
+        let c = d.card_mut(self);
+        let code = match cont {
+            CONT_SINGLE => c.single_effect.remove_any(e),
+            CONT_EQUIP => c.equip_effect.remove_any(e),
+            CONT_TARGET => c.target_effect.remove_any(e),
+            CONT_XMATERIAL => c.xmaterial_effect.remove_any(e),
+            _ => c.field_effect.remove_any(e),
+        };
+        if let Some(code) = code
+            && cont != CONT_FIELD
+        {
+            d.count_card_effect(code, false);
+        }
+        d.condition_scan_changed();
+        code
+    }
+    pub fn set_equiping_target(self, d: &mut Duel, target: Option<CardId>) {
+        d.card_mut(self).equiping_target = target;
+        d.condition_scan_changed();
+    }
+    /// Returns the previous overlay target.
+    pub fn set_overlay_target(self, d: &mut Duel, target: Option<CardId>) -> Option<CardId> {
+        let previous = std::mem::replace(&mut d.card_mut(self).overlay_target, target);
+        d.condition_scan_changed();
+        previous
+    }
+    pub fn insert_effect_target(self, d: &mut Duel, target: CardId) {
+        d.card_mut(self).effect_target_cards.insert(target);
+        d.condition_scan_changed();
+    }
+    /// Whether `target` was a target.
+    pub fn remove_effect_target(self, d: &mut Duel, target: CardId) -> bool {
+        let removed = d.card_mut(self).effect_target_cards.remove(target);
+        d.condition_scan_changed();
+        removed
+    }
+    pub fn clear_effect_targets(self, d: &mut Duel) {
+        d.card_mut(self).effect_target_cards.clear();
+        d.condition_scan_changed();
     }
 
     pub fn is_extra_deck_monster(self, d: &Duel) -> bool {

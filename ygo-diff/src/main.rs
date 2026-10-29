@@ -59,6 +59,8 @@ thread_local! {
 struct Args {
     bench_clone: bool,
     games: u64,
+    /// `--from G`: only the games from G on (a game depends only on the seed and its number)
+    from: u64,
     seed: u64,
     max_decisions: usize,
     verbose: bool,
@@ -157,13 +159,17 @@ fn load_ydk(path: &str) -> Deck {
 }
 
 fn parse_args() -> Args {
-    let mut a = Args { bench_clone: false, games: 10, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None, focus: vec![], no_shuffle: false, rust_only: false, digest: false, replay_prefix: false, dump_replay: None };
+    let mut a = Args { bench_clone: false, games: 10, from: 0, seed: 1, max_decisions: 3000, verbose: false, scripted_permille: 500, cards: None, extra: 15, decks: None, cache: None, replay: None, focus: vec![], no_shuffle: false, rust_only: false, digest: false, replay_prefix: false, dump_replay: None };
     let argv: Vec<String> = std::env::args().collect();
     let mut i = 1;
     while i < argv.len() {
         match argv[i].as_str() {
             "--games" => {
                 a.games = argv[i + 1].parse().unwrap();
+                i += 1;
+            }
+            "--from" => {
+                a.from = argv[i + 1].parse().unwrap();
                 i += 1;
             }
             "--seed" => {
@@ -208,7 +214,7 @@ fn parse_args() -> Args {
                 i += 1;
             }
             "-h" | "--help" => {
-                println!("ygo-diff [--games N] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [--focus a,b] [--no-shuffle] [--rust-only [--digest]] [--replay-prefix] [--dump-replay FILE] [-v] [--bench-clone]");
+                println!("ygo-diff [--games N] [--from G] [--seed S] [--max-decisions N] [--cards a,b,..] [--scripted SHARE] [--extra N] [--decks a.ydk,b.ydk] [--cache DIR] [--replay FILE] [--focus a,b] [--no-shuffle] [--rust-only [--digest]] [--replay-prefix] [--dump-replay FILE] [-v] [--bench-clone]");
                 std::process::exit(0);
             }
             "-v" | "--verbose" => a.verbose = true,
@@ -813,7 +819,7 @@ fn main() {
         cache::Cache::new(dir, &core_lib, key.as_bytes())
     });
     let (mut cached_games, mut stale) = (0, 0);
-    for g in 0..args.games {
+    for g in args.from..args.games {
         let rec = cache.as_ref().and_then(|c| c.load(g)).filter(|r| r.complete || r.steps.len() >= args.max_decisions);
         let res = match rec.as_ref().map(|rec| play(g, &args, &db, &scripts, &pool, &scripted, &scripted_extra, &codes, Some(rec))) {
             Some(Ok(o)) => {

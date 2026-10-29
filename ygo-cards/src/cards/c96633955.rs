@@ -13,7 +13,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_property(d, e1, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_range(d, e1, LOCATION_MZONE);
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     card::register_effect(d, c, e1, false);
     let e2 = effect::clone(d, e1);
     effect::set_code(d, e2, EFFECT_UPDATE_DEFENSE);
@@ -24,7 +24,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_code(d, e3, EFFECT_UPDATE_ATTACK);
     effect::set_range(d, e3, LOCATION_MZONE);
     effect::set_target_range(d, e3, 0, LOCATION_MZONE);
-    effect::set_value_fn(d, e3, effect_card_value(val));
+    effect::set_value_fn(d, e3, effect_value(val));
     card::register_effect(d, c, e3, false);
     let e4 = effect::clone(d, e3);
     effect::set_code(d, e4, EFFECT_UPDATE_DEFENSE);
@@ -51,11 +51,11 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_operation(d, e6, Some(operation(remop)));
     card::register_effect(d, c, e6, false);
 }
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // Duel.GetFieldGroupCount(0,LOCATION_REMOVED,LOCATION_REMOVED)*100
     (duel::get_field_group_count(d, 0, LOCATION_REMOVED, LOCATION_REMOVED) * 100) as i64
 }
-fn val(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, _e: EffectId) -> i64 {
     // Duel.GetFieldGroupCount(0,LOCATION_REMOVED,LOCATION_REMOVED)*(-100)
     (duel::get_field_group_count(d, 0, LOCATION_REMOVED, LOCATION_REMOVED) * -100) as i64
 }

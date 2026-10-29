@@ -57,7 +57,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTargetRange(LOCATION_MZONE,0)
     effect::set_target_range(d, e2, LOCATION_MZONE, 0);
     // e2:SetValue(function(e,c) return e:GetHandler():GetCounter(COUNTER_ACCESS)*100 end)
-    effect::set_value_fn(d, e2, effect_card_value(atk_value));
+    effect::set_value_fn(d, e2, effect_value(atk_value));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Return this card to the hand, and if you do, Set 1 Continuous Trap with an effect that Special Summons itself directly from your Deck
@@ -168,7 +168,7 @@ fn setop(d: &mut Duel, a: &EffArgs) {
     }
 }
 // function(e,c) return e:GetHandler():GetCounter(COUNTER_ACCESS)*100 end
-fn atk_value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atk_value(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     card::get_counter(d, h, COUNTER_ACCESS) as i64 * 100
 }

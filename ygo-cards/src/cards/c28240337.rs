@@ -21,7 +21,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // local e2=e1:Clone()
@@ -55,7 +55,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // local LOCATION_GRAVE_MZONE=LOCATION_GRAVE|LOCATION_MZONE
     let location_grave_mzone = LOCATION_GRAVE | LOCATION_MZONE;
     // return Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsRace,RACE_ZOMBIE),0,LOCATION_GRAVE_MZONE,LOCATION_GRAVE_MZONE,nil)*100

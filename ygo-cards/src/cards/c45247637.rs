@@ -26,7 +26,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EFFECT_SET_CONTROL)
     effect::set_code(d, e1, EFFECT_SET_CONTROL);
     // e1:SetValue(function(e,c) return e:GetHandler():GetFlagEffectLabel(id) end)
-    effect::set_value_fn(d, e1, effect_card_value(control_value));
+    effect::set_value_fn(d, e1, effect_value(control_value));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Negate this card's effect until your next Standby Phase
@@ -49,7 +49,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
 }
-fn control_value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn control_value(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetFlagEffectLabel(id)
     let h = effect::get_handler(d, e).nil();
     card::get_flag_effect_label(d, h, ID).first().copied().unwrap_or(0)

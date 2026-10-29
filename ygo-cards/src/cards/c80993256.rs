@@ -18,7 +18,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EFFECT_EXTRA_ATTACK)
     effect::set_code(d, e1, EFFECT_EXTRA_ATTACK);
     // e1:SetValue(s.matkval)
-    effect::set_value_fn(d, e1, effect_card_value(matkval));
+    effect::set_value_fn(d, e1, effect_value(matkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Increase ATK if it battles
@@ -65,7 +65,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.matkval(e,c)`
-fn matkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn matkval(d: &mut Duel, e: EffectId) -> i64 {
     // local oc=e:GetHandler():GetOverlayCount()
     let h = effect::get_handler(d, e).nil();
     let oc = card::get_overlay_count(d, h) as i64;

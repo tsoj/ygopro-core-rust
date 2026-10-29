@@ -21,7 +21,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Special Summon 1 monster from the GY
@@ -74,7 +74,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsType,e:GetHandlerPlayer(),LOCATION_GRAVE,LOCATION_GRAVE,nil,TYPE_LINK)*200
     let tp = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&|d, x| card::is_type(d, x, TYPE_LINK)), tp, LOCATION_GRAVE, LOCATION_GRAVE, NO_EX) as i64 * 200

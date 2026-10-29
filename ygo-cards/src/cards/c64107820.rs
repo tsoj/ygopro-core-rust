@@ -31,7 +31,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTarget(aux.TargetBoolFunction(Card.IsRace,RACE_PSYCHIC))
     effect::set_target(d, e2, Some(effect_card_fn(|d, _e, c| card::is_race(d, c, RACE_PSYCHIC))));
     // e2:SetValue(s.val)
-    effect::set_value_fn(d, e2, effect_card_value(val));
+    effect::set_value_fn(d, e2, effect_value(val));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // e1:SetLabelObject(e2)
@@ -71,7 +71,7 @@ fn op(d: &mut Duel, a: &EffArgs) {
     effect::set_label(d, lo, &[label]);
 }
 /// `s.val(e,c)`
-fn val(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetLabel()
     effect::get_label(d, e)
 }

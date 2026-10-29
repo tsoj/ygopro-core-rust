@@ -32,7 +32,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTarget(function(e,c) return c:IsSetCard(SET_FUR_HIRE) end)
     effect::set_target(d, e1, Some(effect_card_fn(|d, _e, c| card::is_set_card(d, c, &[SET_FUR_HIRE as u16]))));
     // e1:SetValue(function(e,c) return 300*Duel.GetMatchingGroup(...):GetClassCount(Card.GetCode) end)
-    effect::set_value_fn(d, e1, effect_card_value(valfn));
+    effect::set_value_fn(d, e1, effect_value(valfn));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Add 1 monster "Fur Hire" from your Deck to your hand, then discard 1 card
@@ -118,7 +118,7 @@ fn thop(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `s.valfn(e,c)`: 300 times the number of "Fur Hire" monsters you control with different names
-fn valfn(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn valfn(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&faceup_fur), p, LOCATION_MZONE, 0, NO_EX);
     300 * group::get_class_count(d, &g, &|d, c| card::get_code(d, c)[0] as i64) as i64

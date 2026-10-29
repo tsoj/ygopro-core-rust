@@ -59,7 +59,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2a:SetRange(LOCATION_MZONE)
     effect::set_range(d, e2a, LOCATION_MZONE);
     // e2a:SetValue(function(e,c) return 1000*Duel.GetMatchingGroupCount(Card.IsTrap,0,LOCATION_GRAVE,LOCATION_GRAVE,nil) end)
-    effect::set_value_fn(d, e2a, effect_card_value(|d, _e, _c| trap_count_value(d)));
+    effect::set_value_fn(d, e2a, effect_value(|d, _e| trap_count_value(d)));
     // c:RegisterEffect(e2a)
     card::register_effect(d, c, e2a, false);
     // local e2b=e2a:Clone()

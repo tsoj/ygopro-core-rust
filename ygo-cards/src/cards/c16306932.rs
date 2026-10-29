@@ -120,7 +120,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e6:SetRange(LOCATION_MZONE)
     effect::set_range(d, e6, LOCATION_MZONE);
     // e6:SetValue(s.atkval)
-    effect::set_value_fn(d, e6, effect_card_value(atkval));
+    effect::set_value_fn(d, e6, effect_value(atkval));
     // c:RegisterEffect(e6)
     card::register_effect(d, c, e6, false);
     // local e7=e6:Clone()
@@ -344,7 +344,7 @@ fn thop(d: &mut Duel, a: &EffArgs) {
     }
 }
 // function s.atkval(e,c)
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return math.floor(Duel.GetLP(1-e:GetHandlerPlayer())/2)
     let p = effect::get_handler_player(d, e);
     (duel::get_lp(d, 1 - p) as i64).div_euclid(2)

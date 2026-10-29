@@ -42,7 +42,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_value_fn(
         d,
         e1,
-        effect_card_value(|d, _e, _c| {
+        effect_value(|d, _e| {
             300 * duel::get_matching_group_count(d, Some(&|d, x| card::is_type(d, x, TYPE_TUNER)), 0, LOCATION_GRAVE, LOCATION_GRAVE, NO_EX) as i64
         }),
     );

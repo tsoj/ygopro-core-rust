@@ -18,7 +18,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1a:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1a, LOCATION_MZONE);
     // e1a:SetValue(function(e,c) ... end)
-    effect::set_value_fn(d, e1a, effect_card_value(atkval));
+    effect::set_value_fn(d, e1a, effect_value(atkval));
     // c:RegisterEffect(e1a)
     card::register_effect(d, c, e1a, false);
     // local e1b=e1a:Clone()
@@ -75,7 +75,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 // function(e,c) of e1a/e1b
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=Duel.GetMatchingGroup(aux.FaceupFilter(Card.IsSetCard,SET_ARGOSTARS),e:GetHandlerPlayer(),LOCATION_MZONE,0,e:GetHandler())
     let p = effect::get_handler_player(d, e);
     let h = effect::get_handler(d, e).nil();

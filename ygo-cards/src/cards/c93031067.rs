@@ -29,7 +29,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,SET_PLUNDER_PATROLL))
     effect::set_target(d, e2, Some(effect_card_fn(|d, _e, c| card::is_set_card(d, c, &[SET_PLUNDER_PATROLL as u16]))));
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // --Add 1 "Plunder Patroll" card from deck
@@ -81,7 +81,7 @@ fn atkfil(d: &mut Duel, c: CardId) -> bool {
     card::is_faceup(d, c) && card::is_set_card(d, c, &[SET_PLUNDER_PATROLL as u16]) && card::get_sequence(d, c) < 5
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(s.atkfil,e:GetHandlerPlayer(),LOCATION_SZONE,0,nil)*500
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&atkfil), p, LOCATION_SZONE, 0, NO_EX) as i64 * 500

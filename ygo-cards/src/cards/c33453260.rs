@@ -27,7 +27,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetCode(EFFECT_SET_CONTROL)
     effect::set_code(d, e3, EFFECT_SET_CONTROL);
     // e3:SetValue(s.cval)
-    effect::set_value_fn(d, e3, effect_card_value(cval));
+    effect::set_value_fn(d, e3, effect_value(cval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // Equipped monster is treated as a Toon
@@ -92,7 +92,7 @@ fn eqlimit(d: &mut Duel, a: Args) -> bool {
     effect::get_handler_player(d, e) != card::get_controler(d, c) || card::get_equip_target(d, h) == Some(c)
 }
 /// `s.cval(e,c)`
-fn cval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn cval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandlerPlayer()
     effect::get_handler_player(d, e) as i64
 }

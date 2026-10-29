@@ -29,7 +29,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCode(EFFECT_CHANGE_ATTRIBUTE)
     effect::set_code(d, e2, EFFECT_CHANGE_ATTRIBUTE);
     // e2:SetValue(s.value)
-    effect::set_value_fn(d, e2, effect_card_value(value));
+    effect::set_value_fn(d, e2, effect_value(value));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // e1:SetLabelObject(e2)
@@ -54,7 +54,7 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     true
 }
 /// `s.value(e,c)`
-fn value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetLabel()
     effect::get_label(d, e)
 }

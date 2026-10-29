@@ -102,6 +102,15 @@ pub fn effect_card_value(f: impl Fn(&mut Duel, EffectId, CardId) -> i64 + Send +
         Value::Int(f(d, e, c))
     })
 }
+/// A value function that does not read its card (`function(e, c)` returning a number without
+/// using `c`): it also runs when the core passes no card, as Lua's does (e.g.
+/// `EFFECT_AVOID_BATTLE_DAMAGE` on a direct attack).
+pub fn effect_value(f: impl Fn(&mut Duel, EffectId) -> i64 + Send + Sync + 'static) -> LuaFn {
+    LuaFn::new(move |d, a| {
+        let e = a.first().and_then(|v| v.as_effect()).unwrap();
+        Value::Int(f(d, e))
+    })
+}
 /// `aux.TRUE`
 pub fn aux_true() -> LuaFn {
     LuaFn::new(|_, _| Value::Bool(true))

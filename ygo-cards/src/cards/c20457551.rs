@@ -39,7 +39,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetTarget(s.atktg)
     effect::set_target(d, e3, Some(effect_card_fn(atktg)));
     // e3:SetValue(s.atkval)
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // destroy sub
@@ -74,7 +74,7 @@ fn atktg(d: &mut Duel, e: EffectId, c: CardId) -> bool {
     card::get_battle_target(d, et) == Some(c)
 }
 // function s.atkval(e,c)
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetEquipTarget():GetLevel()*-100
     let h = effect::get_handler(d, e).nil();
     let et = card::get_equip_target(d, h).nil();

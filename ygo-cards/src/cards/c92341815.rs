@@ -14,7 +14,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
     effect::set_range(d, e1, LOCATION_SZONE);
     effect::set_target_range(d, e1, 0, LOCATION_MZONE);
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     card::register_effect(d, c, e1, false);
     // Equip itself to "Adventurer Token"
     let e2 = effect::create_effect(d, c);
@@ -33,7 +33,7 @@ fn atkfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_faceup(d, c) && card::lists_code(d, c, &[TOKEN_ADVENTURER])
 }
 /// `function(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&atkfilter), p, LOCATION_MZONE, 0, NO_EX);
     group::get_class_count(d, &g, &|d, c| card::get_code(d, c)[0] as i64) as i64 * -500

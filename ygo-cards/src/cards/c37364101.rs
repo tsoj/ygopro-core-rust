@@ -31,7 +31,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1a:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e1a, EFFECT_UPDATE_ATTACK);
     // e1a:SetValue(function(e,c) return Duel.GetOverlayCount(e:GetHandlerPlayer(),1,0)*600 end)
-    effect::set_value_fn(d, e1a, effect_card_value(value_atk));
+    effect::set_value_fn(d, e1a, effect_value(value_atk));
     // c:RegisterEffect(e1a)
     card::register_effect(d, c, e1a, false);
     // And any battle damage your opponent takes from battles involving it and their monster is doubled
@@ -96,7 +96,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `function(e,c) return Duel.GetOverlayCount(e:GetHandlerPlayer(),1,0)*600 end`
-fn value_atk(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn value_atk(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     duel::get_overlay_count(d, p, 1, 0, None) as i64 * 600
 }

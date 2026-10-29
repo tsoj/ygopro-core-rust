@@ -13,7 +13,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     let e2 = effect::create_effect(d, c);
     effect::set_type(d, e2, EFFECT_TYPE_EQUIP);
     effect::set_code(d, e2, EFFECT_UPDATE_ATTACK);
-    effect::set_value_fn(d, e2, effect_card_value(val));
+    effect::set_value_fn(d, e2, effect_value(val));
     card::register_effect(d, c, e2, false);
     // local e3=e2:Clone()
     let e3 = effect::clone(d, e2);
@@ -56,7 +56,7 @@ fn cost(d: &mut Duel, a: &EffArgs) -> bool {
     true
 }
 /// `s.val(e,c)`
-fn val(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, e: EffectId) -> i64 {
     // local ct=e:GetHandler():GetFlagEffectLabel(id)
     let h = effect::get_handler(d, e).nil();
     let ct = card::get_flag_effect_label(d, h, ID).first().copied();

@@ -26,7 +26,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // cannot attack
@@ -76,7 +76,7 @@ fn matfilter(d: &mut Duel, c: CardId, lc: Option<CardId>, sumtype: u64, tp: u8) 
     card::is_set_card_ctx(d, c, &[SET_CRUSADIA as u16], lc, sumtype, Some(tp)) && !card::is_summon_code(d, c, lc, sumtype, tp, &[ID])
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=e:GetHandler():GetLinkedGroup():Filter(Card.IsFaceup,nil)
     let h = effect::get_handler(d, e).nil();
     let linked = card::get_linked_group(d, h);

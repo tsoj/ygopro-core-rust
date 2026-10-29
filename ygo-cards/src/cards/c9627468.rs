@@ -17,7 +17,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Special Summon this card
@@ -68,7 +68,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local c=e:GetHandler()
     let c = effect::get_handler(d, e).nil();
     // return Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsRace,RACE_INSECT),0,LOCATION_MZONE,LOCATION_MZONE,e:GetHandler())*300

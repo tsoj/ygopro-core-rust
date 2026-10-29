@@ -48,14 +48,14 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetCode(EFFECT_MATERIAL_CHECK)
     effect::set_code(d, e3, EFFECT_MATERIAL_CHECK);
     // e3:SetValue(s.valcheck)
-    effect::set_value_fn(d, e3, effect_card_value(valcheck));
+    effect::set_value_fn(d, e3, effect_value(valcheck));
     // e3:SetLabelObject(e2)
     effect::set_label_object(d, e3, Value::Effect(e2));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
 }
 /// `s.valcheck(e,c)`
-fn valcheck(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn valcheck(d: &mut Duel, e: EffectId) -> i64 {
     // local hc=e:GetHandler()
     let hc = effect::get_handler(d, e).nil();
     // local ct=hc:GetMaterial():GetClassCount(Card.GetCode,hc,SUMMON_TYPE_FUSION,hc:GetControler())

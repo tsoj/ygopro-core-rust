@@ -75,7 +75,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetRange(LOCATION_MZONE)
     effect::set_range(d, e2, LOCATION_MZONE);
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Negate the activation of an opponent's card or effect and banish it
@@ -170,7 +170,7 @@ fn atkfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_code(d, c, &[CARD_STARDUST_DRAGON]) || (card::is_type(d, c, TYPE_SYNCHRO) && card::lists_code(d, c, &[CARD_STARDUST_DRAGON]))
 }
 // function s.atkval(e,c)
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(s.atkfilter,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil)
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&atkfilter), p, LOCATION_GRAVE, 0, NO_EX) as i64

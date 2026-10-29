@@ -24,7 +24,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // local e2=Effect.CreateEffect(c)
@@ -70,7 +70,7 @@ fn tribute_summoned_cond(d: &mut Duel, a: &EffArgs) -> bool {
     card::is_tribute_summoned(d, h)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local _,val=Duel.GetMatchingGroup(Card.IsFaceup,e:GetHandlerPlayer(),0,LOCATION_MZONE,nil):GetMaxGroup(Card.GetBaseAttack)
     let p = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&|d, c| card::is_faceup(d, c)), p, 0, LOCATION_MZONE, NO_EX);

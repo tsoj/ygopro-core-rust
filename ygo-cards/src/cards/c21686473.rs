@@ -99,7 +99,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e6:SetCode(EFFECT_AVOID_BATTLE_DAMAGE)
     effect::set_code(d, e6, EFFECT_AVOID_BATTLE_DAMAGE);
     // e6:SetValue(s.damlimit)
-    effect::set_value_fn(d, e6, effect_card_value(damlimit));
+    effect::set_value_fn(d, e6, effect_value(damlimit));
     // c:RegisterEffect(e6)
     card::register_effect(d, c, e6, false);
 }
@@ -258,7 +258,7 @@ fn valcon(d: &mut Duel, a: Args) -> bool {
     }
 }
 /// `s.damlimit(e,c)`
-fn damlimit(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn damlimit(d: &mut Duel, e: EffectId) -> i64 {
     // if e:GetHandler():GetFlagEffect(id)==0 then return 1 else return 0 end
     let h = effect::get_handler(d, e).nil();
     if card::get_flag_effect(d, h, ID) == 0 {

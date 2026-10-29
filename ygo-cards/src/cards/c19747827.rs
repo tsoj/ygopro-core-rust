@@ -70,7 +70,7 @@ fn eqop(d: &mut Duel, a: &EffArgs) {
     let e3 = effect::create_effect(d, c);
     effect::set_type(d, e3, EFFECT_TYPE_EQUIP);
     effect::set_code(d, e3, EFFECT_UPDATE_ATTACK);
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     effect::set_reset(d, e3, RESET_EVENT | RESETS_STANDARD, 1);
     card::register_effect(d, c, e3, false);
     // e4: the same for DEF
@@ -83,6 +83,6 @@ fn eqlimit(d: &mut Duel, a: Args) -> bool {
     effect::get_label_object(d, a.e(0)).as_card() == a.card(1)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     duel::get_matching_group_count(d, Some(&|d, c| card::is_faceup(d, c) && card::is_race(d, c, RACE_DRAGON)), 0, LOCATION_MZONE | LOCATION_GRAVE, LOCATION_MZONE | LOCATION_GRAVE, NO_EX) as i64 * 500
 }

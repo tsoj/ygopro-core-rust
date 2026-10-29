@@ -38,7 +38,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e3, 0, LOCATION_MZONE);
     // e3:SetValue(s.atkval)
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // local e4=e3:Clone()
@@ -91,7 +91,7 @@ fn cfilter(d: &mut Duel, c: CardId) -> bool {
     // return c:IsFaceup() and c:IsSetCard(SET_DINOMIST)
     card::is_faceup(d, c) && card::is_set_card(d, c, &[SET_DINOMIST as u16])
 }
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(s.cfilter,e:GetHandlerPlayer(),LOCATION_ONFIELD,0,nil)*-100
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&cfilter), p, LOCATION_ONFIELD, 0, NO_EX) as i64 * -100

@@ -48,7 +48,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetRange(LOCATION_MZONE)
     effect::set_range(d, e3, LOCATION_MZONE);
     // e3:SetValue(s.val)
-    effect::set_value_fn(d, e3, effect_card_value(val));
+    effect::set_value_fn(d, e3, effect_value(val));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // local e4=e3:Clone()
@@ -253,7 +253,7 @@ fn spop(d: &mut Duel, a: Args) {
     // g:DeleteGroup() (nothing in Rust)
 }
 /// `s.val(e,c)`
-fn val(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsFacedown,0,LOCATION_REMOVED,LOCATION_REMOVED,nil)*100
     duel::get_matching_group_count(d, Some(&|d, c| card::is_facedown(d, c)), 0, LOCATION_REMOVED, LOCATION_REMOVED, NO_EX) as i64 * 100
 }

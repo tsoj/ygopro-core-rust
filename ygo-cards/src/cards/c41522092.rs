@@ -36,7 +36,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(function(e,c) return Duel.GetMatchingGroup(aux.FaceupFilter(Card.IsType,TYPE_XYZ),e:GetHandlerPlayer(),LOCATION_MZONE,LOCATION_GRAVE,nil):GetSum(Card.GetRank)*500 end)
-    effect::set_value_fn(d, e1, effect_card_value(atk_value));
+    effect::set_value_fn(d, e1, effect_value(atk_value));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // local e2=e1:Clone()
@@ -104,7 +104,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e5, false);
 }
 /// `function(e,c) return Duel.GetMatchingGroup(...):GetSum(Card.GetRank)*500 end` (e1's value)
-fn atk_value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atk_value(d: &mut Duel, e: EffectId) -> i64 {
     let hp = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&aux::faceup_filter(|d, x| card::is_type(d, x, TYPE_XYZ))), hp, LOCATION_MZONE, LOCATION_GRAVE, NO_EX);
     group::get_sum(d, &g, &|d, x| card::get_rank(d, x) as i64) * 500

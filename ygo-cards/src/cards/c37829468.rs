@@ -13,7 +13,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_range(d, e1, LOCATION_MZONE);
     effect::set_target_range(d, e1, LOCATION_MZONE, 0);
     effect::set_target(d, e1, Some(effect_card_fn(atktg)));
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     card::register_effect(d, c, e1, false);
     // destroy
     let e2 = effect::create_effect(d, c);
@@ -34,7 +34,7 @@ fn atktg(d: &mut Duel, _e: EffectId, c: CardId) -> bool {
     card::is_attribute(d, c, ATTRIBUTE_LIGHT)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&|d, cc| card::is_attribute(d, cc, ATTRIBUTE_LIGHT)), p, LOCATION_GRAVE, 0, NO_EX) as i64 * 100
 }

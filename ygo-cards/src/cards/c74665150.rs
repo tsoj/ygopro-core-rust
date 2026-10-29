@@ -15,7 +15,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_property(d, e1, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
     effect::set_range(d, e1, LOCATION_EMZONE);
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     card::register_effect(d, c, e1, false);
     // cannot be target
     let e2 = effect::create_effect(d, c);
@@ -40,7 +40,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsLinkMonster,e:GetHandlerPlayer(),LOCATION_MZONE|LOCATION_GRAVE,LOCATION_MZONE|LOCATION_GRAVE,e:GetHandler())*500
     let p = effect::get_handler_player(d, e);
     let h = effect::get_handler(d, e).nil();

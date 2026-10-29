@@ -26,7 +26,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_property(d, e1, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_range(d, e1, LOCATION_MZONE);
     effect::set_condition(d, e1, Some(condition(atkcon)));
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     card::register_effect(d, c, e1, false);
     // mill
     let e2 = effect::create_effect(d, c);
@@ -56,7 +56,7 @@ fn atkcon(d: &mut Duel, a: &EffArgs) -> bool {
     duel::get_turn_player(d) == effect::get_handler_player(d, a.e)
 }
 // function s.atkval(e,c)
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsRace,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil,RACE_FAIRY|RACE_FIEND)*300
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&|d, c| card::is_race(d, c, RACE_FAIRY | RACE_FIEND)), p, LOCATION_GRAVE, 0, NO_EX) as i64 * 300

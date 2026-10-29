@@ -15,7 +15,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EFFECT_SET_ATTACK)
     effect::set_code(d, e1, EFFECT_SET_ATTACK);
     // e1:SetValue(s.value)
-    effect::set_value_fn(d, e1, effect_card_value(value));
+    effect::set_value_fn(d, e1, effect_value(value));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // local e2=Effect.CreateEffect(c)
@@ -29,7 +29,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCode(EFFECT_SET_DEFENSE)
     effect::set_code(d, e2, EFFECT_SET_DEFENSE);
     // e2:SetValue(s.value)
-    effect::set_value_fn(d, e2, effect_card_value(value));
+    effect::set_value_fn(d, e2, effect_value(value));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // return
@@ -58,7 +58,7 @@ fn filter(d: &mut Duel, c: CardId) -> bool {
     card::is_faceup(d, c) && card::is_attribute(d, c, ATTRIBUTE_DARK)
 }
 // function s.value(e,c)
-fn value(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(s.filter,0,LOCATION_REMOVED,LOCATION_REMOVED,nil)*300
     duel::get_matching_group_count(d, Some(&filter), 0, LOCATION_REMOVED, LOCATION_REMOVED, NO_EX) as i64 * 300
 }

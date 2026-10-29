@@ -45,7 +45,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_property(d, e2, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_code(d, e2, EFFECT_UPDATE_LSCALE);
     effect::set_range(d, e2, LOCATION_PZONE);
-    effect::set_value_fn(d, e2, effect_card_value(scale_value));
+    effect::set_value_fn(d, e2, effect_value(scale_value));
     card::register_effect(d, c, e2, false);
     let e2b = effect::clone(d, e2);
     effect::set_code(d, e2b, EFFECT_UPDATE_RSCALE);
@@ -85,7 +85,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_operation(d, e5, Some(operation(thop)));
     card::register_effect(d, c, e5, false);
 }
-fn scale_value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn scale_value(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     card::get_counter(d, h, COUNTER_VEDA) as i64
 }

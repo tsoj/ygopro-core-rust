@@ -20,7 +20,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_property(d, e2, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_code(d, e2, EFFECT_UPDATE_ATTACK);
     effect::set_range(d, e2, LOCATION_MZONE);
-    effect::set_value_fn(d, e2, effect_card_value(e2_value));
+    effect::set_value_fn(d, e2, effect_value(e2_value));
     card::register_effect(d, c, e2, false);
     // Face-up cards in your Spell & Trap Zone cannot be destroyed by card effects
     let e3 = effect::create_effect(d, c);
@@ -73,7 +73,7 @@ fn setop(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `function(e,c) return Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsSpellTrap),e:GetHandlerPlayer(),LOCATION_ONFIELD,0,nil)*300 end`
-fn e2_value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn e2_value(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     let f = aux::faceup_filter(|d, c| card::is_spell_trap(d, c));
     duel::get_matching_group_count(d, Some(&f), p, LOCATION_ONFIELD, 0, NO_EX) as i64 * 300

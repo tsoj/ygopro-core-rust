@@ -42,7 +42,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     let e3 = effect::create_effect(d, c);
     effect::set_type(d, e3, EFFECT_TYPE_SINGLE);
     effect::set_code(d, e3, EFFECT_EXTRA_ATTACK_MONSTER);
-    effect::set_value_fn(d, e3, effect_card_value(|d, e, _c| {
+    effect::set_value_fn(d, e3, effect_value(|d, e| {
         let h = effect::get_handler(d, e).nil();
         group::get_bin_class_count(d, &CardSet::from_card(h), &|d, cc| card::get_attribute(d, cc) as i64) as i64 - 1
     }));

@@ -48,7 +48,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCode(EFFECT_EXTRA_ATTACK_MONSTER)
     effect::set_code(d, e2, EFFECT_EXTRA_ATTACK_MONSTER);
     // e2:SetValue(s.raval)
-    effect::set_value_fn(d, e2, effect_card_value(raval));
+    effect::set_value_fn(d, e2, effect_value(raval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
 }
@@ -125,7 +125,7 @@ fn ftarget(d: &mut Duel, e: EffectId, c: CardId) -> bool {
     effect::get_label(d, e) != card::get_field_id(d, c) as i64
 }
 /// `s.raval(e,c)`
-fn raval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn raval(d: &mut Duel, e: EffectId) -> i64 {
     // local oc=e:GetHandler():GetOverlayCount()
     let h = effect::get_handler(d, e).nil();
     let oc = card::get_overlay_count(d, h) as i64;

@@ -33,7 +33,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1a:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e1a, 0, LOCATION_MZONE);
     // e1a:SetValue(function(e,c) return -300*Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsRace,RACE_THUNDER),e:GetHandlerPlayer(),LOCATION_MZONE,0,nil) end)
-    effect::set_value_fn(d, e1a, effect_card_value(|d, e, _c| {
+    effect::set_value_fn(d, e1a, effect_value(|d, e| {
         let p = effect::get_handler_player(d, e);
         -300 * duel::get_matching_group_count(d, Some(&|d, x| card::is_faceup(d, x) && card::is_race(d, x, RACE_THUNDER)), p, LOCATION_MZONE, 0, NO_EX) as i64
     }));

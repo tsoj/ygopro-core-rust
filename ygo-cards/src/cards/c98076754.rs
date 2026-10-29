@@ -35,7 +35,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(s.effcon)
     effect::set_condition(d, e2, Some(condition(effcon)));
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // e2:SetLabel(3)
     effect::set_label(d, e2, &[3]);
     // c:RegisterEffect(e2)
@@ -121,7 +121,7 @@ fn code_value(d: &mut Duel, c: CardId) -> i64 {
     card::get_code(d, c)[0] as i64
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsFaceup,0,LOCATION_EXTRA,LOCATION_EXTRA,nil)*100
     duel::get_matching_group_count(d, Some(&|d, c| card::is_faceup(d, c)), 0, LOCATION_EXTRA, LOCATION_EXTRA, NO_EX) as i64 * 100
 }

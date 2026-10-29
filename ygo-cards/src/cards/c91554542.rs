@@ -16,12 +16,12 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
     // e1:SetValue(s.val)
-    effect::set_value_fn(d, e1, effect_card_value(val));
+    effect::set_value_fn(d, e1, effect_value(val));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
 }
 /// `s.val(e)`
-fn val(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, e: EffectId) -> i64 {
     // local gct=Duel.GetFieldGroupCount(e:GetHandler():GetControler(),0,LOCATION_GRAVE)
     let h = effect::get_handler(d, e).nil();
     let p = card::get_controler(d, h);

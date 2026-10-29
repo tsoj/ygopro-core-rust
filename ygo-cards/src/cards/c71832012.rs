@@ -34,7 +34,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTargetRange(LOCATION_MZONE,0)
     effect::set_target_range(d, e2, LOCATION_MZONE, 0);
     // e2:SetValue(s.atkdefval)
-    effect::set_value_fn(d, e2, effect_card_value(atkdefval));
+    effect::set_value_fn(d, e2, effect_value(atkdefval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // local e3=e2:Clone()
@@ -92,7 +92,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `s.atkdefval(e,c)`
-fn atkdefval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkdefval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroup(Card.IsFaceup,0,LOCATION_MZONE,LOCATION_MZONE,nil):GetBinClassCount(Card.GetAttribute)*100
     let g = duel::get_matching_group(d, Some(&|d, c| card::is_faceup(d, c)), 0, LOCATION_MZONE, LOCATION_MZONE, NO_EX);
     (group::get_bin_class_count(d, &g, &|d, c| card::get_attribute(d, c) as i64) as i64) * 100

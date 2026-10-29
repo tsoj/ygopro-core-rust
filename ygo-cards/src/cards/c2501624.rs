@@ -72,7 +72,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e4:SetRange(LOCATION_MZONE)
     effect::set_range(d, e4, LOCATION_MZONE);
     // e4:SetValue(s.atkval)
-    effect::set_value_fn(d, e4, effect_card_value(atkval));
+    effect::set_value_fn(d, e4, effect_value(atkval));
     // c:RegisterEffect(e4)
     card::register_effect(d, c, e4, false);
 }
@@ -181,7 +181,7 @@ fn atkfilter(d: &mut Duel, c: CardId) -> bool {
     card::lists_code(d, c, &[CARD_SHINING_SARCOPHAGUS as u32]) && card::is_monster(d, c)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(s.atkfilter,0,LOCATION_GRAVE,LOCATION_GRAVE,nil)*300
     duel::get_matching_group_count(d, Some(&atkfilter), 0, LOCATION_GRAVE, LOCATION_GRAVE, NO_EX) as i64 * 300
 }

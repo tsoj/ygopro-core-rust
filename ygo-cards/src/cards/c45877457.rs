@@ -16,7 +16,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Negate the activation of an opponent's monster effect and destroy it
@@ -69,7 +69,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 // function s.atkval(e,c)
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=Duel.GetMatchingGroup(Card.IsMonster,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil)
     let p = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&card::is_monster), p, LOCATION_GRAVE, 0, NO_EX);

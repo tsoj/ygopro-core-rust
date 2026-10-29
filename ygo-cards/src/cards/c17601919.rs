@@ -84,7 +84,7 @@ fn repop(d: &mut Duel, a: &EffArgs) {
     // e3:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e3, 0, LOCATION_MZONE);
     // e3:SetValue(s.adval)
-    effect::set_value_fn(d, e3, effect_card_value(adval));
+    effect::set_value_fn(d, e3, effect_value(adval));
     // e3:SetReset(RESET_EVENT|RESETS_STANDARD)
     effect::set_reset(d, e3, RESET_EVENT | RESETS_STANDARD, 1);
     // c:RegisterEffect(e3)
@@ -117,7 +117,7 @@ fn addc(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `s.adval(e,c)`
-fn adval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn adval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetCounter(0x2f)*-100
     let h = effect::get_handler(d, e).nil();
     card::get_counter(d, h, 0x2f) as i64 * -100

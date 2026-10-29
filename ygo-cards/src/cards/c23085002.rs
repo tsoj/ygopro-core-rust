@@ -24,7 +24,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
     // e1:SetValue(s.value)
-    effect::set_value_fn(d, e1, effect_card_value(value));
+    effect::set_value_fn(d, e1, effect_value(value));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // local e2=e1:Clone()
@@ -52,7 +52,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.value(e,c)`
-fn value(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsMonster,0,LOCATION_GRAVE,LOCATION_GRAVE,nil)*100
     duel::get_matching_group_count(d, Some(&card::is_monster), 0, LOCATION_GRAVE, LOCATION_GRAVE, NO_EX) as i64 * 100
 }

@@ -14,7 +14,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
     effect::set_property(d, e1, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_range(d, e1, LOCATION_MZONE);
-    effect::set_value_fn(d, e1, effect_card_value(atk_value));
+    effect::set_value_fn(d, e1, effect_value(atk_value));
     card::register_effect(d, c, e1, false);
     // special summon
     let e2 = effect::create_effect(d, c);
@@ -32,7 +32,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e2, false);
 }
 /// `function(e,c) return 300*Duel.GetMatchingGroup(...):GetBinClassCount(Card.GetAttribute) end`
-fn atk_value(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atk_value(d: &mut Duel, _e: EffectId) -> i64 {
     let g = duel::get_matching_group(d, Some(&|d, x| card::is_faceup(d, x)), 0, LOCATION_MZONE, LOCATION_MZONE, NO_EX);
     300 * group::get_bin_class_count(d, &g, &|d, x| card::get_attribute(d, x) as i64) as i64
 }

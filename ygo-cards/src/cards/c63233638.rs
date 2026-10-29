@@ -47,7 +47,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTargetRange(LOCATION_MZONE,0)
     effect::set_target_range(d, e2, LOCATION_MZONE, 0);
     // e2:SetValue(function(e,c) return 300*Duel.GetMatchingGroupCount(Card.IsRitualMonster,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil) end)
-    effect::set_value_fn(d, e2, effect_card_value(atk_value));
+    effect::set_value_fn(d, e2, effect_value(atk_value));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // local e3=e2:Clone()
@@ -58,7 +58,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 // function(e,c) return 300*Duel.GetMatchingGroupCount(Card.IsRitualMonster,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil) end
-fn atk_value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atk_value(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     300 * duel::get_matching_group_count(d, Some(&card::is_ritual_monster), p, LOCATION_GRAVE, 0, NO_EX) as i64
 }

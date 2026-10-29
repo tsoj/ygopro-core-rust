@@ -18,7 +18,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCondition(s.atkcon)
     effect::set_condition(d, e1, Some(condition(atkcon)));
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // If this card attacks, it is removed from play at the end of the Damage Step and returned to your side of the field in face-up Attack Position at the beginning of your next turn's Battle Phase
@@ -55,7 +55,7 @@ fn atkcon(d: &mut Duel, a: &EffArgs) -> bool {
         && card::is_faceup(d, duel::get_attack_target(d).nil())
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetBattleTarget():GetLevel()*200
     let h = effect::get_handler(d, e).nil();
     let bt = card::get_battle_target(d, h).nil();

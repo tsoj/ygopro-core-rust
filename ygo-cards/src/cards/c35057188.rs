@@ -39,7 +39,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTarget(function(e,c) return c:IsRace(RACE_INSECT) and c:IsType(TYPE_SYNCHRO) end)
     effect::set_target(d, e2, Some(effect_card_fn(|d, _e, c| card::is_race(d, c, RACE_INSECT as u64) && card::is_type(d, c, TYPE_SYNCHRO))));
     // e2:SetValue(function(e,c) return 200*Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsRace,RACE_INSECT),e:GetHandlerPlayer(),LOCATION_REMOVED,0,nil) end)
-    effect::set_value_fn(d, e2, effect_card_value(|d, e, _c| {
+    effect::set_value_fn(d, e2, effect_value(|d, e| {
         let p = effect::get_handler_player(d, e);
         200 * duel::get_matching_group_count(d, Some(&|d, c| card::is_faceup(d, c) && card::is_race(d, c, RACE_INSECT as u64)), p, LOCATION_REMOVED, 0, NO_EX) as i64
     }));

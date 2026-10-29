@@ -78,7 +78,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e6:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e6, EFFECT_UPDATE_ATTACK);
     // e6:SetValue(s.atkval)
-    effect::set_value_fn(d, e6, effect_card_value(atkval));
+    effect::set_value_fn(d, e6, effect_value(atkval));
     // c:RegisterEffect(e6)
     card::register_effect(d, c, e6, false);
 }
@@ -115,7 +115,7 @@ fn addc(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetCounter(0,1,1,COUNTER_FOG)*500
     duel::get_counter(d, 0, 1, 1, COUNTER_FOG as u16) as i64 * 500
 }

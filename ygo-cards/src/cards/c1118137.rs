@@ -24,7 +24,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     let e3 = effect::create_effect(d, c);
     effect::set_type(d, e3, EFFECT_TYPE_EQUIP);
     effect::set_code(d, e3, EFFECT_UPDATE_ATTACK);
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     card::register_effect(d, c, e3, false);
     let e4 = effect::clone(d, e3);
     effect::set_code(d, e4, EFFECT_UPDATE_DEFENSE);
@@ -66,7 +66,7 @@ fn ctop(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetCounter(COUNTER_SPELL)*500
     let h = effect::get_handler(d, e).nil();
     card::get_counter(d, h, COUNTER_SPELL as u16) as i64 * 500

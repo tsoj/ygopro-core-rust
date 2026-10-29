@@ -15,12 +15,12 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
     // e1:SetValue(s.value)
-    effect::set_value_fn(d, e1, effect_card_value(value));
+    effect::set_value_fn(d, e1, effect_value(value));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
 }
 /// `s.value(e,c)`
-fn value(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsRace,RACE_PLANT),0,LOCATION_MZONE,LOCATION_MZONE,nil)*100
     let n = duel::get_matching_group_count(d, Some(&aux::faceup_filter(|d, c| card::is_race(d, c, RACE_PLANT))), 0, LOCATION_MZONE, LOCATION_MZONE, NO_EX);
     n as i64 * 100

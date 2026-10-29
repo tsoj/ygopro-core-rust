@@ -11,7 +11,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_property(d, e1, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
     effect::set_range(d, e1, LOCATION_MZONE);
-    effect::set_value_fn(d, e1, effect_card_value(|d, _e, _c| duel::get_field_group_count(d, 0, LOCATION_REMOVED, LOCATION_REMOVED) as i64 * 300));
+    effect::set_value_fn(d, e1, effect_value(|d, _e| duel::get_field_group_count(d, 0, LOCATION_REMOVED, LOCATION_REMOVED) as i64 * 300));
     card::register_effect(d, c, e1, false);
     // Special Summon this card from your hand
     let e2 = effect::create_effect(d, c);

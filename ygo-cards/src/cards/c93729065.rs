@@ -34,7 +34,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_range(d, e2, LOCATION_PZONE);
     effect::set_target_range(d, e2, LOCATION_MZONE, LOCATION_MZONE);
     effect::set_target(d, e2, Some(effect_card_fn(|d, _e, c| !(card::is_attribute(d, c, ATTRIBUTE_DARK) && card::is_race(d, c, RACE_DRAGON)))));
-    effect::set_value_fn(d, e2, effect_card_value(|d, _e, _c| duel::get_counter(d, 0, 1, 1, 0x1149) as i64 * -200));
+    effect::set_value_fn(d, e2, effect_value(|d, _e| duel::get_counter(d, 0, 1, 1, 0x1149) as i64 * -200));
     card::register_effect(d, c, e2, false);
     // Once per turn, you can reduce battle damage you would take to 0
     let e3 = effect::create_effect(d, c);

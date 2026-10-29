@@ -29,7 +29,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e4:SetRange(LOCATION_MZONE)
     effect::set_range(d, e4, LOCATION_MZONE);
     // e4:SetValue(s.adval)
-    effect::set_value_fn(d, e4, effect_card_value(adval));
+    effect::set_value_fn(d, e4, effect_value(adval));
     // c:RegisterEffect(e4)
     card::register_effect(d, c, e4, false);
     // local e5=e4:Clone()
@@ -63,7 +63,7 @@ fn filter(d: &mut Duel, c: CardId) -> bool {
     card::is_faceup(d, c) && card::is_has_effect(d, c, ID, None).is_empty()
 }
 /// `s.adval(e,c)`
-fn adval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn adval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=Duel.GetMatchingGroup(s.filter,0,LOCATION_MZONE,LOCATION_MZONE,nil)
     let mut g = duel::get_matching_group(d, Some(&filter), 0, LOCATION_MZONE, LOCATION_MZONE, NO_EX);
     // if #g==0 then

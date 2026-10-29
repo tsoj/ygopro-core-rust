@@ -86,7 +86,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // e1:SetReset(RESET_EVENT|RESETS_STANDARD)
     effect::set_reset(d, e1, RESET_EVENT | RESETS_STANDARD, 1);
     // c:RegisterEffect(e1,true)
@@ -126,7 +126,7 @@ fn atkfilter(d: &mut Duel, c: CardId) -> bool {
         && (card::is_code(d, c, &[CARD_SHINING_SARCOPHAGUS]) || (card::is_monster(d, c) && card::lists_code(d, c, &[CARD_SHINING_SARCOPHAGUS])))
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetFieldGroup(e:GetHandlerPlayer(),LOCATION_ONFIELD,0):FilterCount(s.atkfilter,nil)*1000
     let p = effect::get_handler_player(d, e);
     let g = duel::get_field_group(d, p, LOCATION_ONFIELD, 0);

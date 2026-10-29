@@ -49,13 +49,13 @@ fn arcanareg(d: &mut Duel, c: CardId, coin: i32) {
     effect::set_range(d, e1, LOCATION_MZONE);
     effect::set_target_range(d, e1, LOCATION_MZONE, 0);
     effect::set_target(d, e1, Some(effect_card_fn(|d, _e, c| card::is_set_card(d, c, &[SET_ARCANA_FORCE as u16]))));
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     effect::set_reset(d, e1, RESET_EVENT | RESETS_STANDARD, 1);
     card::register_effect(d, c, e1, false);
     //
     aux::arcana::register_coin_result(d, c, coin);
 }
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local coin=Arcana.GetCoinResult(e:GetHandler())
     let h = effect::get_handler(d, e).nil();
     let coin = aux::arcana::get_coin_result(d, h);

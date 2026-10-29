@@ -37,7 +37,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTarget(function(e,c) return c:IsAttribute(ATTRIBUTE_WATER) end)
     effect::set_target(d, e1, Some(effect_card_fn(|d, _e, c| card::is_attribute(d, c, ATTRIBUTE_WATER))));
     // e1:SetValue(function(e,c) return 300*e:GetHandler():GetOverlayCount() end)
-    effect::set_value_fn(d, e1, effect_card_value(value_fn));
+    effect::set_value_fn(d, e1, effect_value(value_fn));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // local e2=e1:Clone()
@@ -92,7 +92,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e4, false);
 }
 /// `function(e,c) return 300*e:GetHandler():GetOverlayCount() end` (the ATK/DEF of e1 and e2)
-fn value_fn(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn value_fn(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     300 * card::get_overlay_count(d, h) as i64
 }

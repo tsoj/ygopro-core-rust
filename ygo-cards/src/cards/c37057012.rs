@@ -24,7 +24,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCondition(s.atkcon)
     effect::set_condition(d, e1, Some(condition(atkcon)));
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
 }
@@ -38,7 +38,7 @@ fn atkcon(d: &mut Duel, a: &EffArgs) -> bool {
     }
 }
 // function s.atkval(e,c)
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetAttackTarget():GetAttack()/2
     let t = duel::get_attack_target(d).nil();
     let atk = card::get_attack(d, t);

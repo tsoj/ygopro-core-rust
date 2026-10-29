@@ -27,7 +27,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_property(d, e3, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_range(d, e3, LOCATION_MZONE);
     effect::set_code(d, e3, EFFECT_UPDATE_ATTACK);
-    effect::set_value_fn(d, e3, effect_card_value(attackup));
+    effect::set_value_fn(d, e3, effect_value(attackup));
     card::register_effect(d, c, e3, false);
     // damage
     let e4 = effect::create_effect(d, c);
@@ -67,7 +67,7 @@ fn addc2(d: &mut Duel, a: &EffArgs) {
         card::add_counter(d, h, 0xa, 2, false);
     }
 }
-fn attackup(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn attackup(d: &mut Duel, _e: EffectId) -> i64 {
     duel::get_counter(d, 0, 1, 1, 0xa) as i64 * 100
 }
 fn damp(d: &mut Duel, a: &EffArgs) {

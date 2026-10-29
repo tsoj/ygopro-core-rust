@@ -60,7 +60,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetTarget(s.atktg)
     effect::set_target(d, e3, Some(effect_card_fn(atktg)));
     // e3:SetValue(s.atkval)
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // local e4=e3:Clone()
@@ -125,7 +125,7 @@ fn atktg(d: &mut Duel, _e: EffectId, c: CardId) -> bool {
     !card::is_set_card(d, c, &[SET_AMORPHAGE as u16])
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsSetCard,SET_AMORPHAGE),0,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)*-100
     duel::get_matching_group_count(d, Some(&|d, c| filter_faceup_amorphage(d, c)), 0, LOCATION_ONFIELD, LOCATION_ONFIELD, NO_EX) as i64 * -100
 }

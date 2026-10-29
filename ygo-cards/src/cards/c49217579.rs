@@ -20,7 +20,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCondition(s.atkcon)
     effect::set_condition(d, e1, Some(lua_fn(atkcon)));
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // remove
@@ -63,7 +63,7 @@ fn atkcon(d: &mut Duel, a: Args) -> bool {
     }
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetBattleTarget():GetBaseAttack()
     let h = effect::get_handler(d, e).nil();
     let bt = card::get_battle_target(d, h).nil();

@@ -33,7 +33,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // local e2=e1:Clone()
@@ -41,7 +41,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCode(EFFECT_UPDATE_DEFENSE)
     effect::set_code(d, e2, EFFECT_UPDATE_DEFENSE);
     // e2:SetValue(s.defval)
-    effect::set_value_fn(d, e2, effect_card_value(defval));
+    effect::set_value_fn(d, e2, effect_value(defval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // local e3=Effect.CreateEffect(c)
@@ -96,7 +96,7 @@ fn atkfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_set_card(d, c, &[SET_ZOODIAC as u16]) && card::get_attack(d, c) >= 0
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=e:GetHandler():GetOverlayGroup():Filter(s.atkfilter,nil)
     let h = effect::get_handler(d, e).nil();
     let og = card::get_overlay_group(d, h);
@@ -110,7 +110,7 @@ fn deffilter(d: &mut Duel, c: CardId) -> bool {
     card::is_set_card(d, c, &[SET_ZOODIAC as u16]) && card::get_defense(d, c) >= 0
 }
 /// `s.defval(e,c)`
-fn defval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn defval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=e:GetHandler():GetOverlayGroup():Filter(s.deffilter,nil)
     let h = effect::get_handler(d, e).nil();
     let og = card::get_overlay_group(d, h);

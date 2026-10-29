@@ -55,7 +55,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetTarget(aux.PersistentTargetFilter)
     effect::set_target(d, e3, Some(aux::persistent_target_filter()));
     // e3:SetValue(s.tg)
-    effect::set_value_fn(d, e3, effect_card_value(tg));
+    effect::set_value_fn(d, e3, effect_value(tg));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // treats
@@ -189,7 +189,7 @@ fn con(d: &mut Duel, a: &EffArgs) -> bool {
     card::is_has_card_target(d, c, h)
 }
 /// `s.tg(e,c)`
-fn tg(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn tg(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandlerPlayer()
     effect::get_handler_player(d, e) as i64
 }

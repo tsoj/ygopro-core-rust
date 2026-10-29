@@ -27,7 +27,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTarget(aux.TargetBoolFunction(Card.IsRace,RACE_BEAST))
     effect::set_target(d, e2, Some(effect_card_fn(beast_target)));
     // e2:SetValue(s.val)
-    effect::set_value_fn(d, e2, effect_card_value(val));
+    effect::set_value_fn(d, e2, effect_value(val));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // cannot activate
@@ -63,7 +63,7 @@ fn beast_target(d: &mut Duel, _e: EffectId, c: CardId) -> bool {
     card::is_race(d, c, RACE_BEAST)
 }
 /// `s.val(e,c)`
-fn val(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsMonster,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil)*100
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&|d, c| card::is_monster(d, c)), p, LOCATION_GRAVE, 0, NO_EX) as i64 * 100

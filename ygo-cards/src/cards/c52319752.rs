@@ -17,7 +17,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCondition(s.condtion)
     effect::set_condition(d, e1, Some(condition(condtion)));
     // e1:SetValue(s.val)
-    effect::set_value_fn(d, e1, effect_card_value(val));
+    effect::set_value_fn(d, e1, effect_value(val));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
 }
@@ -27,7 +27,7 @@ fn condtion(d: &mut Duel, _a: &EffArgs) -> bool {
     // return ph==PHASE_DAMAGE or ph==PHASE_DAMAGE_CAL
     ph == PHASE_DAMAGE || ph == PHASE_DAMAGE_CAL
 }
-fn val(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, e: EffectId) -> i64 {
     // if Duel.GetAttacker()==e:GetHandler() and Duel.GetAttackTarget()~=nil then return 400
     let handler = effect::get_handler(d, e).nil();
     if duel::get_attacker(d) == Some(handler) && duel::get_attack_target(d).is_some() {

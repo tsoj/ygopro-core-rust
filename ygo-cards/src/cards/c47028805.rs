@@ -47,7 +47,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_value_fn(
         d,
         e2,
-        effect_card_value(|d, e, _c| {
+        effect_value(|d, e| {
             let p = effect::get_handler_player(d, e);
             let g = duel::get_matching_group(d, Some(&|d, c| card::is_link_monster(d, c)), p, LOCATION_GRAVE, 0, NO_EX);
             400 * group::get_sum(d, &g, &|d, c| card::get_link(d, c) as i64)

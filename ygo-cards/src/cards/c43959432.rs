@@ -114,7 +114,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     // e2:SetRange(LOCATION_MZONE)
     effect::set_range(d, e2, LOCATION_MZONE);
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // e2:SetReset(RESET_EVENT|RESETS_STANDARD)
     effect::set_reset(d, e2, RESET_EVENT | RESETS_STANDARD, 1);
     // c:RegisterEffect(e2,true)
@@ -173,7 +173,7 @@ fn eqfilter(d: &mut Duel, c: CardId) -> bool {
     // return c:GetFlagEffect(id)~=0
     card::get_flag_effect(d, c, ID) != 0
 }
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=e:GetHandler():GetEquipGroup():Filter(s.eqfilter,nil)
     let h = effect::get_handler(d, e).nil();
     let eqg = card::get_equip_group(d, h);

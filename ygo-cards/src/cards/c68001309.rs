@@ -29,7 +29,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,SET_SUBTERROR))
     effect::set_target(d, e2, Some(effect_card_fn(|d, _e, c| card::is_set_card(d, c, &[SET_SUBTERROR as u16]))));
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // local e3=e2:Clone()
@@ -65,7 +65,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e4, false);
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsFacedown,e:GetHandlerPlayer(),LOCATION_MZONE,LOCATION_MZONE,nil)*500
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&|d, c| card::is_facedown(d, c)), p, LOCATION_MZONE, LOCATION_MZONE, NO_EX) as i64 * 500

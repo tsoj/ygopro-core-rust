@@ -16,7 +16,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(s.xyzlv)
-    effect::set_value_fn(d, e1, effect_card_value(xyzlv));
+    effect::set_value_fn(d, e1, effect_value(xyzlv));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // effect gain
@@ -34,7 +34,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e2, false);
 }
 /// `s.xyzlv(e,c,rc)`
-fn xyzlv(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn xyzlv(d: &mut Duel, e: EffectId) -> i64 {
     // return 0x50000+e:GetHandler():GetLevel()
     let h = effect::get_handler(d, e).nil();
     0x50000 + card::get_level(d, h) as i64

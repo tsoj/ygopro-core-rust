@@ -14,7 +14,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e2, EFFECT_UPDATE_ATTACK);
     // e2:SetValue(s.value)
-    effect::set_value_fn(d, e2, effect_card_value(value));
+    effect::set_value_fn(d, e2, effect_value(value));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // desrep
@@ -32,7 +32,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.value(e,c)`
-fn value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetFieldGroupCount(e:GetHandlerPlayer(),0,LOCATION_MZONE)*300
     let p = effect::get_handler_player(d, e);
     duel::get_field_group_count(d, p, 0, LOCATION_MZONE) as i64 * 300

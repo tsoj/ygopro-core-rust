@@ -11,7 +11,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_type(d, e2, EFFECT_TYPE_EQUIP);
     effect::set_code(d, e2, EFFECT_CHANGE_ATTRIBUTE);
     effect::set_condition(d, e2, Some(condition(attcon)));
-    effect::set_value_fn(d, e2, effect_card_value(value));
+    effect::set_value_fn(d, e2, effect_value(value));
     card::register_effect(d, c, e2, false);
 }
 /// `s.target(e,tp,eg,ep,ev,re,r,rp,tc)`: `aux.EquipTarget` calls it with the chosen monster and no `chk`.
@@ -25,7 +25,7 @@ fn attcon(d: &mut Duel, a: &EffArgs) -> bool {
     let h = effect::get_handler(d, a.e).nil();
     card::get_flag_effect(d, h, ID) != 0
 }
-fn value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     card::get_flag_effect_label(d, h, ID).first().copied().unwrap_or(0)
 }

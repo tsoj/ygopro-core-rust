@@ -34,7 +34,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e1, 0, LOCATION_MZONE);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Draw 1 card, then place 1 card from your hand on the bottom of the Deck
@@ -96,7 +96,7 @@ fn atkvalfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_attribute(d, c, ATTRIBUTE_LIGHT) && card::is_race(d, c, RACE_BEAST) && card::is_faceup(d, c)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return -200*Duel.GetMatchingGroupCount(s.atkvalfilter,e:GetHandlerPlayer(),LOCATION_MZONE|LOCATION_GRAVE,0,nil)
     let p = effect::get_handler_player(d, e);
     -200 * duel::get_matching_group_count(d, Some(&atkvalfilter), p, LOCATION_MZONE | LOCATION_GRAVE, 0, NO_EX) as i64

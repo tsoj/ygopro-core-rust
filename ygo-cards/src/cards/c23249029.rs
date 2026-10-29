@@ -14,7 +14,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1a:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e1a, EFFECT_UPDATE_ATTACK);
     // e1a:SetValue(s.atkdefval)
-    effect::set_value_fn(d, e1a, effect_card_value(atkdefval));
+    effect::set_value_fn(d, e1a, effect_value(atkdefval));
     // c:RegisterEffect(e1a)
     card::register_effect(d, c, e1a, false);
     // local e1b=e1a:Clone()
@@ -59,7 +59,7 @@ fn atkdefvalfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_equip_spell(d, c) && (card::is_faceup(d, c) || card::get_equip_target(d, c).is_some())
 }
 /// `s.atkdefval(e,c)`
-fn atkdefval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkdefval(d: &mut Duel, e: EffectId) -> i64 {
     // return 200*Duel.GetMatchingGroupCount(s.atkdefvalfilter,e:GetHandlerPlayer(),LOCATION_ONFIELD|LOCATION_GRAVE,0,nil)
     let hp = effect::get_handler_player(d, e);
     200 * duel::get_matching_group_count(d, Some(&atkdefvalfilter), hp, LOCATION_ONFIELD | LOCATION_GRAVE, 0, NO_EX) as i64

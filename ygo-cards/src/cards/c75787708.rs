@@ -42,7 +42,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
         card::is_pendulum_summoned(d, h)
     })));
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // double damage
@@ -185,7 +185,7 @@ fn checkop(d: &mut Duel, a: &EffArgs) {
     }
 }
 // s.atkval(e,c)
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local pg=Duel.GetFieldGroup(e:GetHandlerPlayer(),LOCATION_PZONE,0)
     let p = effect::get_handler_player(d, e);
     let pg = duel::get_field_group(d, p, LOCATION_PZONE, 0);

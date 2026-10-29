@@ -16,7 +16,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(s.condition)
     effect::set_condition(d, e2, Some(lua_fn(cond)));
     // e2:SetValue(s.value)
-    effect::set_value_fn(d, e2, effect_card_value(value));
+    effect::set_value_fn(d, e2, effect_value(value));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
 }
@@ -26,7 +26,7 @@ fn cond(d: &mut Duel, _a: Args) -> bool {
     duel::get_lp(d, 0) != duel::get_lp(d, 1)
 }
 // function s.value(e,c)
-fn value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, e: EffectId) -> i64 {
     // local p=e:GetHandler():GetControler()
     let h = effect::get_handler(d, e).nil();
     let p = card::get_controler(d, h);

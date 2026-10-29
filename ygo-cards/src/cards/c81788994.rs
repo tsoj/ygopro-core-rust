@@ -48,7 +48,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetCondition(s.atkcon)
     effect::set_condition(d, e3, Some(lua_fn(atkcon)));
     // e3:SetValue(s.atkval)
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // chain material
@@ -111,7 +111,7 @@ fn atkcon(d: &mut Duel, a: Args) -> bool {
     turn != p
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetCounter(0x16)*-100
     let h = effect::get_handler(d, e).nil();
     card::get_counter(d, h, 0x16) as i64 * -100

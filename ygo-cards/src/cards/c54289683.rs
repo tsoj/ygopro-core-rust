@@ -139,7 +139,7 @@ fn op(d: &mut Duel, a: &EffArgs) {
         // e1:SetRange(LOCATION_MZONE)
         effect::set_range(d, e1, LOCATION_MZONE);
         // e1:SetValue(s.tokenatk)
-        effect::set_value_fn(d, e1, effect_card_value(tokenatk));
+        effect::set_value_fn(d, e1, effect_value(tokenatk));
         // e1:SetLabelObject(tc)
         effect::set_label_object(d, e1, Value::Card(tc));
         // e1:SetReset(RESET_EVENT|(RESETS_STANDARD&~RESET_TOFIELD))
@@ -151,7 +151,7 @@ fn op(d: &mut Duel, a: &EffArgs) {
         // e2:SetCode(EFFECT_SET_DEFENSE_FINAL)
         effect::set_code(d, e2, EFFECT_SET_DEFENSE_FINAL);
         // e2:SetValue(s.tokendef)
-        effect::set_value_fn(d, e2, effect_card_value(tokendef));
+        effect::set_value_fn(d, e2, effect_value(tokendef));
         // e2:SetLabelObject(tc)
         effect::set_label_object(d, e2, Value::Card(tc));
         // token:RegisterEffect(e2,true)
@@ -163,7 +163,7 @@ fn op(d: &mut Duel, a: &EffArgs) {
         // e3:SetCode(EFFECT_CHANGE_LEVEL)
         effect::set_code(d, e3, EFFECT_CHANGE_LEVEL);
         // e3:SetValue(s.tokenlv)
-        effect::set_value_fn(d, e3, effect_card_value(tokenlv));
+        effect::set_value_fn(d, e3, effect_value(tokenlv));
         // e3:SetLabelObject(tc)
         effect::set_label_object(d, e3, Value::Card(tc));
         // e3:SetReset(RESET_EVENT|(RESETS_STANDARD&~RESET_TOFIELD))
@@ -177,7 +177,7 @@ fn op(d: &mut Duel, a: &EffArgs) {
         // e4:SetCode(EFFECT_CHANGE_RACE)
         effect::set_code(d, e4, EFFECT_CHANGE_RACE);
         // e4:SetValue(s.tokenrace)
-        effect::set_value_fn(d, e4, effect_card_value(tokenrace));
+        effect::set_value_fn(d, e4, effect_value(tokenrace));
         // e4:SetLabelObject(tc)
         effect::set_label_object(d, e4, Value::Card(tc));
         // e4:SetReset(RESET_EVENT|(RESETS_STANDARD&~RESET_TOFIELD))
@@ -191,7 +191,7 @@ fn op(d: &mut Duel, a: &EffArgs) {
         // e5:SetCode(EFFECT_CHANGE_ATTRIBUTE)
         effect::set_code(d, e5, EFFECT_CHANGE_ATTRIBUTE);
         // e5:SetValue(s.tokenatt)
-        effect::set_value_fn(d, e5, effect_card_value(tokenatt));
+        effect::set_value_fn(d, e5, effect_value(tokenatt));
         // e5:SetLabelObject(tc)
         effect::set_label_object(d, e5, Value::Card(tc));
         // e5:SetReset(RESET_EVENT|(RESETS_STANDARD&~RESET_TOFIELD))
@@ -231,31 +231,31 @@ fn op(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `s.tokenatk(e,c)`
-fn tokenatk(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn tokenatk(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetLabelObject():GetAttack()
     let tc = effect::get_label_object(d, e).as_card().nil();
     card::get_attack(d, tc) as i64
 }
 /// `s.tokendef(e,c)`
-fn tokendef(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn tokendef(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetLabelObject():GetDefense()
     let tc = effect::get_label_object(d, e).as_card().nil();
     card::get_defense(d, tc) as i64
 }
 /// `s.tokenlv(e,c)`
-fn tokenlv(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn tokenlv(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetLabelObject():GetLevel()
     let tc = effect::get_label_object(d, e).as_card().nil();
     card::get_level(d, tc) as i64
 }
 /// `s.tokenrace(e,c)`
-fn tokenrace(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn tokenrace(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetLabelObject():GetRace()
     let tc = effect::get_label_object(d, e).as_card().nil();
     card::get_race(d, tc) as i64
 }
 /// `s.tokenatt(e,c)`
-fn tokenatt(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn tokenatt(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetLabelObject():GetAttribute()
     let tc = effect::get_label_object(d, e).as_card().nil();
     card::get_attribute(d, tc) as i64

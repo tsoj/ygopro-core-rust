@@ -59,7 +59,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(s.adcon)
     effect::set_condition(d, e2, Some(condition(adcon)));
     // e2:SetValue(s.adval)
-    effect::set_value_fn(d, e2, effect_card_value(|d, e, _c| adval(d, e)));
+    effect::set_value_fn(d, e2, effect_value(|d, e| adval(d, e)));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // local e3=e2:Clone()

@@ -35,7 +35,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e2, 0, LOCATION_MZONE);
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // local e3=e2:Clone()
@@ -118,7 +118,7 @@ fn spop(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsRace,RACE_DRAGON),e:GetHandlerPlayer(),LOCATION_MZONE,0,nil)*-500
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&aux::faceup_filter(|d, c| card::is_race(d, c, RACE_DRAGON))), p, LOCATION_MZONE, 0, NO_EX) as i64 * -500

@@ -38,7 +38,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Return all cards on the field to the hand
@@ -82,7 +82,7 @@ fn splimit(d: &mut Duel, a: Args) -> bool {
     !card::is_location(d, h, LOCATION_EXTRA)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetFieldGroupCount(0,LOCATION_ONFIELD,LOCATION_ONFIELD)*400
     duel::get_field_group_count(d, 0, LOCATION_ONFIELD, LOCATION_ONFIELD) as i64 * 400
 }

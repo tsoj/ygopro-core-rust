@@ -34,7 +34,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EFFECT_MATERIAL_CHECK)
     effect::set_code(d, e1, EFFECT_MATERIAL_CHECK);
     // e1:SetValue(s.valcheck)
-    effect::set_value_fn(d, e1, effect_card_value(valcheck));
+    effect::set_value_fn(d, e1, effect_value(valcheck));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Register effect
@@ -55,7 +55,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
 }
 /// `s.valcheck(e,c)`: `local att=e:GetHandler():GetMaterial():GetBitwiseOr(Card.GetAttribute)&(ATTRIBUTE_EARTH|ATTRIBUTE_FIRE|ATTRIBUTE_LIGHT)`
 /// `e:SetLabel(att)`. The function returns nothing (0 for the core).
-fn valcheck(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn valcheck(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     let mats = card::get_material(d, h);
     let bits = group::get_bitwise_or(d, &mats, &|d, c| card::get_attribute(d, c) as i64);

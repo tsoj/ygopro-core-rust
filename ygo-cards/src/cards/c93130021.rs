@@ -111,24 +111,24 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     true
 }
 /// `s.tokenatk(e,c)` etc.: the stats of the token copy the Victory Viper
-fn tokenatk(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn tokenatk(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetOwner():GetAttack()
     let owner = effect::get_owner(d, e).nil();
     card::get_attack(d, owner) as i64
 }
-fn tokendef(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn tokendef(d: &mut Duel, e: EffectId) -> i64 {
     let owner = effect::get_owner(d, e).nil();
     card::get_defense(d, owner) as i64
 }
-fn tokenlv(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn tokenlv(d: &mut Duel, e: EffectId) -> i64 {
     let owner = effect::get_owner(d, e).nil();
     card::get_level(d, owner) as i64
 }
-fn tokenrace(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn tokenrace(d: &mut Duel, e: EffectId) -> i64 {
     let owner = effect::get_owner(d, e).nil();
     card::get_race(d, owner) as i64
 }
-fn tokenatt(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn tokenatt(d: &mut Duel, e: EffectId) -> i64 {
     let owner = effect::get_owner(d, e).nil();
     card::get_attribute(d, owner) as i64
 }
@@ -206,7 +206,7 @@ fn operation_fn(d: &mut Duel, a: &EffArgs) {
         // e1:SetRange(LOCATION_MZONE)
         effect::set_range(d, e1, LOCATION_MZONE);
         // e1:SetValue(s.tokenatk)
-        effect::set_value_fn(d, e1, effect_card_value(tokenatk));
+        effect::set_value_fn(d, e1, effect_value(tokenatk));
         // e1:SetReset(RESET_EVENT|(RESETS_STANDARD&~RESET_TOFIELD))
         effect::set_reset(d, e1, RESET_EVENT | (RESETS_STANDARD & !RESET_TOFIELD), 1);
         // token:RegisterEffect(e1,true)
@@ -216,7 +216,7 @@ fn operation_fn(d: &mut Duel, a: &EffArgs) {
         // e2:SetCode(EFFECT_SET_DEFENSE_FINAL)
         effect::set_code(d, e2, EFFECT_SET_DEFENSE_FINAL);
         // e2:SetValue(s.tokendef)
-        effect::set_value_fn(d, e2, effect_card_value(tokendef));
+        effect::set_value_fn(d, e2, effect_value(tokendef));
         // token:RegisterEffect(e2,true)
         card::register_effect(d, token, e2, true);
         // local e3=Effect.CreateEffect(c)
@@ -226,7 +226,7 @@ fn operation_fn(d: &mut Duel, a: &EffArgs) {
         // e3:SetCode(EFFECT_CHANGE_LEVEL)
         effect::set_code(d, e3, EFFECT_CHANGE_LEVEL);
         // e3:SetValue(s.tokenlv)
-        effect::set_value_fn(d, e3, effect_card_value(tokenlv));
+        effect::set_value_fn(d, e3, effect_value(tokenlv));
         // e3:SetReset(RESET_EVENT|(RESETS_STANDARD&~RESET_TOFIELD))
         effect::set_reset(d, e3, RESET_EVENT | (RESETS_STANDARD & !RESET_TOFIELD), 1);
         // token:RegisterEffect(e3,true)
@@ -238,7 +238,7 @@ fn operation_fn(d: &mut Duel, a: &EffArgs) {
         // e4:SetCode(EFFECT_CHANGE_RACE)
         effect::set_code(d, e4, EFFECT_CHANGE_RACE);
         // e4:SetValue(s.tokenrace)
-        effect::set_value_fn(d, e4, effect_card_value(tokenrace));
+        effect::set_value_fn(d, e4, effect_value(tokenrace));
         // e4:SetReset(RESET_EVENT|(RESETS_STANDARD&~RESET_TOFIELD))
         effect::set_reset(d, e4, RESET_EVENT | (RESETS_STANDARD & !RESET_TOFIELD), 1);
         // token:RegisterEffect(e4,true)
@@ -250,7 +250,7 @@ fn operation_fn(d: &mut Duel, a: &EffArgs) {
         // e5:SetCode(EFFECT_CHANGE_ATTRIBUTE)
         effect::set_code(d, e5, EFFECT_CHANGE_ATTRIBUTE);
         // e5:SetValue(s.tokenatt)
-        effect::set_value_fn(d, e5, effect_card_value(tokenatt));
+        effect::set_value_fn(d, e5, effect_value(tokenatt));
         // e5:SetReset(RESET_EVENT|(RESETS_STANDARD&~RESET_TOFIELD))
         effect::set_reset(d, e5, RESET_EVENT | (RESETS_STANDARD & !RESET_TOFIELD), 1);
         // token:RegisterEffect(e5,true)

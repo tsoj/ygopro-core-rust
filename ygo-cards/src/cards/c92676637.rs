@@ -31,12 +31,12 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCode(EFFECT_SYNCHRO_LEVEL)
     effect::set_code(d, e2, EFFECT_SYNCHRO_LEVEL);
     // e2:SetValue(s.slevel)
-    effect::set_value_fn(d, e2, effect_card_value(slevel));
+    effect::set_value_fn(d, e2, effect_value(slevel));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
 }
 /// `s.slevel(e,c)`: `return 2*65536+lv` with the Level of the handler
-fn slevel(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn slevel(d: &mut Duel, e: EffectId) -> i64 {
     // local lv=e:GetHandler():GetLevel()
     let h = effect::get_handler(d, e).nil();
     let lv = card::get_level(d, h);

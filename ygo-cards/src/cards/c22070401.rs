@@ -55,7 +55,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetTarget(s.atktg)
     effect::set_target(d, e3, Some(effect_card_fn(atktg)));
     // e3:SetValue(s.atkval)
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // negate
@@ -140,7 +140,7 @@ fn atktg(d: &mut Duel, _e: EffectId, c: CardId) -> bool {
     !(card::is_attribute(d, c, ATTRIBUTE_DARK) && card::is_race(d, c, RACE_DRAGON))
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetCounter(0,1,1,0x1149)*-200
     duel::get_counter(d, 0, 1, 1, 0x1149) as i64 * -200
 }

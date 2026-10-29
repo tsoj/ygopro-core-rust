@@ -38,7 +38,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(function(e) return e:GetHandler():IsSetCard(SET_PURRELY) end)
     effect::set_condition(d, e2, Some(condition(xcond)));
     // e2:SetValue(s.atkvalue)
-    effect::set_value_fn(d, e2, effect_card_value(atkvalue));
+    effect::set_value_fn(d, e2, effect_value(atkvalue));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // local e3=e2:Clone()
@@ -131,7 +131,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     }
 }
 // function s.atkvalue(e,c)
-fn atkvalue(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkvalue(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetOverlayCount()*300
     let h = effect::get_handler(d, e).nil();
     card::get_overlay_count(d, h) as i64 * 300

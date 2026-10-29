@@ -32,7 +32,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTarget(aux.TargetBoolFunction(Card.IsRace,RACE_SPELLCASTER))
     effect::set_target(d, e2, Some(effect_card_fn(|d, _e, c| card::is_race(d, c, RACE_SPELLCASTER as u64))));
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Increase DEF
@@ -71,7 +71,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e4, false);
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=Duel.GetMatchingGroup(aux.FaceupFilter(Card.IsSetCard,SET_FORTUNE_FAIRY),e:GetHandlerPlayer(),LOCATION_MZONE,0,nil)
     let p = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&|d, c| card::is_faceup(d, c) && card::is_set_card(d, c, &[SET_FORTUNE_FAIRY as u16])), p, LOCATION_MZONE, 0, NO_EX);

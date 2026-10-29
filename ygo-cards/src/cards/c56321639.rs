@@ -59,7 +59,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetTarget(aux.TargetBoolFunction(Card.IsRace,RACE_SPELLCASTER))
     effect::set_target(d, e3, Some(effect_card_fn(|d, _e, c| card::is_race(d, c, RACE_SPELLCASTER))));
     // e3:SetValue(s.atkval)
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // registration before leaving
@@ -118,7 +118,7 @@ fn ctop(d: &mut Duel, a: &EffArgs) {
     card::add_counter(d, h, COUNTER_SPELL as u16, 1, false);
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetCounter(COUNTER_SPELL)*100
     let h = effect::get_handler(d, e).nil();
     card::get_counter(d, h, COUNTER_SPELL as u16) as i64 * 100

@@ -57,7 +57,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(s.adcon)
     effect::set_condition(d, e2, Some(condition(adcon)));
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
 }
@@ -138,7 +138,7 @@ fn adcon(d: &mut Duel, a: &EffArgs) -> bool {
     !group::filter(d, &g, &|d, x| eqfilter(d, x), NO_EX).is_empty()
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local c=e:GetHandler()
     let c = effect::get_handler(d, e).nil();
     // local g=c:GetEquipGroup():Filter(s.eqfilter,nil)

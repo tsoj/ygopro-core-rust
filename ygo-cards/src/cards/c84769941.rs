@@ -70,7 +70,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetRange(LOCATION_MZONE)
     effect::set_range(d, e3, LOCATION_MZONE);
     // e3:SetValue(s.atkval)
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
 }
@@ -152,7 +152,7 @@ fn atkfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_set_card(d, c, &[SET_KAIJU as u16]) && card::get_attack(d, c) >= 0 && card::get_flag_effect(d, c, ID) != 0
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=e:GetHandler():GetEquipGroup():Filter(s.atkfilter,nil)
     let h = effect::get_handler(d, e).nil();
     let eg = card::get_equip_group(d, h);

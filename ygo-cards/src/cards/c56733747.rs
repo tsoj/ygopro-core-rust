@@ -67,7 +67,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetRange(LOCATION_MZONE)
     effect::set_range(d, e2, LOCATION_MZONE);
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Cannot be destroyed by card effects
@@ -156,7 +156,7 @@ fn desop(d: &mut Duel, a: &EffArgs) {
     }
 }
 // function s.atkval(e,c)
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsMonster,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil)*300
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&|d, c| card::is_monster(d, c)), p, LOCATION_GRAVE, 0, NO_EX) as i64 * 300

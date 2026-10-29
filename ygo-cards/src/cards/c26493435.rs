@@ -52,7 +52,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetTargetRange(LOCATION_MZONE,0)
     effect::set_target_range(d, e3, LOCATION_MZONE, 0);
     // e3:SetValue(s.val)
-    effect::set_value_fn(d, e3, effect_card_value(val));
+    effect::set_value_fn(d, e3, effect_value(val));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // local e4=e3:Clone()
@@ -102,7 +102,7 @@ fn ctop(d: &mut Duel, a: &EffArgs) {
     card::add_counter(d, h, COUNTER_HI_FIVE, 1, false);
 }
 // function s.val(e,c)
-fn val(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetCounter(COUNTER_HI_FIVE)*200
     let h = effect::get_handler(d, e).nil();
     card::get_counter(d, h, COUNTER_HI_FIVE) as i64 * 200

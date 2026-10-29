@@ -86,7 +86,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetRange(LOCATION_MZONE)
     effect::set_range(d, e2, LOCATION_MZONE);
     // e2:SetValue(s.defval)
-    effect::set_value_fn(d, e2, effect_card_value(defval));
+    effect::set_value_fn(d, e2, effect_value(defval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Can use monsters you control equipped to this card you control as material for the Fusion Summon of a "Metalfoes" Fusion Monster
@@ -162,7 +162,7 @@ fn defvalfilter(d: &mut Duel, c: CardId) -> bool {
     card::get_flag_effect(d, c, ID) > 0 && card::get_text_attack(d, c) >= 0
 }
 /// `s.defval(e,c)`
-fn defval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn defval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetEquipGroup():Filter(s.defvalfilter,nil):GetSum(Card.GetTextAttack)
     let h = effect::get_handler(d, e).nil();
     let g = card::get_equip_group(d, h);

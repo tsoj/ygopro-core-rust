@@ -10,14 +10,14 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
     effect::set_property(d, e1, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_range(d, e1, LOCATION_MZONE);
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     card::register_effect(d, c, e1, false);
 }
 fn atkfilter(d: &mut Duel, c: CardId) -> bool {
     // return c:IsFaceup() and c:IsLinkMonster()
     card::is_faceup(d, c) && card::is_link_monster(d, c)
 }
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=Duel.GetMatchingGroup(s.atkfilter,e:GetHandlerPlayer(),LOCATION_MZONE,LOCATION_MZONE,nil)
     let p = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&atkfilter), p, LOCATION_MZONE, LOCATION_MZONE, NO_EX);

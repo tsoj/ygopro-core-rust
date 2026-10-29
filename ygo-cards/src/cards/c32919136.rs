@@ -43,7 +43,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     let e5 = effect::create_effect(d, c);
     effect::set_type(d, e5, EFFECT_TYPE_EQUIP);
     effect::set_code(d, e5, EFFECT_SET_CONTROL);
-    effect::set_value_fn(d, e5, effect_card_value(ctval));
+    effect::set_value_fn(d, e5, effect_value(ctval));
     card::register_effect(d, c, e5, false);
 }
 fn eqlimit(d: &mut Duel, e: EffectId, c: CardId) -> bool {
@@ -80,6 +80,6 @@ fn descon(d: &mut Duel, a: &EffArgs) -> bool {
     let p = effect::get_handler_player(d, a.e);
     !duel::is_existing_matching_card(d, Some(&desfilter), p, LOCATION_ONFIELD, 0, 1, NO_EX)
 }
-fn ctval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn ctval(d: &mut Duel, e: EffectId) -> i64 {
     effect::get_handler_player(d, e) as i64
 }

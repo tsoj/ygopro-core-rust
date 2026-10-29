@@ -21,7 +21,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_value_fn(
         d,
         e1,
-        effect_card_value(|d, e, _c| {
+        effect_value(|d, e| {
             let p = effect::get_handler_player(d, e);
             400 * duel::get_matching_group_count(d, Some(&|d, c| card::is_faceup(d, c) && card::is_race(d, c, RACE_DRAGON)), p, LOCATION_MZONE, 0, NO_EX) as i64
         }),

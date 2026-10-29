@@ -25,7 +25,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetRange(LOCATION_MZONE)
     effect::set_range(d, e2, LOCATION_MZONE);
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // battle damage change
@@ -47,7 +47,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return math.abs(Duel.GetLP(1)-Duel.GetLP(0))
     (duel::get_lp(d, 1) - duel::get_lp(d, 0)).abs() as i64
 }

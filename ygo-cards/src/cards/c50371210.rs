@@ -35,7 +35,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCode(EFFECT_EXTRA_ATTACK)
     effect::set_code(d, e2, EFFECT_EXTRA_ATTACK);
     // e2:SetValue(s.val)
-    effect::set_value_fn(d, e2, effect_card_value(val));
+    effect::set_value_fn(d, e2, effect_value(val));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // remove
@@ -182,7 +182,7 @@ fn ftarget(d: &mut Duel, e: EffectId, c: CardId) -> bool {
     card::get_equip_target(d, h) != Some(c)
 }
 /// `s.val(e,c)`
-fn val(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, e: EffectId) -> i64 {
     // local ct=Duel.GetMatchingGroupCount(Card.IsSetCard,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil,SET_BLUE_EYES)
     let p = effect::get_handler_player(d, e);
     let ct = duel::get_matching_group_count(d, Some(&|d, c| card::is_set_card(d, c, &[SET_BLUE_EYES as u16])), p, LOCATION_GRAVE, 0, NO_EX) as i64;

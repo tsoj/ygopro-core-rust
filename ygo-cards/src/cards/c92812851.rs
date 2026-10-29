@@ -20,7 +20,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Add 1 face-up Pendulum Monster from your Extra Deck to your hand
@@ -83,7 +83,7 @@ fn pendfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_faceup(d, c) && card::is_original_type(d, c, TYPE_PENDULUM) && card::is_original_type(d, c, TYPE_MONSTER)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(s.pendfilter,e:GetHandlerPlayer(),LOCATION_ONFIELD,0,nil)*100
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&pendfilter), p, LOCATION_ONFIELD, 0, NO_EX) as i64 * 100

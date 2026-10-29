@@ -16,7 +16,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
 }
@@ -24,7 +24,7 @@ fn cfilter(d: &mut Duel, c: CardId) -> bool {
     // return c:IsFaceup() and c:IsType(TYPE_TUNER)
     card::is_faceup(d, c) && card::is_type(d, c, TYPE_TUNER)
 }
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(s.cfilter,0,LOCATION_MZONE,LOCATION_MZONE,nil)*500
     duel::get_matching_group_count(d, Some(&cfilter), 0, LOCATION_MZONE, LOCATION_MZONE, NO_EX) as i64 * 500
 }

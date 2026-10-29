@@ -66,7 +66,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetTarget(function(e,c) return c:IsType(TYPE_PENDULUM) end)
     effect::set_target(d, e3, Some(effect_card_fn(|d, _e, c| card::is_type(d, c, TYPE_PENDULUM))));
     // e3:SetValue(function(e,c) return e:GetHandler():GetCounter(COUNTER_SOUL_PENDULUM)*300 end)
-    effect::set_value_fn(d, e3, effect_card_value(|d, e, _c| {
+    effect::set_value_fn(d, e3, effect_value(|d, e| {
         let h = effect::get_handler(d, e).nil();
         card::get_counter(d, h, COUNTER_SOUL_PENDULUM) as i64 * 300
     }));

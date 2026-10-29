@@ -40,7 +40,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetRange(LOCATION_MZONE)
     effect::set_range(d, e2, LOCATION_MZONE);
     // e2:SetValue(s.adval)
-    effect::set_value_fn(d, e2, effect_card_value(adval));
+    effect::set_value_fn(d, e2, effect_value(adval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Destroy
@@ -120,7 +120,7 @@ fn spop(d: &mut Duel, a: &EffArgs) {
     duel::special_summon(d, c, 0, a.tp, a.tp, false, false, POS_FACEUP as u8, None);
 }
 /// `s.adval(e,c)`: 500 for each card in your hand
-fn adval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn adval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetFieldGroupCount(0,LOCATION_HAND,LOCATION_HAND)*500
     duel::get_field_group_count(d, 0, LOCATION_HAND, LOCATION_HAND) as i64 * 500
 }

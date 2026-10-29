@@ -49,7 +49,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(function(e,c) return 200*Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsMonster),0,LOCATION_REMOVED,LOCATION_REMOVED,nil) end)
-    effect::set_value_fn(d, e1, effect_card_value(|d, _e, _c| {
+    effect::set_value_fn(d, e1, effect_value(|d, _e| {
         200 * duel::get_matching_group_count(d, Some(&|d, x| card::is_faceup(d, x) && card::is_monster(d, x)), 0, LOCATION_REMOVED, LOCATION_REMOVED, NO_EX) as i64
     }));
     // c:RegisterEffect(e1)

@@ -27,7 +27,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTarget(aux.TargetBoolFunction(Card.IsRace,RACE_ZOMBIE))
     effect::set_target(d, e2, Some(effect_card_fn(|d, _e, c| card::is_race(d, c, RACE_ZOMBIE))));
     // e2:SetValue(s.val)
-    effect::set_value_fn(d, e2, effect_card_value(val));
+    effect::set_value_fn(d, e2, effect_value(val));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // destroy replace
@@ -51,7 +51,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 // function s.val(e,c)
-fn val(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetFieldGroupCount(e:GetHandlerPlayer(),0,LOCATION_MZONE)*200
     let p = effect::get_handler_player(d, e);
     duel::get_field_group_count(d, p, 0, LOCATION_MZONE) as i64 * 200

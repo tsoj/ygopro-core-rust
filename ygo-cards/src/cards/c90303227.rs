@@ -17,7 +17,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EFFECT_EXTRA_ATTACK)
     effect::set_code(d, e1, EFFECT_EXTRA_ATTACK);
     // e1:SetValue(function(e,c) return math.max(0,e:GetHandler():GetOverlayCount()-1) end)
-    effect::set_value_fn(d, e1, effect_card_value(extra_attack_value));
+    effect::set_value_fn(d, e1, effect_value(extra_attack_value));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Activate this effect depending on whose turn it is
@@ -46,7 +46,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
 }
-fn extra_attack_value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn extra_attack_value(d: &mut Duel, e: EffectId) -> i64 {
     // math.max(0,e:GetHandler():GetOverlayCount()-1)
     let h = effect::get_handler(d, e).nil();
     (card::get_overlay_count(d, h) as i64 - 1).max(0)

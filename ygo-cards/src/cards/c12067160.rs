@@ -44,7 +44,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_property(d, e3, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_code(d, e3, EFFECT_UPDATE_ATTACK);
     effect::set_range(d, e3, LOCATION_MZONE);
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     card::register_effect(d, c, e3, false);
     // Cannot be destroyed by battle or monster effects while it points to no monsters
     let e4 = effect::create_effect(d, c);
@@ -86,7 +86,7 @@ fn discon(d: &mut Duel, a: &EffArgs) -> bool {
         }
         && !card::is_status(d, c, STATUS_BATTLE_DESTROYED)
 }
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     let lg = card::get_linked_group(d, h);
     let fg = group::filter(d, &lg, &|d, c| card::is_faceup(d, c), NO_EX);

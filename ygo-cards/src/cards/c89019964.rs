@@ -10,7 +10,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     let e1 = effect::create_effect(d, c);
     effect::set_type(d, e1, EFFECT_TYPE_SINGLE);
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     card::register_effect(d, c, e1, false);
     // Link Summon 1 DARK Link monster
     let e2 = effect::create_effect(d, c);
@@ -37,7 +37,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&|d, c| card::is_set_card(d, c, &[SET_UNCHAINED as u16])), p, LOCATION_GRAVE, 0, NO_EX) as i64 * 300
 }

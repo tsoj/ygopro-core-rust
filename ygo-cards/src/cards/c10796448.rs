@@ -57,7 +57,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(function(e) return e:GetHandler():IsAttackPos() end)
     effect::set_condition(d, e2, Some(condition(atk_cond)));
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Cannot be destroyed by battle or card effects
@@ -145,7 +145,7 @@ fn def_cond(d: &mut Duel, a: &EffArgs) -> bool {
     card::is_defense_pos(d, h)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=Duel.GetMatchingGroup(Card.IsFaceup,e:GetHandlerPlayer(),0,LOCATION_MZONE,nil)
     let p = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&|d, c| card::is_faceup(d, c)), p, 0, LOCATION_MZONE, NO_EX);

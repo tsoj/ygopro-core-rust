@@ -44,7 +44,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetRange(LOCATION_MZONE)
     effect::set_range(d, e3, LOCATION_MZONE);
     // e3:SetValue(s.atkval)
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // local e4=e3:Clone()
@@ -93,7 +93,7 @@ fn spcon(d: &mut Duel, _e: EffectId, c: Option<CardId>) -> bool {
     group::get_class_count(d, &g, &|d, c| card::get_attribute(d, c) as i64) >= 6
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=Duel.GetMatchingGroup(Card.IsMonster,e:GetHandlerPlayer(),LOCATION_GRAVE,LOCATION_GRAVE,nil)
     let p = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&|d, c| card::is_monster(d, c)), p, LOCATION_GRAVE, LOCATION_GRAVE, NO_EX);

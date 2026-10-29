@@ -35,7 +35,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(s.fuscon)
     effect::set_condition(d, e2, Some(condition(fuscon)));
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Opponent cannot target other monsters you control with effects
@@ -97,7 +97,7 @@ fn fuscon(d: &mut Duel, a: &EffArgs) -> bool {
     duel::is_existing_matching_card(d, Some(&cfilter), p, LOCATION_GRAVE, 0, 1, NO_EX)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsMonster,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil)*200
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&card::is_monster), p, LOCATION_GRAVE, 0, NO_EX) as i64 * 200

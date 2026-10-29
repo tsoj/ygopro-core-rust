@@ -17,7 +17,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_ONFIELD)
     effect::set_range(d, e1, LOCATION_ONFIELD);
     // e1:SetValue(function(e) return 8*65536+e:GetHandler():GetLevel() end)
-    effect::set_value_fn(d, e1, effect_card_value(synchro_level));
+    effect::set_value_fn(d, e1, effect_value(synchro_level));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Synchro Monster gains effect
@@ -37,7 +37,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e2, false);
 }
 /// The value function of e1: `8*65536+e:GetHandler():GetLevel()`
-fn synchro_level(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn synchro_level(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     (8i64 * 65536) + card::get_level(d, h) as i64
 }

@@ -63,7 +63,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetRange(LOCATION_MZONE)
     effect::set_range(d, e2, LOCATION_MZONE);
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Detach 1 material from this card
@@ -107,7 +107,7 @@ fn matxyzcond(d: &mut Duel, a: &EffArgs) -> bool {
     card::is_status(d, c, STATUS_SPSUMMON_TURN) && card::is_xyz_summoned(d, c)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local g=e:GetHandler():GetOverlayGroup():Filter(aux.OR(Card.HasLevel,Card.HasRank),nil)
     let h = effect::get_handler(d, e).nil();
     let overlay = card::get_overlay_group(d, h);

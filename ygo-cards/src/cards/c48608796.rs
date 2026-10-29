@@ -47,7 +47,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetCode(EFFECT_EXTRA_ATTACK)
     effect::set_code(d, e3, EFFECT_EXTRA_ATTACK);
     // e3:SetValue(s.raval)
-    effect::set_value_fn(d, e3, effect_card_value(raval));
+    effect::set_value_fn(d, e3, effect_value(raval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // Protection
@@ -76,7 +76,7 @@ fn atkval(d: &mut Duel, _e: EffectId, c: CardId) -> i64 {
     card::get_overlay_count(d, c) as i64 * 200
 }
 /// `s.raval(e,c)`
-fn raval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn raval(d: &mut Duel, e: EffectId) -> i64 {
     // local oc=e:GetHandler():GetOverlayCount()
     let h = effect::get_handler(d, e).nil();
     let oc = card::get_overlay_count(d, h) as i64;

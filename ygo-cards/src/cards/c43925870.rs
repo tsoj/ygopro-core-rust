@@ -29,7 +29,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_type(d, e1, EFFECT_TYPE_SINGLE);
     effect::set_property(d, e1, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_range(d, e1, LOCATION_MZONE);
-    effect::set_value_fn(d, e1, effect_card_value(val));
+    effect::set_value_fn(d, e1, effect_value(val));
     card::register_effect(d, c, e1, false);
     // destroy
     let e2 = effect::create_effect(d, c);
@@ -43,7 +43,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_operation(d, e2, Some(operation(desop)));
     card::register_effect(d, c, e2, false);
 }
-fn val(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, _e: EffectId) -> i64 {
     duel::get_matching_group_count(d, Some(&|d, x| card::is_facedown(d, x)), 0, LOCATION_SZONE, LOCATION_SZONE, NO_EX) as i64 * 300
 }
 fn descost(d: &mut Duel, a: &EffArgs) -> bool {

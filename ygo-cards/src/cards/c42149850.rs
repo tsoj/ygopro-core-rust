@@ -9,7 +9,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     let e1 = effect::create_effect(d, c);
     effect::set_type(d, e1, EFFECT_TYPE_EQUIP);
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
-    effect::set_value_fn(d, e1, effect_card_value(val));
+    effect::set_value_fn(d, e1, effect_value(val));
     card::register_effect(d, c, e1, false);
     // Register the fact it was sent from field to GY
     let e2 = effect::create_effect(d, c);
@@ -31,7 +31,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_operation(d, e3, Some(operation(setop)));
     card::register_effect(d, c, e3, false);
 }
-fn val(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     let p = card::get_controler(d, h);
     duel::get_matching_group_count(d, Some(&card::is_monster), p, LOCATION_GRAVE, 0, NO_EX) as i64 * 200

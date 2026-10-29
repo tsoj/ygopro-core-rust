@@ -30,7 +30,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e2, EFFECT_UPDATE_ATTACK);
     // e2:SetValue(s.value)
-    effect::set_value_fn(d, e2, effect_card_value(value));
+    effect::set_value_fn(d, e2, effect_value(value));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Register flag if this card destroys a monster by battle
@@ -113,7 +113,7 @@ fn atop(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `s.value(e,c)`
-fn value(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsRace,RACE_INSECT),0,LOCATION_MZONE,LOCATION_MZONE,nil)*200
     duel::get_matching_group_count(d, Some(&aux::faceup_filter(|d, c| card::is_race(d, c, RACE_INSECT))), 0, LOCATION_MZONE, LOCATION_MZONE, NO_EX) as i64 * 200
 }

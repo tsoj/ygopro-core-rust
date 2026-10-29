@@ -40,7 +40,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e5:SetRange(LOCATION_MZONE)
     effect::set_range(d, e5, LOCATION_MZONE);
     // e5:SetValue(s.atkval)
-    effect::set_value_fn(d, e5, effect_card_value(atkval));
+    effect::set_value_fn(d, e5, effect_value(atkval));
     // c:RegisterEffect(e5)
     card::register_effect(d, c, e5, false);
 }
@@ -63,7 +63,7 @@ fn splimit(d: &mut Duel, a: Args) -> bool {
     !card::is_location(d, h, LOCATION_EXTRA)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsSpellTrap,0,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)*400
     duel::get_matching_group_count(d, Some(&card::is_spell_trap), 0, LOCATION_ONFIELD, LOCATION_ONFIELD, NO_EX) as i64 * 400
 }

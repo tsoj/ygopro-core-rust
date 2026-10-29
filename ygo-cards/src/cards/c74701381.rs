@@ -16,7 +16,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_range(d, e2, LOCATION_SZONE);
     effect::set_target_range(d, e2, LOCATION_MZONE, LOCATION_MZONE);
     effect::set_code(d, e2, EFFECT_CHANGE_RACE);
-    effect::set_value_fn(d, e2, effect_card_value(value));
+    effect::set_value_fn(d, e2, effect_value(value));
     card::register_effect(d, c, e2, false);
     effect::set_label_object(d, e1, Value::Effect(e2));
 }
@@ -33,6 +33,6 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     card::set_hint(d, c, CHINT_RACE as u8, rc);
     true
 }
-fn value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, e: EffectId) -> i64 {
     effect::get_label(d, e)
 }

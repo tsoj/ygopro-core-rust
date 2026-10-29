@@ -38,7 +38,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTarget(s.atktg)
     effect::set_target(d, e1, Some(effect_card_fn(atktg)));
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // pierce
@@ -64,7 +64,7 @@ fn atkfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_set_card(d, c, &[SET_HERO as u16]) && card::is_type(d, c, TYPE_MONSTER)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroup(s.atkfilter,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil):GetClassCount(Card.GetCode)*100
     let p = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&atkfilter), p, LOCATION_GRAVE, 0, NO_EX);

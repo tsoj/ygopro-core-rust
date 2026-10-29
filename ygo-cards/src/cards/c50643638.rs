@@ -22,7 +22,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e1, 0, LOCATION_MZONE);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Send 1 Equip Spell from your hand or Deck to the GY, and if you do, destroy that target
@@ -74,7 +74,7 @@ fn atkdvalfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_equip_spell(d, c) && (card::is_faceup(d, c) || card::get_equip_target(d, c).is_some())
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return -400*Duel.GetMatchingGroupCount(s.atkdvalfilter,e:GetHandlerPlayer(),LOCATION_ONFIELD,0,nil)
     let p = effect::get_handler_player(d, e);
     -400 * duel::get_matching_group_count(d, Some(&atkdvalfilter), p, LOCATION_ONFIELD, 0, NO_EX) as i64

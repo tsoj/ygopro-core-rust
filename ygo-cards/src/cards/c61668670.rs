@@ -56,7 +56,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTarget(s.ecfilter)
     effect::set_target(d, e2, Some(effect_card_fn(ecfilter)));
     // e2:SetValue(s.atkvalue)
-    effect::set_value_fn(d, e2, effect_card_value(atkvalue));
+    effect::set_value_fn(d, e2, effect_value(atkvalue));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Additional attack to co-linked EARTH monsters
@@ -153,7 +153,7 @@ fn ecfilter(d: &mut Duel, e: EffectId, c: CardId) -> bool {
     group::is_contains(&g, c) && card::is_attribute(d, c, ATTRIBUTE_EARTH)
 }
 /// `s.atkvalue(e,c)`
-fn atkvalue(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkvalue(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetCounter(0x20c)*600
     let handler = effect::get_handler(d, e).nil();
     card::get_counter(d, handler, 0x20c) as i64 * 600

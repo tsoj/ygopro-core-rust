@@ -40,7 +40,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(function(e,c) return Duel.GetMatchingGroupCount(function(c) return c:IsSetCard(SET_NUMBER) and c:IsType(TYPE_XYZ) end,0,LOCATION_GRAVE,LOCATION_GRAVE,nil)*500 end)
-    effect::set_value_fn(d, e1, effect_card_value(|d, _e, _c| {
+    effect::set_value_fn(d, e1, effect_value(|d, _e| {
         duel::get_matching_group_count(d, Some(&|d, x| card::is_set_card(d, x, &[SET_NUMBER as u16]) && card::is_type(d, x, TYPE_XYZ)), 0, LOCATION_GRAVE, LOCATION_GRAVE, NO_EX) as i64 * 500
     }));
     // c:RegisterEffect(e1)

@@ -160,7 +160,7 @@ fn eqop(d: &mut Duel, a: &EffArgs) {
         // e3:SetReset(RESET_EVENT|RESETS_STANDARD)
         effect::set_reset(d, e3, RESET_EVENT | RESETS_STANDARD, 1);
         // e3:SetValue(s.ctval)
-        effect::set_value_fn(d, e3, effect_card_value(|d, e, _x| effect::get_handler_player(d, e) as i64));
+        effect::set_value_fn(d, e3, effect_value(|d, e| effect::get_handler_player(d, e) as i64));
         // c:RegisterEffect(e3)
         card::register_effect(d, c, e3, false);
     }

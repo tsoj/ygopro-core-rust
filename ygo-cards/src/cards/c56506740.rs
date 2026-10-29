@@ -59,7 +59,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetTarget(function(e,c) return c:IsType(TYPE_NORMAL) or c:IsSetCard(SET_PRIMITE) end)
     effect::set_target(d, e3, Some(effect_card_fn(e3_target)));
     // e3:SetValue(function(e,c) return 300*Duel.GetMatchingGroup(Card.IsType,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil,TYPE_NORMAL):GetClassCount(Card.GetCode) end)
-    effect::set_value_fn(d, e3, effect_card_value(e3_value));
+    effect::set_value_fn(d, e3, effect_value(e3_value));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
 }
@@ -216,7 +216,7 @@ fn e3_target(d: &mut Duel, _e: EffectId, c: CardId) -> bool {
     card::is_type(d, c, TYPE_NORMAL) || card::is_set_card(d, c, &[SET_PRIMITE as u16])
 }
 /// `function(e,c) return 300*Duel.GetMatchingGroup(Card.IsType,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil,TYPE_NORMAL):GetClassCount(Card.GetCode) end`
-fn e3_value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn e3_value(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&|d, c| card::is_type(d, c, TYPE_NORMAL)), p, LOCATION_GRAVE, 0, NO_EX);
     300 * group::get_class_count(d, &g, &|d, c| card::get_code(d, c)[0] as i64) as i64

@@ -34,7 +34,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTargetRange(LOCATION_MZONE,0)
     effect::set_target_range(d, e1, LOCATION_MZONE, 0);
     // e1:SetValue(s.defval)
-    effect::set_value_fn(d, e1, effect_card_value(defval));
+    effect::set_value_fn(d, e1, effect_value(defval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Halve the current ATK/DEF and negate the effects of 1 opponent's monster until the end of that turn
@@ -72,7 +72,7 @@ fn afdfilter(d: &mut Duel, c: CardId) -> bool {
         && card::is_faceup(d, c)
 }
 /// `s.defval(e,c)`
-fn defval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn defval(d: &mut Duel, e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(s.afdfilter,e:GetHandlerPlayer(),LOCATION_ONFIELD,0,nil)*500
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&afdfilter), p, LOCATION_ONFIELD, 0, NO_EX) as i64 * 500

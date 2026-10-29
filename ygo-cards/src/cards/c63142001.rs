@@ -21,7 +21,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1a:SetCondition(s.atkdefcon(Card.IsAttackPos))
     effect::set_condition(d, e1a, Some(lua_fn(|d, a| atkdefcon(d, a.e(0), true))));
     // e1a:SetValue(function(e,c) return 1000*Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsCode,id),e:GetHandlerPlayer(),LOCATION_MZONE,0,nil) end)
-    effect::set_value_fn(d, e1a, effect_card_value(atkval));
+    effect::set_value_fn(d, e1a, effect_value(atkval));
     // c:RegisterEffect(e1a)
     card::register_effect(d, c, e1a, false);
     // If all "Batteryman AA"(s) on your side of the field are in Defense Position, this card gains 1000 DEF for each "Batteryman AA" on your side of the field
@@ -51,7 +51,7 @@ fn atkdefcon(d: &mut Duel, e: EffectId, pos_attack: bool) -> bool {
     n == g.len()
 }
 /// `function(e,c) return 1000*Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsCode,id),e:GetHandlerPlayer(),LOCATION_MZONE,0,nil) end`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     1000 * duel::get_matching_group_count(d, Some(&|d, x| card::is_faceup(d, x) && card::is_code(d, x, &[ID])), p, LOCATION_MZONE, 0, NO_EX) as i64
 }

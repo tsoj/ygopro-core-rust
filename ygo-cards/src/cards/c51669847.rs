@@ -53,7 +53,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_code(d, e2, EFFECT_UPDATE_ATTACK);
     effect::set_range(d, e2, LOCATION_FZONE);
     effect::set_target_range(d, e2, 0, LOCATION_MZONE);
-    effect::set_value_fn(d, e2, effect_card_value(|d, _e, _c| -100 * duel::get_field_group_count(d, 0, LOCATION_REMOVED, LOCATION_REMOVED) as i64));
+    effect::set_value_fn(d, e2, effect_value(|d, _e| -100 * duel::get_field_group_count(d, 0, LOCATION_REMOVED, LOCATION_REMOVED) as i64));
     card::register_effect(d, c, e2, false);
     // Your opponent cannot activate card effects in the GY while you control "Nerva ...", "Jupiter ...", and "Junora ..."
     let e3 = effect::create_effect(d, c);

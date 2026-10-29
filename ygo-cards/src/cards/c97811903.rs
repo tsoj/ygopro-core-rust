@@ -34,7 +34,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(s.atkcon)
     effect::set_condition(d, e2, Some(condition(atkcon)));
     // e2:SetValue(function(e,c) return Duel.GetAttackTarget():GetAttack()*2 end)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // If this card would be destroyed by an opponent's card effect, you can discard 1 card instead
@@ -70,7 +70,7 @@ fn atkcon(d: &mut Duel, a: &EffArgs) -> bool {
     }
 }
 /// `function(e,c) return Duel.GetAttackTarget():GetAttack()*2 end`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     let at = duel::get_attack_target(d).nil();
     card::get_attack(d, at) as i64 * 2
 }

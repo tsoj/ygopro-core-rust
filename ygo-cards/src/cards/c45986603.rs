@@ -33,7 +33,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     let e4 = effect::create_effect(d, c);
     effect::set_type(d, e4, EFFECT_TYPE_EQUIP);
     effect::set_code(d, e4, EFFECT_SET_CONTROL);
-    effect::set_value_fn(d, e4, effect_card_value(ctval));
+    effect::set_value_fn(d, e4, effect_value(ctval));
     card::register_effect(d, c, e4, false);
 }
 /// `s.eqlimit(e,c)`: `e:GetHandlerPlayer()~=c:GetControler() or e:GetHandler():GetEquipTarget()==c`
@@ -78,6 +78,6 @@ fn recop(d: &mut Duel, a: &EffArgs) {
     duel::recover(d, info[0].int() as u8, info[1].int(), REASON_EFFECT, false, None);
 }
 /// `s.ctval(e,c)`: `return e:GetHandlerPlayer()`
-fn ctval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn ctval(d: &mut Duel, e: EffectId) -> i64 {
     effect::get_handler_player(d, e) as i64
 }

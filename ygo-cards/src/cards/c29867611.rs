@@ -17,7 +17,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e2, EFFECT_UPDATE_ATTACK);
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Your opponent: The equipped monster loses 500 ATK for each of your "Ɐttraction" Traps that are equipped to a monster.
@@ -40,7 +40,7 @@ fn atkfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_trap(d, c) && card::is_set_card(d, c, &[SET_ATTRACTION as u16]) && card::get_equip_target(d, c).is_some()
 }
 // function s.atkval(e,c)
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local et=e:GetHandler():GetEquipTarget()
     let h = effect::get_handler(d, e).nil();
     let et = card::get_equip_target(d, h);

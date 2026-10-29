@@ -35,7 +35,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetRange(LOCATION_MZONE)
     effect::set_range(d, e2, LOCATION_MZONE);
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // local e3=e2:Clone()
@@ -83,7 +83,7 @@ fn spcon(d: &mut Duel, a: Args) -> bool {
     duel::get_location_count(d, tp, LOCATION_MZONE as u8, None, None, None).0 > 0 && duel::is_existing_matching_card(d, Some(&stfilter), tp, LOCATION_SZONE, 0, 1, NO_EX)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsSpellTrap),0,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)*600
     let n = duel::get_matching_group_count(d, Some(&|d, c| card::is_faceup(d, c) && card::is_spell_trap(d, c)), 0, LOCATION_ONFIELD, LOCATION_ONFIELD, NO_EX);
     n as i64 * 600

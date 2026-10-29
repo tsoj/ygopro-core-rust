@@ -21,7 +21,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_property(d, e2, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_range(d, e2, LOCATION_MZONE);
     effect::set_code(d, e2, EFFECT_SET_ATTACK);
-    effect::set_value_fn(d, e2, effect_card_value(value));
+    effect::set_value_fn(d, e2, effect_value(value));
     card::register_effect(d, c, e2, false);
     let e3 = effect::clone(d, e2);
     effect::set_code(d, e3, EFFECT_SET_DEFENSE);
@@ -88,7 +88,7 @@ fn hspop(d: &mut Duel, a: Args) {
     // g:DeleteGroup() (nothing in Rust)
 }
 /// `s.value(e,c)`
-fn value(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsMonster),0,LOCATION_REMOVED,LOCATION_REMOVED,nil)*300
     duel::get_matching_group_count(d, Some(&|d, x| card::is_faceup(d, x) && card::is_monster(d, x)), 0, LOCATION_REMOVED, LOCATION_REMOVED, NO_EX) as i64 * 300
 }

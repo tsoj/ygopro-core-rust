@@ -57,7 +57,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e5:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e5, EFFECT_UPDATE_ATTACK);
     // e5:SetValue(s.value)
-    effect::set_value_fn(d, e5, effect_card_value(value));
+    effect::set_value_fn(d, e5, effect_value(value));
     // c:RegisterEffect(e5)
     card::register_effect(d, c, e5, false);
     // remove overlay replace
@@ -85,7 +85,7 @@ fn regop(d: &mut Duel, a: &EffArgs) {
     card::add_counter(d, h, 0x31, 1, false);
 }
 /// `s.value(e,c)`
-fn value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetCounter(0x31)*500
     let h = effect::get_handler(d, e).nil();
     card::get_counter(d, h, 0x31) as i64 * 500

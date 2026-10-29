@@ -61,7 +61,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetRange(LOCATION_MZONE)
     effect::set_range(d, e2, LOCATION_MZONE);
     // e2:SetValue(function(e,c) return e:GetHandler():GetEquipGroup():Filter(Card.HasFlagEffect,nil,id):GetSum(Card.GetAttack) end)
-    effect::set_value_fn(d, e2, effect_card_value(atk_value));
+    effect::set_value_fn(d, e2, effect_value(atk_value));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // While equipped with a Synchro Monster, this card can make up to 3 attacks on monsters during each Battle Phase
@@ -223,7 +223,7 @@ fn e3_condition(d: &mut Duel, a: &EffArgs) -> bool {
     group::is_exists(d, &eq, &|d, c| card::is_original_type(d, c, TYPE_SYNCHRO), 1, NO_EX)
 }
 /// `function(e,c) return e:GetHandler():GetEquipGroup():Filter(Card.HasFlagEffect,nil,id):GetSum(Card.GetAttack) end`
-fn atk_value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atk_value(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     let eq = card::get_equip_group(d, h);
     let g = group::filter(d, &eq, &|d, c| card::has_flag_effect(d, c, ID, None), NO_EX);

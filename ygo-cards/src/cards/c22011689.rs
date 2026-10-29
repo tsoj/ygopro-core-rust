@@ -19,7 +19,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(function(e,c) return Duel.GetCounter(0,1,1,COUNTER_PREDATOR)*200 end)
-    effect::set_value_fn(d, e1, effect_card_value(|d, _e, _c| duel::get_counter(d, 0, 1, 1, COUNTER_PREDATOR as u16) as i64 * 200));
+    effect::set_value_fn(d, e1, effect_value(|d, _e| duel::get_counter(d, 0, 1, 1, COUNTER_PREDATOR as u16) as i64 * 200));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Equip an opponent's monster that was destroyed by battle with this card to this card

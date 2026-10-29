@@ -35,7 +35,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e1, 0, LOCATION_MZONE);
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Destroy 2 cards on the field
@@ -86,7 +86,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.atkval(e,c)`: `Duel.GetMatchingGroupCount(Card.IsSetCard,e:GetHandler():GetControler(),LOCATION_GRAVE,0,nil,SET_HERO)*-200`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     let p = card::get_controler(d, h);
     duel::get_matching_group_count(d, Some(&|d, cc| card::is_set_card(d, cc, &[SET_HERO as u16])), p, LOCATION_GRAVE, 0, NO_EX) as i64 * -200

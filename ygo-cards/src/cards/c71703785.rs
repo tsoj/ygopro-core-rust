@@ -42,7 +42,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(s.atkcon)
     effect::set_condition(d, e2, Some(condition(atkcon)));
     // e2:SetValue(function(e,c) return e:GetHandler():GetAttack()*2 end)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Special Summon 1 "Dark Magician" from your hand, Deck, or GY
@@ -101,7 +101,7 @@ fn selfspop(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `e:GetHandler():GetAttack()*2`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     card::get_attack(d, h) as i64 * 2
 }

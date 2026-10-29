@@ -34,7 +34,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e1, 0, LOCATION_MZONE);
     // e1:SetValue(function(e,c) return Duel.GetFieldGroupCount(e:GetHandlerPlayer(),LOCATION_ONFIELD,0)*-100 end)
-    effect::set_value_fn(d, e1, effect_card_value(atk_value));
+    effect::set_value_fn(d, e1, effect_value(atk_value));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // If your "@Ignister" monster battles, your opponent cannot activate cards or effects until the end of the Damage Step
@@ -83,7 +83,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.atkval` (e1): `Duel.GetFieldGroupCount(e:GetHandlerPlayer(),LOCATION_ONFIELD,0)*-100`
-fn atk_value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atk_value(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     duel::get_field_group_count(d, p, LOCATION_ONFIELD, 0) as i64 * -100
 }

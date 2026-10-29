@@ -35,7 +35,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(s.atkcon)
     effect::set_condition(d, e2, Some(condition(atkcon)));
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // search
@@ -66,7 +66,7 @@ fn atkcon(d: &mut Duel, a: &EffArgs) -> bool {
     duel::get_lp(d, tp) < duel::get_lp(d, 1 - tp)
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // local tp=e:GetHandlerPlayer()
     let tp = effect::get_handler_player(d, e);
     // return Duel.GetLP(1-tp)-Duel.GetLP(tp)

@@ -24,7 +24,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(s.val)
-    effect::set_value_fn(d, e1, effect_card_value(val));
+    effect::set_value_fn(d, e1, effect_value(val));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // pierce
@@ -63,7 +63,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `s.val(e,c)`
-fn val(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(s.filter,0,LOCATION_ONFIELD|LOCATION_GRAVE,LOCATION_ONFIELD|LOCATION_GRAVE,nil)*100
     duel::get_matching_group_count(d, Some(&filter), 0, LOCATION_ONFIELD | LOCATION_GRAVE, LOCATION_ONFIELD | LOCATION_GRAVE, NO_EX) as i64 * 100
 }

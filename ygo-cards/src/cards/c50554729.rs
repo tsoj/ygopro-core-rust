@@ -29,7 +29,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,SET_AMORPHAGE))
     effect::set_target(d, e2, Some(effect_card_fn(|d, _e, c| card::is_set_card(d, c, &[SET_AMORPHAGE as u16]))));
     // e2:SetValue(s.value)
-    effect::set_value_fn(d, e2, effect_card_value(value));
+    effect::set_value_fn(d, e2, effect_value(value));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // local e3=e2:Clone()
@@ -76,7 +76,7 @@ fn filter(d: &mut Duel, c: CardId) -> bool {
     card::is_faceup(d, c) && card::is_set_card(d, c, &[SET_AMORPHAGE as u16])
 }
 /// `s.value(e,c)`
-fn value(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(s.filter,0,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)*100
     duel::get_matching_group_count(d, Some(&|d, c| filter(d, c)), 0, LOCATION_ONFIELD, LOCATION_ONFIELD, NO_EX) as i64 * 100
 }

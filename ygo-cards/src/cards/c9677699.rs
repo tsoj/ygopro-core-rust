@@ -15,7 +15,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetCode(EFFECT_UPDATE_ATTACK)
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
     // e1:SetValue(s.value)
-    effect::set_value_fn(d, e1, effect_card_value(value));
+    effect::set_value_fn(d, e1, effect_value(value));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // cannot attack
@@ -54,7 +54,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 // function s.value(e,c)
-fn value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, e: EffectId) -> i64 {
     // local ec=e:GetHandler():GetEquipTarget()
     let ec = card::get_equip_target(d, effect::get_handler(d, e).nil()).nil();
     // if ec:IsRace(RACE_FAIRY) then

@@ -22,7 +22,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1a:SetCondition(s.atkdefcon(Card.IsAttackPos))
     effect::set_condition(d, e1a, Some(condition(atkcon)));
     // e1a:SetValue(function(e,c) return 500*Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsCode,id),e:GetHandlerPlayer(),LOCATION_MZONE,0,nil) end)
-    effect::set_value_fn(d, e1a, effect_card_value(valfn));
+    effect::set_value_fn(d, e1a, effect_value(valfn));
     // c:RegisterEffect(e1a)
     card::register_effect(d, c, e1a, false);
     // If all "Batteryman C"(s) you control are in Defense Position, all Machine-Type monsters you control gain 500 DEF for each "Batteryman C" you control
@@ -51,7 +51,7 @@ fn atkdefcon(d: &mut Duel, a: &EffArgs, pos_function: &dyn Fn(&mut Duel, CardId)
     !g.is_empty() && group::filter_count(d, &g, &|d, c| pos_function(d, c), NO_EX) == g.len()
 }
 /// `function(e,c) return 500*Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsCode,id),e:GetHandlerPlayer(),LOCATION_MZONE,0,nil) end`
-fn valfn(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn valfn(d: &mut Duel, e: EffectId) -> i64 {
     let hp = effect::get_handler_player(d, e);
     500 * duel::get_matching_group_count(d, Some(&|d, c| card::is_faceup(d, c) && card::is_code(d, c, &[ID])), hp, LOCATION_MZONE, 0, NO_EX) as i64
 }

@@ -28,7 +28,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_range(d, e3, LOCATION_FZONE);
     effect::set_target_range(d, e3, LOCATION_MZONE, LOCATION_MZONE);
     effect::set_target(d, e3, Some(effect_card_fn(|d, _e, c| card::is_set_card(d, c, &[SET_GLADIATOR as u16]))));
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     card::register_effect(d, c, e3, false);
     let e4 = effect::clone(d, e3);
     effect::set_code(d, e4, EFFECT_UPDATE_DEFENSE);
@@ -43,7 +43,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_operation(d, e5, Some(operation(desrepop)));
     card::register_effect(d, c, e5, false);
 }
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     card::get_counter(d, h, 0x7) as i64 * 100
 }

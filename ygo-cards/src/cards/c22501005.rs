@@ -27,7 +27,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e2, 0, LOCATION_MZONE);
     // e2:SetValue(s.atkvalue)
-    effect::set_value_fn(d, e2, effect_card_value(atkvalue));
+    effect::set_value_fn(d, e2, effect_value(atkvalue));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // Search 1 "Ritual Beast" monster then discard 1 card
@@ -82,7 +82,7 @@ fn faceup_rb(d: &mut Duel, c: CardId) -> bool {
     card::is_faceup(d, c) && card::is_set_card(d, c, &[SET_RITUAL_BEAST as u16])
 }
 /// `s.atkvalue(e,c)`
-fn atkvalue(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkvalue(d: &mut Duel, e: EffectId) -> i64 {
     // local g=Duel.GetMatchingGroup(aux.FaceupFilter(Card.IsSetCard,SET_RITUAL_BEAST),e:GetHandlerPlayer(),LOCATION_MZONE,0,nil)
     let p = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&faceup_rb), p, LOCATION_MZONE, 0, NO_EX);

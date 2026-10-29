@@ -50,12 +50,12 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e3, 0, LOCATION_MZONE);
     // e3:SetValue(s.atkval)
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetCounter(0x32)*-300
     let h = effect::get_handler(d, e).nil();
     card::get_counter(d, h, 0x32) as i64 * -300

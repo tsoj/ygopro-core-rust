@@ -35,14 +35,14 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCode(EFFECT_TRAP_ACT_IN_HAND)
     effect::set_code(d, e2, EFFECT_TRAP_ACT_IN_HAND);
     // e2:SetValue(function(e,c) e:SetLabel(1) end)
-    effect::set_value_fn(d, e2, effect_card_value(value_fn));
+    effect::set_value_fn(d, e2, effect_value(value_fn));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // e1:SetLabelObject(e2)
     effect::set_label_object(d, e1, Value::Effect(e2));
 }
 /// `function(e,c) e:SetLabel(1) end`
-fn value_fn(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn value_fn(d: &mut Duel, e: EffectId) -> i64 {
     // e:SetLabel(1)
     effect::set_label(d, e, &[1]);
     0

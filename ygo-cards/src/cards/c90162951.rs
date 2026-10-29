@@ -23,7 +23,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTargetRange(LOCATION_MZONE,0)
     effect::set_target_range(d, e1, LOCATION_MZONE, 0);
     // e1:SetValue(s.val)
-    effect::set_value_fn(d, e1, effect_card_value(val));
+    effect::set_value_fn(d, e1, effect_value(val));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // local e2=e1:Clone()
@@ -81,7 +81,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e5, false);
 }
 /// `s.val(e,c)`
-fn val(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, _e: EffectId) -> i64 {
     // return math.abs(Duel.GetLP(0)-Duel.GetLP(1))
     (duel::get_lp(d, 0) - duel::get_lp(d, 1)).abs() as i64
 }

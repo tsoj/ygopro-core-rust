@@ -36,7 +36,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_range(d, e2, LOCATION_MZONE);
     effect::set_code(d, e2, EFFECT_SET_ATTACK);
     effect::set_condition(d, e2, Some(condition(adcon)));
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     card::register_effect(d, c, e2, false);
     let e3 = effect::create_effect(d, c);
     effect::set_type(d, e3, EFFECT_TYPE_SINGLE);
@@ -44,7 +44,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_range(d, e3, LOCATION_MZONE);
     effect::set_code(d, e3, EFFECT_SET_DEFENSE);
     effect::set_condition(d, e3, Some(condition(adcon)));
-    effect::set_value_fn(d, e3, effect_card_value(defval));
+    effect::set_value_fn(d, e3, effect_value(defval));
     card::register_effect(d, c, e3, false);
     // damage
     let e4 = effect::create_effect(d, c);
@@ -124,7 +124,7 @@ fn adcon(d: &mut Duel, a: &EffArgs) -> bool {
     let eg = card::get_equip_group(d, c);
     !group::filter(d, &eg, &eqfilter, NO_EX).is_empty()
 }
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     let c = effect::get_handler(d, e).nil();
     let eg = card::get_equip_group(d, c);
     let g = group::filter(d, &eg, &eqfilter, NO_EX);
@@ -136,7 +136,7 @@ fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
         atk as i64
     }
 }
-fn defval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn defval(d: &mut Duel, e: EffectId) -> i64 {
     let c = effect::get_handler(d, e).nil();
     let eg = card::get_equip_group(d, c);
     let g = group::filter(d, &eg, &eqfilter, NO_EX);

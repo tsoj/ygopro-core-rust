@@ -44,7 +44,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetCondition(s.ctcon)
     effect::set_condition(d, e2, Some(condition(ctcon)));
     // e2:SetValue(s.ctval)
-    effect::set_value_fn(d, e2, effect_card_value(ctval));
+    effect::set_value_fn(d, e2, effect_value(ctval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // special summon
@@ -110,7 +110,7 @@ fn ctcon(d: &mut Duel, a: &EffArgs) -> bool {
     group::is_exists(d, &og, &|d: &mut Duel, c: CardId| card::is_set_card(d, c, &[SET_RAIDRAPTOR as u16]), 1, NO_EX)
 }
 /// `s.ctval(e,c)`
-fn ctval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn ctval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetOverlayGroup():FilterCount(Card.IsSetCard,nil,SET_RAIDRAPTOR)-1
     let h = effect::get_handler(d, e).nil();
     let og = card::get_overlay_group(d, h);

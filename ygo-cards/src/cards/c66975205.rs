@@ -30,7 +30,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,SET_YUMMY))
     effect::set_target(d, e1, Some(effect_card_fn(yummy_target)));
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Special Summon 1 Level 1 "Yummy" monster from your GY
@@ -92,7 +92,7 @@ fn atkfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_attribute(d, c, ATTRIBUTE_LIGHT) && card::is_race(d, c, RACE_BEAST as u64) && card::is_faceup(d, c)
 }
 // function s.atkval(e,c)
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return 500*Duel.GetMatchingGroupCount(s.atkfilter,0,LOCATION_MZONE,LOCATION_MZONE,nil)
     500 * duel::get_matching_group_count(d, Some(&atkfilter), 0, LOCATION_MZONE, LOCATION_MZONE, NO_EX) as i64
 }

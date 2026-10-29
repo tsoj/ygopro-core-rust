@@ -50,7 +50,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e3, 0, LOCATION_MZONE);
     // e3:SetValue(s.atkval)
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // Special summon
@@ -103,7 +103,7 @@ fn tgop(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `function s.atkval(e,c) return Duel.GetMatchingGroupCount(Card.IsRace,e:GetHandler():GetControler(),LOCATION_GRAVE,0,nil,RACE_WARRIOR)*-100 end`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     let h = effect::get_handler(d, e).nil();
     let p = card::get_controler(d, h);
     let n = duel::get_matching_group_count(d, Some(&|d, cc| card::is_race(d, cc, RACE_WARRIOR)), p, LOCATION_GRAVE, 0, NO_EX);

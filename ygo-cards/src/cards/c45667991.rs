@@ -160,7 +160,7 @@ fn efop(d: &mut Duel, a: &EffArgs) {
     // e1:SetCondition(s.atkcon)
     effect::set_condition(d, e1, Some(lua_fn(atkcon)));
     // e1:SetValue(s.atkval)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // e1:SetReset(RESET_EVENT|RESETS_STANDARD)
     effect::set_reset(d, e1, RESET_EVENT | RESETS_STANDARD, 1);
     // rc:RegisterEffect(e1,true)
@@ -199,7 +199,7 @@ fn atkcon(d: &mut Duel, a: Args) -> bool {
     }
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetBaseAttack()*2
     let h = effect::get_handler(d, e).nil();
     card::get_base_attack(d, h) as i64 * 2

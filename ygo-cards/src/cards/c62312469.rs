@@ -22,7 +22,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTarget(s.atktg)
     effect::set_target(d, e1, Some(effect_card_fn(atktg)));
     // e1:SetValue(s.value)
-    effect::set_value_fn(d, e1, effect_card_value(value));
+    effect::set_value_fn(d, e1, effect_value(value));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // local e2=e1:Clone()
@@ -60,7 +60,7 @@ fn atktg(d: &mut Duel, _e: EffectId, c: CardId) -> bool {
     card::is_attribute(d, c, ATTRIBUTES)
 }
 /// `s.value(e,c)`
-fn value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, e: EffectId) -> i64 {
     // local tp=e:GetHandlerPlayer()
     let tp = effect::get_handler_player(d, e);
     // return Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE,0,nil):GetBinClassCount(Card.GetAttribute)*200

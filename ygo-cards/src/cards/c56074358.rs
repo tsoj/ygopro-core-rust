@@ -46,7 +46,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e3:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,SET_MORPHTRONIC))
     effect::set_target(d, e3, Some(effect_card_fn(|d, _e, c| card::is_set_card(d, c, &[SET_MORPHTRONIC as u16]))));
     // e3:SetValue(s.atkval)
-    effect::set_value_fn(d, e3, effect_card_value(atkval));
+    effect::set_value_fn(d, e3, effect_value(atkval));
     // c:RegisterEffect(e3)
     card::register_effect(d, c, e3, false);
     // special summon
@@ -72,7 +72,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e4, false);
 }
 // function s.atkval(e,c)
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandler():GetCounter(0x8)*300
     let handler = effect::get_handler(d, e).nil();
     card::get_counter(d, handler, 0x8) as i64 * 300

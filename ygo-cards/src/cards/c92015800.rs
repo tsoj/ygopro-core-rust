@@ -23,7 +23,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(function(e,c) return e:GetHandler():GetOverlayGroup():GetBitwiseOr(Card.GetAttribute) end)
-    effect::set_value_fn(d, e1, effect_card_value(|d, e, _c| {
+    effect::set_value_fn(d, e1, effect_value(|d, e| {
         let handler = effect::get_handler(d, e).nil();
         let g = card::get_overlay_group(d, handler);
         group::get_bitwise_or(d, &g, &|d, x| card::get_attribute(d, x) as i64) as i64

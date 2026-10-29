@@ -17,7 +17,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_description(d, e0, aux::stringid(ID, 0));
     effect::set_type(d, e0, EFFECT_TYPE_SINGLE);
     effect::set_code(d, e0, EFFECT_TRAP_ACT_IN_HAND);
-    effect::set_value_fn(d, e0, effect_card_value(|d, e, _c| {
+    effect::set_value_fn(d, e0, effect_value(|d, e| {
         effect::set_label(d, e, &[1]);
         0
     }));

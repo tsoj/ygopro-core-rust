@@ -29,7 +29,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_range(d, e3, LOCATION_SZONE);
     effect::set_target_range(d, e3, LOCATION_MZONE, LOCATION_MZONE);
     effect::set_target(d, e3, Some(aux::persistent_target_filter()));
-    effect::set_value_fn(d, e3, effect_card_value(tg));
+    effect::set_value_fn(d, e3, effect_value(tg));
     card::register_effect(d, c, e3, false);
     // cannot attack
     let e4 = effect::create_effect(d, c);
@@ -109,7 +109,7 @@ fn con(d: &mut Duel, a: &EffArgs) -> bool {
     let h = effect::get_handler(d, a.e).nil();
     card::is_has_card_target(d, c, h)
 }
-fn tg(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn tg(d: &mut Duel, e: EffectId) -> i64 {
     // return e:GetHandlerPlayer()
     effect::get_handler_player(d, e) as i64
 }

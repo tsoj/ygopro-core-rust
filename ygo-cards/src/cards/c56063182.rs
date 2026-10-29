@@ -33,7 +33,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e2, 0, LOCATION_MZONE);
     // e2:SetValue(s.atkval)
-    effect::set_value_fn(d, e2, effect_card_value(atkval));
+    effect::set_value_fn(d, e2, effect_value(atkval));
     // c:RegisterEffect(e2)
     card::register_effect(d, c, e2, false);
     // local e3=e2:Clone()
@@ -91,7 +91,7 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsDefensePos,0,LOCATION_MZONE,LOCATION_MZONE,nil)*-100
     duel::get_matching_group_count(d, Some(&|d, c| card::is_defense_pos(d, c)), 0, LOCATION_MZONE, LOCATION_MZONE, NO_EX) as i64 * -100
 }

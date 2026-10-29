@@ -53,7 +53,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e2:SetTargetRange(LOCATION_MZONE,0)
     effect::set_target_range(d, e2, LOCATION_MZONE, 0);
     // e2:SetValue(function(e,c) return e:GetHandler():GetCounter(COUNTER_SEASON)*400 end)
-    effect::set_value_fn(d, e2, effect_card_value(|d, e, _c| {
+    effect::set_value_fn(d, e2, effect_value(|d, e| {
         let h = effect::get_handler(d, e).nil();
         card::get_counter(d, h, COUNTER_SEASON) as i64 * 400
     }));

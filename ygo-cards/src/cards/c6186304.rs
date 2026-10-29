@@ -90,7 +90,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e4:SetTarget(aux.TargetBoolFunction(Card.IsCode,83965310))
     effect::set_target(d, e4, Some(effect_card_fn(|d, _e, c| card::is_code(d, c, &[83965310]))));
     // e4:SetValue(s.val)
-    effect::set_value_fn(d, e4, effect_card_value(val));
+    effect::set_value_fn(d, e4, effect_value(val));
     // c:RegisterEffect(e4)
     card::register_effect(d, c, e4, false);
     // local e5=e4:Clone()
@@ -158,7 +158,7 @@ fn drawcon(d: &mut Duel, _a: &EffArgs) -> bool {
     duel::is_phase(d, PHASE_DRAW)
 }
 /// `s.val(e,c)`
-fn val(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn val(d: &mut Duel, _e: EffectId) -> i64 {
     // return Duel.GetMatchingGroupCount(Card.IsMonster,0,LOCATION_GRAVE,LOCATION_GRAVE,nil)*100
     duel::get_matching_group_count(d, Some(&|d, c| card::is_monster(d, c)), 0, LOCATION_GRAVE, LOCATION_GRAVE, NO_EX) as i64 * 100
 }

@@ -13,7 +13,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_property(d, e1, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_range(d, e1, LOCATION_MZONE);
     effect::set_code(d, e1, EFFECT_UPDATE_ATTACK);
-    effect::set_value_fn(d, e1, effect_card_value(value));
+    effect::set_value_fn(d, e1, effect_value(value));
     card::register_effect(d, c, e1, false);
     let e2 = effect::clone(d, e1);
     effect::set_code(d, e2, EFFECT_UPDATE_DEFENSE);
@@ -30,7 +30,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_operation(d, e3, Some(operation(op)));
     card::register_effect(d, c, e3, false);
 }
-fn value(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn value(d: &mut Duel, _e: EffectId) -> i64 {
     duel::get_matching_group_count(d, Some(&|d, x| card::is_attribute(d, x, ATTRIBUTE_DARK)), 0, LOCATION_GRAVE, LOCATION_GRAVE, NO_EX) as i64 * 200
 }
 fn target(d: &mut Duel, a: &EffArgs) -> bool {

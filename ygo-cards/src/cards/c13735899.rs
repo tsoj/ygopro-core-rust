@@ -43,7 +43,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetRange(LOCATION_MZONE)
     effect::set_range(d, e1, LOCATION_MZONE);
     // e1:SetValue(function(e,cc) return Duel.GetFieldGroupCount(e:GetHandlerPlayer(),LOCATION_REMOVED,0)*-100 end)
-    effect::set_value_fn(d, e1, effect_card_value(atk_value));
+    effect::set_value_fn(d, e1, effect_value(atk_value));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Banish 1 Special Summoned monster, also banish all monsters from the field with its same original Type
@@ -93,7 +93,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e2b, false);
 }
 /// `function(e,cc) return Duel.GetFieldGroupCount(e:GetHandlerPlayer(),LOCATION_REMOVED,0)*-100 end`
-fn atk_value(d: &mut Duel, e: EffectId, _cc: CardId) -> i64 {
+fn atk_value(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     duel::get_field_group_count(d, p, LOCATION_REMOVED, 0) as i64 * -100
 }

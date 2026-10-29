@@ -94,7 +94,7 @@ fn atkop(d: &mut Duel, a: &EffArgs) {
         // e1:SetRange(LOCATION_MZONE)
         effect::set_range(d, e1, LOCATION_MZONE);
         // e1:SetValue(s.atkval)
-        effect::set_value_fn(d, e1, effect_card_value(atkval));
+        effect::set_value_fn(d, e1, effect_value(atkval));
         // e1:SetReset(RESETS_STANDARD_PHASE_END|RESET_OPPO_TURN)
         effect::set_reset(d, e1, RESETS_STANDARD_PHASE_END | RESET_OPPO_TURN, 1);
         // tc:RegisterEffect(e1)
@@ -108,7 +108,7 @@ fn atkop(d: &mut Duel, a: &EffArgs) {
     }
 }
 /// `s.atkval(e,c)`
-fn atkval(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, _e: EffectId) -> i64 {
     // local g=Duel.GetMatchingGroup(Card.IsType,0,LOCATION_MZONE,LOCATION_MZONE,nil,TYPE_LINK)
     let g = duel::get_matching_group(d, Some(&|d, x| card::is_type(d, x, TYPE_LINK)), 0, LOCATION_MZONE, LOCATION_MZONE, NO_EX);
     // return g:GetSum(Card.GetLink)*100

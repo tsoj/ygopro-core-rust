@@ -36,7 +36,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTargetRange(0,LOCATION_MZONE)
     effect::set_target_range(d, e1, 0, LOCATION_MZONE);
     // e1:SetValue(function(e,c) return Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsSetCard,SET_AZAMINA),e:GetHandlerPlayer(),LOCATION_MZONE,0,nil)*-500 end)
-    effect::set_value_fn(d, e1, effect_card_value(atk_value));
+    effect::set_value_fn(d, e1, effect_value(atk_value));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // local e2=e1:Clone()
@@ -101,7 +101,7 @@ fn matfilter(d: &mut Duel, c: CardId, fc: CardId, st: u64, tp: u8) -> bool {
     card::is_attribute_ctx(d, c, ATTRIBUTE_LIGHT, Some(fc), st, Some(tp)) && card::is_race_ctx(d, c, RACE_SPELLCASTER, Some(fc), st, Some(tp))
 }
 /// `function(e,c) return Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsSetCard,SET_AZAMINA),e:GetHandlerPlayer(),LOCATION_MZONE,0,nil)*-500 end`
-fn atk_value(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atk_value(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     duel::get_matching_group_count(d, Some(&|d, x| card::is_faceup(d, x) && card::is_set_card(d, x, &[SET_AZAMINA as u16])), p, LOCATION_MZONE, 0, NO_EX) as i64 * -500
 }

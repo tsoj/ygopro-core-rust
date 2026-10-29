@@ -22,7 +22,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTarget(function(e,c) return c:IsXyzMonster() end)
     effect::set_target(d, e1, Some(effect_card_fn(|d, _e, c| card::is_xyz_monster(d, c))));
     // e1:SetValue(function(e,c) return Duel.GetOverlayCount(0,1,1)*100 end)
-    effect::set_value_fn(d, e1, effect_card_value(|d, _e, _c| duel::get_overlay_count(d, 0, 1, 1, None) as i64 * 100));
+    effect::set_value_fn(d, e1, effect_value(|d, _e| duel::get_overlay_count(d, 0, 1, 1, None) as i64 * 100));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // You can target 1 "Materiactor" Xyz Monster you control; attach this card to it as material, then draw 1 card. You can only use this effect of "Prima Materiactor" once per turn

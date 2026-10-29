@@ -45,7 +45,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_property(d, e3, EFFECT_FLAG_SINGLE_RANGE, 0);
     effect::set_range(d, e3, LOCATION_MZONE);
     effect::set_code(d, e3, EFFECT_UPDATE_ATTACK);
-    effect::set_value_fn(d, e3, effect_card_value(atkup));
+    effect::set_value_fn(d, e3, effect_value(atkup));
     card::register_effect(d, c, e3, false);
 }
 /// `s.atkfilter(c)`
@@ -53,7 +53,7 @@ fn atkfilter(d: &mut Duel, c: CardId) -> bool {
     card::is_faceup(d, c) && card::get_code(d, c).first().copied() != Some(ID) && card::is_attribute(d, c, ATTRIBUTE_WATER)
 }
 /// `s.atkup(e,c)`
-fn atkup(d: &mut Duel, _e: EffectId, _c: CardId) -> i64 {
+fn atkup(d: &mut Duel, _e: EffectId) -> i64 {
     duel::get_matching_group_count(d, Some(&atkfilter), 0, LOCATION_MZONE, LOCATION_MZONE, NO_EX) as i64 * 500
 }
 /// `s.descon(e,tp,eg,ep,ev,re,r,rp)`

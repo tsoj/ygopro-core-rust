@@ -29,7 +29,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     // e1:SetTargetRange(LOCATION_MZONE,0)
     effect::set_target_range(d, e1, LOCATION_MZONE, 0);
     // e1:SetValue(function(e,c) return 200*Duel.GetMatchingGroup(Card.IsFaceup,e:GetHandlerPlayer(),LOCATION_MZONE,0,nil):GetBinClassCount(Card.GetAttribute) end)
-    effect::set_value_fn(d, e1, effect_card_value(atkval));
+    effect::set_value_fn(d, e1, effect_value(atkval));
     // c:RegisterEffect(e1)
     card::register_effect(d, c, e1, false);
     // Add 1 "Miracle Fusion" from your Deck to your hand
@@ -80,7 +80,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     card::register_effect(d, c, e3, false);
 }
 /// `function(e,c) return 200*...:GetBinClassCount(Card.GetAttribute) end`
-fn atkval(d: &mut Duel, e: EffectId, _c: CardId) -> i64 {
+fn atkval(d: &mut Duel, e: EffectId) -> i64 {
     let p = effect::get_handler_player(d, e);
     let g = duel::get_matching_group(d, Some(&|d, c| card::is_faceup(d, c)), p, LOCATION_MZONE, 0, NO_EX);
     200 * group::get_bin_class_count(d, &g, &|d, c| card::get_attribute(d, c) as i64) as i64

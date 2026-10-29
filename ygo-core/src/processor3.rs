@@ -1046,6 +1046,8 @@ impl Duel {
                 if (cv.is_empty() && self.card(tmp_attacker).direct_attackable == 0) || tmp_attack_target.is_some_and(|t| !cv.contains(&t)) {
                     return true;
                 }
+                arg.backup_attacker = self.core.attacker;
+                arg.backup_attack_target = self.core.attack_target;
                 self.core.attacker = Some(tmp_attacker);
                 self.core.attack_target = tmp_attack_target;
                 self.reset_attack_counts_on_field();
@@ -1076,8 +1078,10 @@ impl Duel {
                 self.core.quick_f_chain.clear();
                 self.core.delayed_quick_tmp.clear();
                 self.reset_attack_counts_on_field();
-                self.core.attacker = None;
-                self.core.attack_target = None;
+                // (the interrupted attack goes on: it was None before, and an attack in progress
+                // unwrapped a None attacker)
+                self.core.attacker = arg.backup_attacker;
+                self.core.attack_target = arg.backup_attack_target;
                 let ph = self.infos.phase;
                 let m = self.new_message(MSG_NEW_PHASE);
                 self.msg(m).u16(ph);

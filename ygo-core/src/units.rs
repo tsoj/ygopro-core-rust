@@ -79,7 +79,8 @@ units! {
         cards_destroyed_by_battle: Option<GroupRef>, reason_card: Option<CardId>, must_attack_map: Vec<(EffectId, CardId)> }
     DamageStep(false) { backup_phase: u16, new_attack: bool, attacker: Option<CardId>, attack_target: Option<CardId>,
         cards_destroyed_by_battle: Option<GroupRef> }
-    ForcedBattle(false) { backup_phase: u16 }
+    // (backup_attacker, backup_attack_target: the attack the forced battle interrupts, if any)
+    ForcedBattle(false) { backup_phase: u16, backup_attacker: Option<CardId>, backup_attack_target: Option<CardId> }
     AddChain(false) { is_activated_effect: bool }
     SolveChain(false) { skip_trigger: bool, skip_freechain: bool, skip_new: bool, backed_up_operation: Option<crate::types::LuaFn> }
     SolveContinuous(false) { reason_player: u8, reason_effect: Option<EffectId> }

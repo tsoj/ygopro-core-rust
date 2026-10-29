@@ -1101,7 +1101,7 @@ impl Duel {
         };
         if self.core.set_forced_attack {
             self.core.set_forced_attack = false;
-            self.emplace_process(units::ForcedBattle { step: 0, backup_phase: 0 });
+            self.emplace_process(units::ForcedBattle { step: 0, backup_phase: 0, backup_attacker: None, backup_attack_target: None });
         }
         done
     }

@@ -3170,8 +3170,8 @@ diff -ruN core_a/playerop.cpp core_b/playerop.cpp
  			message->write<uint32_t>(pcard->data.code);
  			message->write(pcard->get_info_location());
 diff -ruN core_a/processor.cpp core_b/processor.cpp
---- core_a/processor.cpp	2026-09-25 10:05:07.000000000 +0200
-+++ core_b/processor.cpp	2026-10-26 21:27:06.609578935 +0100
+--- core_a/processor.cpp	2026-10-29 13:54:29.063273500 +0100
++++ core_b/processor.cpp	2026-10-29 13:54:29.065790039 +0100
 @@ -962,6 +962,13 @@
  			}
  			++ifit;
@@ -3209,7 +3209,29 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  			}
  			emplace_process<Processors::Destroy>(Step{ 3 }, des, nullptr, REASON_BATTLE, PLAYER_NONE);
  		}
-@@ -2940,6 +2946,18 @@
+@@ -2803,6 +2809,8 @@
+ 		get_attack_target(tmp_attacker, &cv);
+ 		if((cv.size() == 0 && tmp_attacker->direct_attackable == 0) || (tmp_attack_target && std::find(cv.begin(), cv.end(), tmp_attack_target)==cv.end()))
+ 			return TRUE;
++		arg.backup_attacker = core.attacker;
++		arg.backup_attack_target = core.attack_target;
+ 		core.attacker = tmp_attacker;
+ 		core.attack_target = tmp_attack_target;
+ 		for(uint8_t p = 0; p < 2; ++p) {
+@@ -2853,8 +2861,10 @@
+ 				pcard->battled_cards.clear();
+ 			}
+ 		}
+-		core.attacker = nullptr;
+-		core.attack_target = nullptr;
++		// (the interrupted attack goes on: it was null before, and an attack in progress dereferenced
++		// a null attacker)
++		core.attacker = arg.backup_attacker;
++		core.attack_target = arg.backup_attack_target;
+ 		auto message = pduel->new_message(MSG_NEW_PHASE);
+ 		message->write<uint16_t>(infos.phase);
+ 		return TRUE;
+@@ -2940,6 +2950,18 @@
  	std::array<bool, 2> bd{};
  	bool pierce = false;
  	core.battle_damage[0] = core.battle_damage[1] = 0;
@@ -3228,7 +3250,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  	if(core.attacker->is_position(POS_FACEUP_DEFENSE)) {
  		effect* defattack = core.attacker->is_affected_by_effect(EFFECT_DEFENSE_ATTACK);
  		if(defattack && defattack->get_value(core.attacker))
-@@ -3259,6 +3277,7 @@
+@@ -3259,6 +3281,7 @@
  	switch(arg.step) {
  	case 0: {
  		//Pre Draw
@@ -3236,7 +3258,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  		core.used_event.clear();
  		for(auto& peffect : core.reseted_effects) {
  			pduel->delete_effect(peffect);
-@@ -3832,7 +3851,7 @@
+@@ -3832,7 +3855,7 @@
  		card* phandler = peffect->get_handler();
  		if(clit.target_cards && clit.target_cards->container.size()) {
  			if(peffect->is_flag(EFFECT_FLAG_CARD_TARGET)) {
@@ -3245,7 +3267,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  					raise_single_event(pcard, nullptr, EVENT_BECOME_TARGET, peffect, 0, clit.triggering_player, 0, clit.chain_count);
  				process_single_event();
  				if(clit.target_cards->container.size())
-@@ -3880,7 +3899,7 @@
+@@ -3880,7 +3903,7 @@
  						// indecates that it is the opponent that special summons the target monsters
  						if(peffect->is_flag(EFFECT_FLAG_CARD_TARGET) && optarget.op_player == 0x10)
  							sumplayer = 1 - sumplayer;
@@ -3254,7 +3276,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  							if(pcard->spsummon_code) {
  								++core.spsummon_once_map[sumplayer][pcard->spsummon_code];
  								++core.spsummon_once_map_rst[sumplayer][pcard->spsummon_code];
-@@ -4246,7 +4265,7 @@
+@@ -4246,7 +4269,7 @@
  							// indecates that it is the opponent that special summons the target monsters
  							if(cait->triggering_effect->is_flag(EFFECT_FLAG_CARD_TARGET) && optarget.op_player == 0x10)
  								sumplayer = 1 - sumplayer;
@@ -3263,7 +3285,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  								if(is_flag(DUEL_SPSUMMON_ONCE_OLD_NEGATE) && (core.global_flag & GLOBALFLAG_SPSUMMON_ONCE) && ptarget->spsummon_code)
  									++core.spsummon_once_map[sumplayer][ptarget->spsummon_code];
  								check_card_counter(ptarget, ACTIVITY_SPSUMMON, sumplayer);
-@@ -4285,7 +4304,7 @@
+@@ -4285,7 +4308,7 @@
  		if((cait->flag & CHAIN_HAND_EFFECT) && !pcard->is_position(POS_FACEUP) && (pcard->current.location == LOCATION_HAND))
  			shuffle(pcard->current.controler, LOCATION_HAND);
  		if(cait->target_cards && cait->target_cards->container.size()) {
@@ -3272,7 +3294,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  				ptarget->release_relation(*cait);
  		}
  		if((pcard->data.type & TYPE_EQUIP) && (peffect->type & EFFECT_TYPE_ACTIVATE)
-@@ -4302,7 +4321,7 @@
+@@ -4302,7 +4325,7 @@
  		peffect->active_type = 0;
  		peffect->active_handler = nullptr;
  		pcard->release_relation(*cait);
@@ -3281,7 +3303,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  			if(cit->current.location == LOCATION_MZONE)
  				cit->enable_field_effect(true);
  		}
-@@ -4325,10 +4344,9 @@
+@@ -4325,10 +4348,9 @@
  		return FALSE;
  	}
  	case 11: {
@@ -3295,7 +3317,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  		}
  		if(core.leave_confirmed.size())
  			send_to(core.leave_confirmed, nullptr, REASON_RULE, PLAYER_NONE, PLAYER_NONE, LOCATION_GRAVE, 0, POS_FACEUP);
-@@ -4434,8 +4452,69 @@
+@@ -4434,8 +4456,69 @@
  	}
  	return 0;
  }
@@ -3365,7 +3387,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  	adjust_disable_check_list();
  	adjust_self_destroy_set();
  }
-@@ -4650,6 +4729,7 @@
+@@ -4650,6 +4733,7 @@
  	switch(arg.step) {
  	case 0: {
  		core.re_adjust = false;
@@ -3373,7 +3395,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  		return FALSE;
  	}
  	case 1: {
-@@ -4783,7 +4863,7 @@
+@@ -4783,7 +4867,7 @@
  			core.re_adjust = true;
  			get_control(core.control_adjust_set[1 - infos.turn_player], nullptr, PLAYER_NONE, infos.turn_player, 0, 0, 0xff);
  			get_control(core.control_adjust_set[infos.turn_player], nullptr, PLAYER_NONE, 1 - infos.turn_player, 0, 0, 0xff);
@@ -3382,7 +3404,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  				++core.readjust_map[rcard];
  				if(core.readjust_map[rcard] > 3)
  					destroy(rcard, nullptr, REASON_RULE, PLAYER_NONE);
-@@ -4896,18 +4976,35 @@
+@@ -4896,18 +4980,35 @@
  	}
  	case 12: {
  		//shuffle check
@@ -3420,7 +3442,7 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  		if(core.shuffle_hand_check[infos.turn_player])
  			shuffle(infos.turn_player, LOCATION_HAND);
  		if(core.shuffle_hand_check[1 - infos.turn_player])
-@@ -4992,6 +5089,11 @@
+@@ -4992,6 +5093,11 @@
  			arg.step = Processors::restart;
  			return FALSE;
  		}
@@ -3432,3 +3454,19 @@ diff -ruN core_a/processor.cpp core_b/processor.cpp
  		if(core.shuffle_hand_check[0])
  			shuffle(0, LOCATION_HAND);
  		if(core.shuffle_hand_check[1])
+diff -ruN core_a/processor_unit.h core_b/processor_unit.h
+--- core_a/processor_unit.h	2026-10-29 13:54:29.067064263 +0100
++++ core_b/processor_unit.h	2026-10-29 13:54:29.067975282 +0100
+@@ -259,8 +259,11 @@
+ };
+ struct ForcedBattle : public Process<false> {
+ 	uint16_t backup_phase;
++	// the attack the forced battle interrupts, if any (e.g. Last Turn activated during an attack)
++	card* backup_attacker;
++	card* backup_attack_target;
+ 	ForcedBattle(uint16_t step_) :
+-		Process(step_), backup_phase(0) {}
++		Process(step_), backup_phase(0), backup_attacker(nullptr), backup_attack_target(nullptr) {}
+ };
+ struct AddChain : public Process<false> {
+ 	bool is_activated_effect;

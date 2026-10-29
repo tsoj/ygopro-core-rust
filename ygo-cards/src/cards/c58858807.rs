@@ -247,8 +247,8 @@ fn applytg(d: &mut Duel, a: &EffArgs) -> bool {
     // Duel.Hint(HINT_OPSELECTED,1-tp,eff:GetDescription())
     duel::hint(d, HINT_OPSELECTED as u8, 1 - a.tp, effect::get_description(d, eff));
     // e:SetLabel(eff:GetLabel())
-    let lbl = effect::get_label(d, eff);
-    effect::set_label(d, a.e, &[lbl]);
+    let lbl = effect::get_labels(d, eff);
+    effect::set_label(d, a.e, &lbl);
     // e:SetLabelObject(eff:GetLabelObject())
     let eff_lo = effect::get_label_object(d, eff);
     effect::set_label_object(d, a.e, eff_lo);
@@ -275,8 +275,8 @@ fn applytg(d: &mut Duel, a: &EffArgs) -> bool {
         );
     }
     // eff:SetLabel(e:GetLabel())
-    let e_lbl = effect::get_label(d, a.e);
-    effect::set_label(d, eff, &[e_lbl]);
+    let e_lbl = effect::get_labels(d, a.e);
+    effect::set_label(d, eff, &e_lbl);
     // eff:SetLabelObject(e:GetLabelObject())
     let e_lo = effect::get_label_object(d, a.e);
     effect::set_label_object(d, eff, e_lo);
@@ -294,8 +294,8 @@ fn applyop(d: &mut Duel, a: &EffArgs) {
         return;
     };
     // e:SetLabel(eff:GetLabel())
-    let lbl = effect::get_label(d, eff);
-    effect::set_label(d, a.e, &[lbl]);
+    let lbl = effect::get_labels(d, eff);
+    effect::set_label(d, a.e, &lbl);
     // e:SetLabelObject(eff:GetLabelObject())
     let lo = effect::get_label_object(d, eff);
     effect::set_label_object(d, a.e, lo);

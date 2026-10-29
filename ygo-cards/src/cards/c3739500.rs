@@ -119,8 +119,8 @@ fn applytg(d: &mut Duel, a: &EffArgs) -> bool {
     let first = group::get_first(d, &g).nil();
     let te = card::check_activate_effect(d, first, true, true, false).nil().0;
     // e:SetLabel(te:GetLabel())
-    let te_label = effect::get_label(d, te);
-    effect::set_label(d, a.e, &[te_label]);
+    let te_label = effect::get_labels(d, te);
+    effect::set_label(d, a.e, &te_label);
     // e:SetLabelObject(te:GetLabelObject())
     let te_obj = effect::get_label_object(d, te);
     effect::set_label_object(d, a.e, te_obj);
@@ -136,8 +136,8 @@ fn applytg(d: &mut Duel, a: &EffArgs) -> bool {
         tg.call(d, &args);
     }
     // te:SetLabel(e:GetLabel())
-    let l = effect::get_label(d, a.e);
-    effect::set_label(d, te, &[l]);
+    let l = effect::get_labels(d, a.e);
+    effect::set_label(d, te, &l);
     // te:SetLabelObject(e:GetLabelObject())
     let o = effect::get_label_object(d, a.e);
     effect::set_label_object(d, te, o);
@@ -153,8 +153,8 @@ fn applyop(d: &mut Duel, a: &EffArgs) {
     // if te then
     if let Some(te) = te {
         // e:SetLabel(te:GetLabel())
-        let l = effect::get_label(d, te);
-        effect::set_label(d, a.e, &[l]);
+        let l = effect::get_labels(d, te);
+        effect::set_label(d, a.e, &l);
         // e:SetLabelObject(te:GetLabelObject())
         let o = effect::get_label_object(d, te);
         effect::set_label_object(d, a.e, o);
@@ -164,8 +164,8 @@ fn applyop(d: &mut Duel, a: &EffArgs) {
             op.call(d, &event_args(a));
         }
         // te:SetLabel(e:GetLabel())
-        let l = effect::get_label(d, a.e);
-        effect::set_label(d, te, &[l]);
+        let l = effect::get_labels(d, a.e);
+        effect::set_label(d, te, &l);
         // te:SetLabelObject(e:GetLabelObject())
         let o = effect::get_label_object(d, a.e);
         effect::set_label_object(d, te, o);

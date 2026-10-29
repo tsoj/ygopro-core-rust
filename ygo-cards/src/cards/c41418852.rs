@@ -91,8 +91,8 @@ fn applytg(d: &mut Duel, a: &EffArgs) -> bool {
     // Duel.SendtoGrave(sc,REASON_COST)
     duel::send_to_grave(d, sc, REASON_COST, None, None);
     // e:SetLabel(te:GetLabel())
-    let label = effect::get_label(d, te);
-    effect::set_label(d, a.e, &[label]);
+    let label = effect::get_labels(d, te);
+    effect::set_label(d, a.e, &label);
     // e:SetLabelObject(te:GetLabelObject())
     let lo = effect::get_label_object(d, te);
     effect::set_label_object(d, a.e, lo);
@@ -119,8 +119,8 @@ fn applytg(d: &mut Duel, a: &EffArgs) -> bool {
         tg.call(d, &args);
     }
     // te:SetLabel(e:GetLabel())
-    let label = effect::get_label(d, a.e);
-    effect::set_label(d, te, &[label]);
+    let label = effect::get_labels(d, a.e);
+    effect::set_label(d, te, &label);
     // te:SetLabelObject(e:GetLabelObject())
     let lo = effect::get_label_object(d, a.e);
     effect::set_label_object(d, te, lo);
@@ -137,8 +137,8 @@ fn applyop(d: &mut Duel, a: &EffArgs) {
     // if not te then return end
     let Some(te) = te.as_effect() else { return };
     // e:SetLabel(te:GetLabel())
-    let label = effect::get_label(d, te);
-    effect::set_label(d, a.e, &[label]);
+    let label = effect::get_labels(d, te);
+    effect::set_label(d, a.e, &label);
     // e:SetLabelObject(te:GetLabelObject())
     let lo = effect::get_label_object(d, te);
     effect::set_label_object(d, a.e, lo);

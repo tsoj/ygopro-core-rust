@@ -227,8 +227,8 @@ fn applytg(d: &mut Duel, a: &EffArgs) -> bool {
     // tc:CreateEffectRelation(e)
     card::create_effect_relation(d, tc, a.e);
     // e:SetLabel(eff:GetLabel())
-    let label = effect::get_label(d, eff);
-    effect::set_label(d, a.e, &[label]);
+    let label = effect::get_labels(d, eff);
+    effect::set_label(d, a.e, &label);
     // e:SetLabelObject(eff:GetLabelObject())
     let lobj = effect::get_label_object(d, eff);
     effect::set_label_object(d, a.e, lobj);
@@ -253,8 +253,8 @@ fn applytg(d: &mut Duel, a: &EffArgs) -> bool {
             ],
         );
         // eff:SetLabel(e:GetLabel())
-        let label = effect::get_label(d, a.e);
-        effect::set_label(d, eff, &[label]);
+        let label = effect::get_labels(d, a.e);
+        effect::set_label(d, eff, &label);
         // eff:SetLabelObject(e:GetLabelObject())
         let lobj = effect::get_label_object(d, a.e);
         effect::set_label_object(d, eff, lobj);
@@ -276,8 +276,8 @@ fn applyop(d: &mut Duel, a: &EffArgs) {
         return;
     }
     // e:SetLabel(eff:GetLabel())
-    let label = effect::get_label(d, eff);
-    effect::set_label(d, a.e, &[label]);
+    let label = effect::get_labels(d, eff);
+    effect::set_label(d, a.e, &label);
     // e:SetLabelObject(eff:GetLabelObject())
     let lobj = effect::get_label_object(d, eff);
     effect::set_label_object(d, a.e, lobj);

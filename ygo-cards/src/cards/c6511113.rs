@@ -186,8 +186,8 @@ fn efftg(d: &mut Duel, a: &EffArgs) -> bool {
     // local te,ceg,cep,cev,cre,cr,crp=sc:CheckActivateEffect(true,true,true)
     let (te, info) = card::check_activate_effect(d, sc, true, true, true).nil();
     // e:SetLabel(te:GetLabel())
-    let label = effect::get_label(d, te);
-    effect::set_label(d, e, &[label]);
+    let label = effect::get_labels(d, te);
+    effect::set_label(d, e, &label);
     // e:SetLabelObject(te:GetLabelObject())
     let lo = effect::get_label_object(d, te);
     effect::set_label_object(d, e, lo);
@@ -203,8 +203,8 @@ fn efftg(d: &mut Duel, a: &EffArgs) -> bool {
         args.push(Value::Int(1));
         tg.call(d, &args);
         // te:SetLabel(e:GetLabel())
-        let label = effect::get_label(d, e);
-        effect::set_label(d, te, &[label]);
+        let label = effect::get_labels(d, e);
+        effect::set_label(d, te, &label);
         // te:SetLabelObject(e:GetLabelObject())
         let lo = effect::get_label_object(d, e);
         effect::set_label_object(d, te, lo);
@@ -231,8 +231,8 @@ fn effop(d: &mut Duel, a: &EffArgs) {
     // if op then
     if let Some(op) = op {
         // e:SetLabel(te:GetLabel())
-        let label = effect::get_label(d, te);
-        effect::set_label(d, e, &[label]);
+        let label = effect::get_labels(d, te);
+        effect::set_label(d, e, &label);
         // e:SetLabelObject(te:GetLabelObject())
         let lo = effect::get_label_object(d, te);
         effect::set_label_object(d, e, lo);

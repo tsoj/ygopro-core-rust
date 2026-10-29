@@ -155,8 +155,8 @@ fn daop(d: &mut Duel, a: &EffArgs) {
     // e2:SetTarget(s.ftarget)
     effect::set_target(d, e2, Some(effect_card_fn(ftarget)));
     // e2:SetLabel(e:GetLabel())
-    let label = effect::get_label(d, a.e);
-    effect::set_label(d, e2, &[label]);
+    let label = effect::get_labels(d, a.e);
+    effect::set_label(d, e2, &label);
     // e2:SetReset(RESET_PHASE|PHASE_END)
     effect::set_reset(d, e2, RESET_PHASE | PHASE_END, 1);
     // Duel.RegisterEffect(e2,tp)

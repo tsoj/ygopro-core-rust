@@ -63,8 +63,8 @@ fn op(d: &mut Duel, a: &EffArgs) {
     // e1:SetTarget(s.target)
     effect::set_target(d, e1, Some(effect_card_fn(target)));
     // e1:SetLabel(e:GetLabel())
-    let label = effect::get_label(d, a.e);
-    effect::set_label(d, e1, &[label]);
+    let label = effect::get_labels(d, a.e);
+    effect::set_label(d, e1, &label);
     // e1:SetReset(RESET_PHASE|PHASE_END|RESET_OPPO_TURN)
     effect::set_reset(d, e1, RESET_PHASE | PHASE_END | RESET_OPPO_TURN, 1);
     // e1:SetValue(1)

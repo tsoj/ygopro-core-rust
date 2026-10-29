@@ -134,8 +134,8 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
         // tc:CreateEffectRelation(e)
         card::create_effect_relation(d, tc, a.e);
         // e:SetLabel(eff:GetLabel())
-        let lbl = effect::get_label(d, eff);
-        effect::set_label(d, a.e, &[lbl]);
+        let lbl = effect::get_labels(d, eff);
+        effect::set_label(d, a.e, &lbl);
         // e:SetLabelObject(eff:GetLabelObject())
         let lo = effect::get_label_object(d, eff);
         effect::set_label_object(d, a.e, lo);

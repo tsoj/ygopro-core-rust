@@ -67,8 +67,8 @@ fn cost_fn(d: &mut Duel, a: &EffArgs) -> bool {
 fn op(d: &mut Duel, a: &EffArgs) {
     // e:GetLabelObject():SetLabel(e:GetLabel())
     let lo = effect::get_label_object(d, a.e).as_effect().nil();
-    let label = effect::get_label(d, a.e);
-    effect::set_label(d, lo, &[label]);
+    let labels = effect::get_labels(d, a.e);
+    effect::set_label(d, lo, &labels);
 }
 /// `s.val(e,c)`
 fn val(d: &mut Duel, e: EffectId) -> i64 {

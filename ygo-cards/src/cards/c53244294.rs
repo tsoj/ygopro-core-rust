@@ -135,8 +135,8 @@ fn zop(d: &mut Duel, a: &EffArgs) {
     // e1:SetReset(RESET_EVENT|RESETS_STANDARD_DISABLE)
     effect::set_reset(d, e1, RESET_EVENT | RESETS_STANDARD_DISABLE, 1);
     // e1:SetLabel(e:GetLabel())
-    let label = effect::get_label(d, a.e);
-    effect::set_label(d, e1, &[label]);
+    let label = effect::get_labels(d, a.e);
+    effect::set_label(d, e1, &label);
     // e:GetHandler():RegisterEffect(e1)
     card::register_effect(d, h, e1, false);
 }

@@ -179,8 +179,8 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
         let tc = group::get_first(d, &g).nil();
         let te = card::check_activate_effect(d, tc, true, true, false).nil().0;
         // e:SetLabel(te:GetLabel())
-        let te_label = effect::get_label(d, te);
-        effect::set_label(d, a.e, &[te_label]);
+        let te_label = effect::get_labels(d, te);
+        effect::set_label(d, a.e, &te_label);
         // e:SetLabelObject(te:GetLabelObject())
         let te_obj = effect::get_label_object(d, te);
         effect::set_label_object(d, a.e, te_obj);
@@ -190,8 +190,8 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
             tg.call(d, &chain_args(a, 1));
         }
         // te:SetLabel(e:GetLabel())
-        let label = effect::get_label(d, a.e);
-        effect::set_label(d, te, &[label]);
+        let label = effect::get_labels(d, a.e);
+        effect::set_label(d, te, &label);
         // te:SetLabelObject(e:GetLabelObject())
         let obj = effect::get_label_object(d, a.e);
         effect::set_label_object(d, te, obj);
@@ -232,8 +232,8 @@ fn activate(d: &mut Duel, a: &EffArgs) {
         // local te=e:GetLabelObject()
         if let Value::Effect(te) = effect::get_label_object(d, a.e) {
             // e:SetLabel(te:GetLabel())
-            let label = effect::get_label(d, te);
-            effect::set_label(d, a.e, &[label]);
+            let label = effect::get_labels(d, te);
+            effect::set_label(d, a.e, &label);
             // e:SetLabelObject(te:GetLabelObject())
             let obj = effect::get_label_object(d, te);
             effect::set_label_object(d, a.e, obj);
@@ -245,8 +245,8 @@ fn activate(d: &mut Duel, a: &EffArgs) {
                 opf.call(d, &args);
             }
             // te:SetLabel(e:GetLabel())
-            let label = effect::get_label(d, a.e);
-            effect::set_label(d, te, &[label]);
+            let label = effect::get_labels(d, a.e);
+            effect::set_label(d, te, &label);
             // te:SetLabelObject(e:GetLabelObject())
             let obj = effect::get_label_object(d, a.e);
             effect::set_label_object(d, te, obj);

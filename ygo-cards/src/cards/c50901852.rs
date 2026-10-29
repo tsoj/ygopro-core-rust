@@ -133,8 +133,8 @@ fn atkop(d: &mut Duel, a: &EffArgs) {
     // e1:SetTarget(s.ftarget)
     effect::set_target(d, e1, Some(effect_card_fn(ftarget)));
     // e1:SetLabel(e:GetLabel())
-    let label = effect::get_label(d, e);
-    effect::set_label(d, e1, &[label]);
+    let label = effect::get_labels(d, e);
+    effect::set_label(d, e1, &label);
     // e1:SetReset(RESET_PHASE|PHASE_END)
     effect::set_reset(d, e1, RESET_PHASE | PHASE_END, 1);
     // Duel.RegisterEffect(e1,tp)

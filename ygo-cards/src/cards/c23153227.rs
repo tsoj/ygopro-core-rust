@@ -168,8 +168,8 @@ fn copytg(d: &mut Duel, a: &EffArgs) -> bool {
     let gc = group::get_first(d, &g).nil();
     let te = card::check_activate_effect(d, gc, true, true, false).map(|x| x.0).nil();
     // e:SetLabel(te:GetLabel())
-    let te_label = effect::get_label(d, te);
-    effect::set_label(d, a.e, &[te_label]);
+    let te_label = effect::get_labels(d, te);
+    effect::set_label(d, a.e, &te_label);
     // e:SetLabelObject(te:GetLabelObject())
     let te_lo = effect::get_label_object(d, te);
     effect::set_label_object(d, a.e, te_lo);
@@ -180,8 +180,8 @@ fn copytg(d: &mut Duel, a: &EffArgs) -> bool {
         tg.call(d, &copy_args(a, Some(Value::Int(1))));
     }
     // te:SetLabel(e:GetLabel())
-    let e_label = effect::get_label(d, a.e);
-    effect::set_label(d, te, &[e_label]);
+    let e_label = effect::get_labels(d, a.e);
+    effect::set_label(d, te, &e_label);
     // te:SetLabelObject(e:GetLabelObject())
     let e_lo = effect::get_label_object(d, a.e);
     effect::set_label_object(d, te, e_lo);
@@ -214,8 +214,8 @@ fn copyop(d: &mut Duel, a: &EffArgs) {
     // if te then
     if let Value::Effect(te) = effect::get_label_object(d, a.e) {
         // e:SetLabel(te:GetLabel())
-        let te_label = effect::get_label(d, te);
-        effect::set_label(d, a.e, &[te_label]);
+        let te_label = effect::get_labels(d, te);
+        effect::set_label(d, a.e, &te_label);
         // e:SetLabelObject(te:GetLabelObject())
         let te_lo = effect::get_label_object(d, te);
         effect::set_label_object(d, a.e, te_lo);
@@ -225,8 +225,8 @@ fn copyop(d: &mut Duel, a: &EffArgs) {
             op.call(d, &copy_args(a, None));
         }
         // te:SetLabel(e:GetLabel())
-        let e_label = effect::get_label(d, a.e);
-        effect::set_label(d, te, &[e_label]);
+        let e_label = effect::get_labels(d, a.e);
+        effect::set_label(d, te, &e_label);
         // te:SetLabelObject(e:GetLabelObject())
         let e_lo = effect::get_label_object(d, a.e);
         effect::set_label_object(d, te, e_lo);

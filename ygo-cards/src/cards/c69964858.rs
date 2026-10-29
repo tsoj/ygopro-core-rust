@@ -172,8 +172,8 @@ fn efftg(d: &mut Duel, a: &EffArgs) -> bool {
         let (p1, p2) = effect::get_property(d, te);
         effect::set_property(d, e, p1, p2);
         // e:SetLabel(te:GetLabel())
-        let label = effect::get_label(d, te);
-        effect::set_label(d, e, &[label]);
+        let label = effect::get_labels(d, te);
+        effect::set_label(d, e, &label);
         // e:SetLabelObject(te:GetLabelObject())
         let label_object = effect::get_label_object(d, te);
         effect::set_label_object(d, e, label_object);

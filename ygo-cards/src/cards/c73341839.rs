@@ -92,8 +92,8 @@ fn op(d: &mut Duel, a: &EffArgs) {
         // e1:SetReset(RESET_EVENT|RESETS_STANDARD)
         effect::set_reset(d, e1, RESET_EVENT | RESETS_STANDARD, 1);
         // e1:SetLabel(e:GetLabel())
-        let lbl = effect::get_label(d, e);
-        effect::set_label(d, e1, &[lbl]);
+        let lbl = effect::get_labels(d, e);
+        effect::set_label(d, e1, &lbl);
         // c:RegisterEffect(e1,true)
         card::register_effect(d, c, e1, true);
     }

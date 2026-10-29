@@ -209,8 +209,8 @@ fn tgop(d: &mut Duel, a: &EffArgs) {
     // e1:SetOperation(s.drawcheck)
     effect::set_operation(d, e1, Some(operation(drawcheck)));
     // e1:SetLabel(e:GetLabel())
-    let label = effect::get_label(d, a.e);
-    effect::set_label(d, e1, &[label]);
+    let label = effect::get_labels(d, a.e);
+    effect::set_label(d, e1, &label);
     // e1:SetReset(RESET_PHASE|PHASE_DRAW)
     effect::set_reset(d, e1, RESET_PHASE | PHASE_DRAW, 1);
     // Duel.RegisterEffect(e1,tp)

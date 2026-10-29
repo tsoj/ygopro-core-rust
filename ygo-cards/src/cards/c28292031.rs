@@ -160,8 +160,8 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
     let ceg = pe.event_cards.clone().map_or(Value::Nil, Value::Group);
     let cre = pe.reason_effect.map_or(Value::Nil, Value::Effect);
     // e:SetLabel(te:GetLabel())
-    let te_label = effect::get_label(d, te);
-    effect::set_label(d, e, &[te_label]);
+    let te_label = effect::get_labels(d, te);
+    effect::set_label(d, e, &te_label);
     // e:SetLabelObject(te:GetLabelObject())
     let te_lo = effect::get_label_object(d, te);
     effect::set_label_object(d, e, te_lo);
@@ -182,8 +182,8 @@ fn target(d: &mut Duel, a: &EffArgs) -> bool {
         tg.call(d, &args);
     }
     // te:SetLabel(e:GetLabel())
-    let e_label = effect::get_label(d, e);
-    effect::set_label(d, te, &[e_label]);
+    let e_label = effect::get_labels(d, e);
+    effect::set_label(d, te, &e_label);
     // te:SetLabelObject(e:GetLabelObject())
     let e_lo = effect::get_label_object(d, e);
     effect::set_label_object(d, te, e_lo);
@@ -202,8 +202,8 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     // if not te then return end
     let Value::Effect(te) = effect::get_label_object(d, e) else { return };
     // e:SetLabel(te:GetLabel())
-    let te_label = effect::get_label(d, te);
-    effect::set_label(d, e, &[te_label]);
+    let te_label = effect::get_labels(d, te);
+    effect::set_label(d, e, &te_label);
     // e:SetLabelObject(te:GetLabelObject())
     let te_lo = effect::get_label_object(d, te);
     effect::set_label_object(d, e, te_lo);
@@ -213,8 +213,8 @@ fn activate(d: &mut Duel, a: &EffArgs) {
         op.call(d, &copy_args(a, &[]));
     }
     // te:SetLabel(e:GetLabel())
-    let e_label = effect::get_label(d, e);
-    effect::set_label(d, te, &[e_label]);
+    let e_label = effect::get_labels(d, e);
+    effect::set_label(d, te, &e_label);
     // te:SetLabelObject(e:GetLabelObject())
     let e_lo = effect::get_label_object(d, e);
     effect::set_label_object(d, te, e_lo);

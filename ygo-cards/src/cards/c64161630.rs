@@ -115,8 +115,8 @@ fn activate(d: &mut Duel, a: &EffArgs) {
     // e1:SetReset(RESET_PHASE|PHASE_END)
     effect::set_reset(d, e1, RESET_PHASE | PHASE_END, 1);
     // e1:SetLabel(e:GetLabel())
-    let label = effect::get_label(d, a.e);
-    effect::set_label(d, e1, &[label]);
+    let label = effect::get_labels(d, a.e);
+    effect::set_label(d, e1, &label);
     // e1:SetLabelObject(e:GetLabelObject())
     let lo = effect::get_label_object(d, a.e);
     effect::set_label_object(d, e1, lo);

@@ -140,13 +140,15 @@ fn tgval(d: &mut Duel, a: Args) -> bool {
 }
 /// `s.acon(e)`
 fn acon(d: &mut Duel, a: &EffArgs) -> bool {
-    // return e:GetHandler():GetFlagEffect(id)>0 and e:GetHandler():GetFlagEffectLabel(id)==e:GetHandler():GetFirstCardTarget():GetControler()
+    // local tc=e:GetHandler():GetFirstCardTarget() (lua_fixes: no error without a target)
+    // return e:GetHandler():GetFlagEffect(id)>0 and tc and e:GetHandler():GetFlagEffectLabel(id)==tc:GetControler()
     let h = effect::get_handler(d, a.e).nil();
+    let tc = card::get_first_card_target(d, h);
     if card::get_flag_effect(d, h, ID) == 0 {
         return false;
     }
+    let Some(tc) = tc else { return false };
     let label = card::get_flag_effect_label(d, h, ID).first().copied();
-    let tc = card::get_first_card_target(d, h).nil();
     label == Some(card::get_controler(d, tc) as i64)
 }
 /// `s.checkop(e,tp,eg,ep,ev,re,r,rp)`

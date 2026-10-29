@@ -88,7 +88,7 @@ fn thfilter(d: &mut Duel, c: CardId) -> bool {
 /// `s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn thtg(d: &mut Duel, a: &EffArgs) -> bool {
     let tp = a.tp;
-    // if chkc then return chkc:IsLocation(LOCATION_ONFIELD) and chkc:IsSpellTrap() and chkc:IsAbleToHand() and chkc:IsController(1-tp) end
+    // if chkc then return chkc:IsLocation(LOCATION_ONFIELD) and chkc:IsSpellTrap() and chkc:IsAbleToHand() and chkc:IsControler(1-tp) end
     if let Some(chkc) = a.chkc() {
         return card::is_location(d, chkc, LOCATION_ONFIELD)
             && card::is_spell_trap(d, chkc)

@@ -4,7 +4,7 @@ use super::prelude::*;
 pub const ID: u32 = 1102515;
 
 // s.listed_names={74713516}; s.LVnum=3 (no s.LVset: not declared, see report)
-pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[74713516], ..ScriptInfo::DEFAULT };
+pub const INFO: ScriptInfo = ScriptInfo { lv: Some((3, SET_DARK_MIMIC)), listed_names: &[74713516], ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // draw

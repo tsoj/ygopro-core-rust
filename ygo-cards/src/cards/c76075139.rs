@@ -271,7 +271,7 @@ fn thfilter(d: &mut Duel, c: CardId) -> bool {
 }
 /// `s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn thtg(d: &mut Duel, a: &EffArgs) -> bool {
-    // if chkc then return chkc:IsLocation(LOCATION_SZONE) and chkc:IsController(1-tp) and s.thfilter(chkc) end
+    // if chkc then return chkc:IsLocation(LOCATION_SZONE) and chkc:IsControler(1-tp) and s.thfilter(chkc) end
     if let Some(chkc) = a.chkc() {
         return card::is_location(d, chkc, LOCATION_SZONE) && card::is_controler(d, chkc, 1 - a.tp) && thfilter(d, chkc);
     }

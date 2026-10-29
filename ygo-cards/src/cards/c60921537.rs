@@ -38,7 +38,7 @@ fn matfilter(d: &mut Duel, c: CardId) -> bool {
 // function s.extramat(e,tp,eg,ep,ev,re,r,rp,chk)
 fn extramat(d: &mut Duel, a: &EffArgs) -> Option<CardSet> {
     // return Duel.IsPlayerAffectedByEffect(tp,CARD_SPIRIT_ELIMINATION)
-    //   and Group.NewGroup() or Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_GRAVE,0,nil)
+    //   and Group.CreateGroup() or Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_GRAVE,0,nil)
     if duel::is_player_affected_by_effect(d, a.tp, CARD_SPIRIT_ELIMINATION).is_some() {
         Some(CardSet::new())
     } else {

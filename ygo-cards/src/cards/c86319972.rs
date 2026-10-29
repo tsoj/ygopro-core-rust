@@ -45,9 +45,9 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_category(d, e2, CATEGORY_SPECIAL_SUMMON);
     // e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     effect::set_type(d, e2, EFFECT_TYPE_FIELD + EFFECT_TYPE_TRIGGER_O);
-    // e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET,EFFECT,EFFECT_FLAG2_CHECK_SIMULTANEOUS)
+    // e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET,EFFECT_FLAG2_CHECK_SIMULTANEOUS) (lua_fixes: no stray EFFECT)
     // (EFFECT is not a defined constant: the Lua passes nil, which the core reads as 0)
-    effect::set_property(d, e2, EFFECT_FLAG_DELAY + EFFECT_FLAG_CARD_TARGET, 0);
+    effect::set_property(d, e2, EFFECT_FLAG_DELAY + EFFECT_FLAG_CARD_TARGET, EFFECT_FLAG2_CHECK_SIMULTANEOUS);
     // e2:SetCode(EVENT_REMOVE)
     effect::set_code(d, e2, EVENT_REMOVE);
     // e2:SetRange(LOCATION_GRAVE)

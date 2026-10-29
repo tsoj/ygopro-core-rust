@@ -257,7 +257,7 @@ fn sthop(d: &mut Duel, a: &EffArgs) {
 }
 /// `s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)`
 fn thtg(d: &mut Duel, a: &EffArgs) -> bool {
-    // if chkc then return chkc:IsOnField() and chkc:IsAbleToHand() and chkc:IsController(1-tp) end
+    // if chkc then return chkc:IsOnField() and chkc:IsAbleToHand() and chkc:IsControler(1-tp) end
     if let Some(chkc) = a.chkc() {
         return card::is_on_field(d, chkc) && card::is_able_to_hand(d, chkc, None) && card::is_controler(d, chkc, 1 - a.tp);
     }

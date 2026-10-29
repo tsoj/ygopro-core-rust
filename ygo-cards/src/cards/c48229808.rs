@@ -2,9 +2,8 @@
 use super::prelude::*;
 
 pub const ID: u32 = 48229808;
-// s.LVnum=8, s.LVset=SET_HORUS_BLACK_FLAME_DRAGON: that name is not defined in the Lua scripts,
-// so s.LVset is nil and Level Up! never matches this card. `lv` stays None (same behavior).
-pub const INFO: ScriptInfo = ScriptInfo { listed_names: &[11224103], ..ScriptInfo::DEFAULT };
+// s.LVnum=8, s.LVset=SET_HORUS_THE_BLACK_FLAME_DRAGON (lua_fixes: the original names an undefined constant)
+pub const INFO: ScriptInfo = ScriptInfo { lv: Some((8, SET_HORUS_THE_BLACK_FLAME_DRAGON)), listed_names: &[11224103], ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // c:EnableReviveLimit()

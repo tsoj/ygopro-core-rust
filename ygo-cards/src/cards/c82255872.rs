@@ -125,7 +125,7 @@ fn repop(d: &mut Duel, a: &EffArgs) {
 /// `s.cansstk(tp)`
 fn cansstk(d: &mut Duel, tp: u8) -> bool {
     // return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-    //     and Duel.IsPlayerCanSpecialSummonMonster(tp,id+1,SET_ANCIENT_WARRIORS,TYPES_TOKEN,500,500,1,RACE_BEAST_WARRIOR,ATTRIBUTE_WIND)
+    //     and Duel.IsPlayerCanSpecialSummonMonster(tp,id+1,SET_ANCIENT_WARRIORS,TYPES_TOKEN,500,500,1,RACE_BEASTWARRIOR,ATTRIBUTE_WIND)
     duel::get_location_count(d, tp, LOCATION_MZONE as u8, None, None, None).0 > 0
         && duel::is_player_can_special_summon_monster(
             d,

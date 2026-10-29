@@ -34,9 +34,10 @@ fn filter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
         let sc = card::is_has_effect(d, c, EFFECT_SPSUMMON_CONDITION, None).first().copied().nil();
         // local v = sc:GetValue()
         let v = effect::get_value(d, sc);
-        // if type(v) == 'function' and not v(sc,e,tp,SUMMON_TYPE_SPECIAL) then
+        // if type(v) == 'function' and not v(sc,e,tp,SUMMON_TYPE_SPECIAL,POS_FACEUP,tp) then (lua_fixes: the position and player)
         if let Value::Fn(f) = &v {
-            if !f.call(d, &[Value::Effect(sc), Value::Effect(e), Value::Int(tp as i64), Value::Int(SUMMON_TYPE_SPECIAL as i64)]).truthy() {
+            let args = [Value::Effect(sc), Value::Effect(e), Value::Int(tp as i64), Value::Int(SUMMON_TYPE_SPECIAL as i64), Value::Int(POS_FACEUP as i64), Value::Int(tp as i64)];
+            if !f.call(d, &args).truthy() {
                 // return false
                 return false;
             }

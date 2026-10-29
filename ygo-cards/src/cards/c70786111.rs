@@ -39,7 +39,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
 // function s.filter(c,e,tp)
 fn filter(d: &mut Duel, c: CardId, e: EffectId, tp: u8) -> bool {
     // return c:IsAttack(0) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-    card::get_attack(d, c) == 0 && card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, None, None, None)
+    card::is_attack(d, c, &[0]) && card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, None, None, None)
 }
 // function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 fn target(d: &mut Duel, a: &EffArgs) -> bool {

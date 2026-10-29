@@ -119,7 +119,7 @@ fn thfilter(d: &mut Duel, c: CardId, ft: i32, e: EffectId, tp: u8) -> bool {
     // return c:IsRace(RACE_ROCK) and c:IsAttack(0)
     //     and (c:IsAbleToHand() or (ft>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)))
     card::is_race(d, c, RACE_ROCK as u64)
-        && card::get_attack(d, c) == 0
+        && card::is_attack(d, c, &[0])
         && (card::is_able_to_hand(d, c, None) || (ft > 0 && card::is_can_be_special_summoned(d, c, e, 0, tp, false, false, None, None, None)))
 }
 /// `s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)`

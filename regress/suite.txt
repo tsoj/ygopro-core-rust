@@ -31,6 +31,22 @@ case_pair2394 --games 3 --seed 1 --decks decks/pair2394_a.ydk,decks/pair2394_b.y
 case_pair9294 --games 3 --seed 1 --decks decks/pair9294_a.ydk,decks/pair9294_b.ydk
 case_pair15254 --games 3 --seed 1 --decks decks/pair15254_a.ydk,decks/pair15254_b.ydk
 case_pair16976 --games 3 --seed 1 --decks decks/pair16976_a.ydk,decks/pair16976_b.ydk
+# Block Dragon could not return to its owner's full Monster Zones and could not be destroyed: each adjust tried again (the Kaiju loop of TODO.md)
+case_control_return_no_zone_8 --from 169 --games 170 --seed 8 --scripted 0.9 --cards 744887,4031928,5291803,6327734,6327735,7194917,11161666,11163040,16310544,16433136,17255673,18377261,21900719,28674152,29726552,29913783,36956512,42705243,43527730,44649322,48770333,48770334,53174748,54862960,55063751,57566760,57736667,63519819,63941210,75771170,78199891,79575620,79912449,80044027,81057455,81260679,81260680,84550369,84769941,93332803,94689206,94766498,99330325 --focus 744887,4031928,5291803,6327734,6327735,7194917,11161666,11163040,16310544,16433136,17255673,18377261,21900719,28674152,29726552,29913783,36956512,42705243,43527730,44649322,48770333,48770334,53174748,54862960,55063751,57566760,57736667,63519819,63941210,75771170,78199891,79575620,79912449,80044027,81057455,81260679,81260680,84550369,84769941,93332803,94689206,94766498,99330325
+# MiSolfachord Eliteia's target check called IsController (does not exist): Cairngorgon, Antiluminescent Knight (lua_fixes)
+case_cairngorgon_1042 --from 180 --games 181 --seed 1042
+case_cairngorgon_3042 --from 29 --games 30 --seed 3042 --scripted 0.8 --max-decisions 10000
+# Abduction's hint timing had an extra TIMING_BATTLE_START in its port
+case_abduction_hint_1106 --from 44 --games 45 --seed 1106
+case_abduction_hint_1108 --from 433 --games 434 --seed 1108
+# The Deep Grave called summon conditions without position and player (Miracle Flipper; lua_fixes)
+case_deep_grave_1036 --from 61 --games 62 --seed 1036
+# Rivalry of Warlords' adjust operation triggered again while it was asking (the C++ coroutine; oracle patch)
+case_rivalry_reentry_1077 --from 172 --games 173 --seed 1077
+# Level Down!? on Armed Dragon Thunder LV5, named Armed Dragon LV5 whose script it loads (ScriptInfo.loads)
+case_level_down_loaded_script --from 1 --games 2 --seed 2 --decks decks/90500169_1.ydk,decks/opp_90500169_1.ydk --focus 90500169
+# Predaplant Verte Anaconda copying Surprise Fusion kept only its first label (all labels now)
+case_copied_labels_2008 --from 375 --games 376 --seed 2008 --scripted 1.0
 # Random decks: half, all and 80% scripted cards (long games)
 r50_1001 --games 500 --seed 1001
 r50_1002 --games 500 --seed 1002

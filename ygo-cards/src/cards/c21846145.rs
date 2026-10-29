@@ -11,7 +11,7 @@ pub fn initial_effect(d: &mut Duel, c: CardId) {
     effect::set_type(d, e1, EFFECT_TYPE_ACTIVATE);
     effect::set_property(d, e1, EFFECT_FLAG_CARD_TARGET, 0);
     effect::set_code(d, e1, EVENT_FREE_CHAIN);
-    effect::set_hint_timing(d, e1, 0, Some(TIMING_STANDBY_PHASE | TIMING_MAIN_END | TIMING_BATTLE_START | TIMINGS_CHECK_MONSTER_E));
+    effect::set_hint_timing(d, e1, 0, Some(TIMING_STANDBY_PHASE | TIMING_MAIN_END | TIMINGS_CHECK_MONSTER_E));
     effect::set_count_limit(d, e1, 1, ID, 0, EFFECT_COUNT_CODE_OATH as u8);
     effect::set_target(d, e1, Some(cost_target(rmtg)));
     effect::set_operation(d, e1, Some(operation(rmop)));

@@ -31,26 +31,27 @@ fn group_of(v: &Value) -> Option<CardSet> {
 impl EffArgs {
     /// From the arguments of a condition or operation (8 values).
     pub fn new(a: &[Value]) -> EffArgs {
-        let get = |i: usize| a.get(i).cloned().unwrap_or(Value::Nil);
+        EffArgs::from_args(a, None, 8)
+    }
+    /// From the arguments of a cost or target function (9 values: `chk` last).
+    pub fn with_chk(a: &[Value]) -> EffArgs {
+        EffArgs::from_args(a, Some(a.get(8).map_or(0, |v| v.int())), 9)
+    }
+    /// The 8 values, `chk`, and the arguments from `extra` on as `extra`.
+    fn from_args(a: &[Value], chk: Option<i64>, extra: usize) -> EffArgs {
+        let get = |i: usize| a.get(i).unwrap_or(&Value::Nil);
         EffArgs {
             e: get(0).as_effect().expect("effect function without an effect"),
             tp: get(1).int() as u8,
-            eg: group_of(&get(2)),
+            eg: group_of(get(2)),
             ep: get(3).int() as u8,
             ev: get(4).int() as u32,
             re: get(5).as_effect(),
             r: get(6).int() as u32,
             rp: get(7).int() as u8,
-            chk: None,
-            extra: a.get(8..).map_or(Vec::new(), |x| x.to_vec()),
+            chk,
+            extra: a.get(extra..).map_or(Vec::new(), |x| x.to_vec()),
         }
-    }
-    /// From the arguments of a cost or target function (9 values: `chk` last).
-    pub fn with_chk(a: &[Value]) -> EffArgs {
-        let mut x = EffArgs::new(a);
-        x.chk = Some(a.get(8).map_or(0, |v| v.int()));
-        x.extra = a.get(9..).map_or(Vec::new(), |x| x.to_vec());
-        x
     }
     /// `chkc` of a target function: the card the core asks about (`Duel.CheckChainTarget`).
     pub fn chkc(&self) -> Option<CardId> {

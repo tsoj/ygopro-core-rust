@@ -333,6 +333,7 @@ impl CardId {
         }
         d.card_mut(target).equiping_cards.insert(self);
         d.card_mut(self).equiping_target = Some(target);
+        d.condition_scan_changed();
         for e in self.cc(d).equip_effect.all() {
             if e.is_disable_related(d) {
                 d.add_to_disable_check_list(target);
@@ -356,6 +357,7 @@ impl CardId {
         let c = d.card_mut(self);
         c.pre_equip_target = Some(target);
         c.equiping_target = None;
+        d.condition_scan_changed();
     }
     pub fn get_union_count(self, d: &mut Duel) -> i32 {
         let mut count = 0;
@@ -389,6 +391,7 @@ impl CardId {
             m.current.location = LOCATION_OVERLAY as u8;
             m.current.sequence = n - 1;
         }
+        d.condition_scan_changed();
         for e in d.card(mat).xmaterial_effect.all() {
             if d.effect(e).type_ as u32 & EFFECT_TYPE_FIELD != 0 {
                 d.add_effect(e, 2);
@@ -415,6 +418,7 @@ impl CardId {
             m.current.sequence = 0;
             m.pre_overlay_target = m.overlay_target.take();
         }
+        d.condition_scan_changed();
         let mats = d.card(self).xyz_materials.clone();
         for (i, c) in mats.into_iter().enumerate() {
             d.card_mut(c).current.sequence = i as u32;
@@ -585,6 +589,7 @@ impl CardId {
         } else {
             return 0;
         }
+        d.condition_scan_changed();
         if ecode == EFFECT_SELF_TOGRAVE {
             d.core.global_flag |= GLOBALFLAG_SELF_TOGRAVE;
         } else if ecode == EVENT_DETACH_MATERIAL {
@@ -680,6 +685,7 @@ impl CardId {
     /// `card::remove_effect`
     pub fn remove_effect(self, d: &mut Duel, peffect: EffectId) {
         let Some(cont) = self.indexer_find(d, peffect) else { return };
+        d.condition_scan_changed();
         let mut check_target = CardSet::from_card(self);
         let etype = d.effect(peffect).type_ as u32;
         match cont {
@@ -1275,6 +1281,7 @@ impl CardId {
     pub fn add_card_target(self, d: &mut Duel, pcard: CardId) {
         d.card_mut(self).effect_target_cards.insert(pcard);
         d.card_mut(pcard).effect_target_owner.insert(self);
+        d.condition_scan_changed();
         for e in self.cc(d).target_effect.all() {
             if e.is_disable_related(d) {
                 d.add_to_disable_check_list(pcard);
@@ -1288,6 +1295,7 @@ impl CardId {
     pub fn cancel_card_target(self, d: &mut Duel, pcard: CardId) {
         if d.card_mut(self).effect_target_cards.remove(pcard) {
             d.card_mut(pcard).effect_target_owner.remove(self);
+            d.condition_scan_changed();
             for e in self.cc(d).target_effect.all() {
                 if e.is_disable_related(d) {
                     d.add_to_disable_check_list(pcard);
@@ -1302,6 +1310,7 @@ impl CardId {
     pub fn clear_card_target(self, d: &mut Duel) {
         for pc in public_order(d, &self.cc(d).effect_target_owner) {
             d.card_mut(pc).effect_target_cards.remove(self);
+            d.condition_scan_changed();
             for e in d.card(pc).target_effect.all() {
                 if e.is_disable_related(d) {
                     d.add_to_disable_check_list(self);
@@ -1324,6 +1333,7 @@ impl CardId {
         let c = d.card_mut(self);
         c.effect_target_owner.clear();
         c.effect_target_cards.clear();
+        d.condition_scan_changed();
     }
     pub fn filter_effect(self, d: &mut Duel, code: u32, eset: &mut Vec<EffectId>, sort: bool) {
         // (no card and no aura has an effect under the code: nothing to filter)

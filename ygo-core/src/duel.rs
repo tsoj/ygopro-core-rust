@@ -633,6 +633,9 @@ pub struct Duel {
     /// The number of effects filed under each code below `CARD_EFFECT_CODES` in the cards' single,
     /// equip, target and Xyz material effects (`CardId::filter_effect` skips a code no card has)
     pub card_effect_count: [u16; CARD_EFFECT_CODES],
+    /// `refresh_effect_conditions`' scan (the effects with a condition, in scan order), kept until
+    /// what it depends on changes (`condition_scan_changed`)
+    pub condition_scan: Option<Rc<Vec<EffectId>>>,
     pub assumes: Vec<CardId>,
     /// Effects added while copying effects that are not copyable (`duel::uncopy`).
     pub uncopy: Vec<EffectId>,
@@ -694,6 +697,11 @@ impl Duel {
         if let Some(n) = self.card_effect_count.get_mut(code as usize) {
             *n = if filed { *n + 1 } else { *n - 1 };
         }
+    }
+    /// Marks `refresh_effect_conditions`' scan as outdated: an effect was filed or removed, a
+    /// condition set, or an equip, target or Xyz material relation changed.
+    pub fn condition_scan_changed(&mut self) {
+        self.condition_scan = None;
     }
     /// Whether a card may have an effect under `code` in its single, equip, target or Xyz
     /// material effects (false: none has).
@@ -937,6 +945,7 @@ impl Duel {
             effects: Vec::with_capacity(256),
             stat_temp: Vec::with_capacity(128),
             card_effect_count: [0; CARD_EFFECT_CODES],
+            condition_scan: None,
             assumes: Vec::new(),
             uncopy: Vec::new(),
             groups: Vec::new(),

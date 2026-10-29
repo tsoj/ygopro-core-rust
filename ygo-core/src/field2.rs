@@ -470,6 +470,7 @@ impl Duel {
             }
             cont.insert(code, peffect);
         }
+        self.condition_scan_changed();
         if typ & EFFECT_TYPE_ACTIONS == 0 {
             if code == EFFECT_SELF_TOGRAVE {
                 self.core.global_flag |= GLOBALFLAG_SELF_TOGRAVE;
@@ -549,6 +550,7 @@ impl Duel {
         let (typ, code) = (self.effect(peffect).type_ as u32, self.effect(peffect).code);
         if typ & EFFECT_TYPE_ACTIONS == 0 {
             self.field_effects.aura_effect.remove_any(peffect);
+            self.condition_scan_changed();
             if code == EFFECT_SPSUMMON_COUNT_LIMIT {
                 self.field_effects.spsummon_count_eff.retain(|&x| x != peffect);
             }

@@ -6,6 +6,7 @@ use crate::constants::*;
 use crate::duel::{Chain, Duel, Event};
 use crate::types::*;
 use crate::units;
+use std::rc::Rc;
 
 impl Duel {
     pub fn process_add_chain(&mut self, arg: &mut units::AddChain) -> bool {
@@ -959,29 +960,15 @@ impl Duel {
         }
         // (the effects in scan order with their ids; sorted by (id, scan index), as a stable sort
         // by id would)
-        let mut scan: Vec<(u32, EffectId)> = Vec::new();
-        let add = |d: &Duel, c: &crate::duel::EffectContainer, out: &mut Vec<(u32, EffectId)>| {
-            for &(_, e) in &c.items {
-                let x = d.effect(e);
-                if x.condition.is_some() {
-                    out.push((x.id, e));
-                }
+        let effects = match &self.condition_scan {
+            Some(effects) => effects.clone(),
+            None => {
+                let effects = Rc::new(self.scan_conditions());
+                self.condition_scan = Some(effects.clone());
+                effects
             }
         };
-        add(self, &self.field_effects.aura_effect, &mut scan);
-        for c in &self.cards {
-            add(self, &c.single_effect, &mut scan);
-            add(self, &c.field_effect, &mut scan);
-            if c.equiping_target.is_some() {
-                add(self, &c.equip_effect, &mut scan);
-            }
-            if !c.effect_target_cards.is_empty() {
-                add(self, &c.target_effect, &mut scan);
-            }
-            if c.overlay_target.is_some() {
-                add(self, &c.xmaterial_effect, &mut scan);
-            }
-        }
+        let scan: Vec<(u32, EffectId)> = effects.iter().map(|&e| (self.effect(e).id, e)).collect();
         let order = sorted_order(&scan);
         let mut last = None;
         for i in order {
@@ -996,6 +983,31 @@ impl Duel {
         self.core.refreshing_condition = None;
     }
 
+    /// The effects whose conditions `refresh_effect_conditions` checks, in scan order: those with a
+    /// condition among the auras, then by card its single and field effects, its equip effects
+    /// while it equips a card, its target effects while it targets cards and its Xyz material
+    /// effects while it is a material.
+    fn scan_conditions(&self) -> Vec<EffectId> {
+        let mut scan = Vec::new();
+        let add = |c: &crate::duel::EffectContainer, out: &mut Vec<EffectId>| {
+            out.extend(c.items.iter().map(|&(_, e)| e).filter(|&e| self.effect(e).condition.is_some()));
+        };
+        add(&self.field_effects.aura_effect, &mut scan);
+        for c in &self.cards {
+            add(&c.single_effect, &mut scan);
+            add(&c.field_effect, &mut scan);
+            if c.equiping_target.is_some() {
+                add(&c.equip_effect, &mut scan);
+            }
+            if !c.effect_target_cards.is_empty() {
+                add(&c.target_effect, &mut scan);
+            }
+            if c.overlay_target.is_some() {
+                add(&c.xmaterial_effect, &mut scan);
+            }
+        }
+        scan
+    }
     /// The effects offered as options in public order: by description.
     pub fn sort_select_options(&mut self) {
         let mut from = 0;

@@ -639,6 +639,7 @@ impl Duel {
                 }
                 if let Some(et) = self.card(equip_card).equiping_target {
                     self.card_mut(equip_card).effect_target_cards.remove(et);
+                    self.condition_scan_changed();
                     self.card_mut(et).effect_target_owner.remove(equip_card);
                     equip_card.unequip(self);
                     equip_card.enable_field_effect(self, false);
@@ -684,6 +685,7 @@ impl Duel {
                     equip_card.add_effect(self, pe);
                 }
                 self.card_mut(equip_card).effect_target_cards.insert(target);
+                self.condition_scan_changed();
                 self.card_mut(target).effect_target_owner.insert(equip_card);
                 if !is_step {
                     if self.card(equip_card).is_position(POS_FACEUP) != 0 {

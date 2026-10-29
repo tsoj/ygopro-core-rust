@@ -153,6 +153,7 @@ pub fn set_hint_timing(d: &mut Duel, e: EffectId, vs: u32, vo: Option<u32>) {
 }
 pub fn set_condition(d: &mut Duel, e: EffectId, f: Option<LuaFn>) {
     d.effect_mut(e).condition = f;
+    d.condition_scan_changed();
 }
 pub fn set_target(d: &mut Duel, e: EffectId, f: Option<LuaFn>) {
     d.effect_mut(e).target = f;

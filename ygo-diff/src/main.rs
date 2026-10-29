@@ -896,7 +896,8 @@ fn main() {
             format!("{c}: {a} activations, {s} summons")
         }).collect();
         v.sort();
-        if !v.is_empty() && (v.len() <= 50 || args.decks.is_some() || args.replay.is_some()) {
+        // (with --digest always: test runs add up the coverage)
+        if !v.is_empty() && (v.len() <= 50 || args.decks.is_some() || args.replay.is_some() || args.digest) {
             println!("coverage of the scripted cards:\n  {}", v.join("\n  "));
         }
     });

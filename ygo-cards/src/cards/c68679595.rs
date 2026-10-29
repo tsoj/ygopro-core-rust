@@ -4,7 +4,7 @@ use super::prelude::*;
 
 pub const ID: u32 = 68679595;
 
-pub const INFO: ScriptInfo = ScriptInfo {
+pub const INFO: ScriptInfo = ScriptInfo { loads: &[56840427],
     listed_names: &[56840427],
     listed_series: &[SET_ZW],
     xyz_number: Some(39),

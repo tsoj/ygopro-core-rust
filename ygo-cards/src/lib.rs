@@ -161,6 +161,9 @@ pub struct ScriptInfo {
     pub maximum_side: Option<global::MaximumSide>,
     /// `s.self_equip_trap`
     pub self_equip_trap: bool,
+    /// The scripts the script loads (`Duel.LoadCardScript`): their metatables exist in the duel
+    /// (`current_info`) as if a card with that code took part
+    pub loads: &'static [u32],
     /// `s.listed_names`
     pub listed_names: &'static [u32],
     /// `s.fit_monster`
@@ -227,6 +230,7 @@ impl ScriptInfo {
     pub const DEFAULT: ScriptInfo = ScriptInfo {
         maximum_side: None,
         self_equip_trap: false,
+        loads: &[],
         listed_names: &[],
         fit_monster: &[],
         listed_card_types: &[],
@@ -288,7 +292,7 @@ pub fn current_info(d: &mut ygo_core::duel::Duel, c: ygo_core::types::CardId) ->
     let code = *ygo_core::api::card::get_code(d, c).first()?;
     let loaded = (0..d.cards.len() as u32).map(ygo_core::types::CardId).any(|x| {
         let card = d.card(x);
-        card.script_code == code || card.data.code == code
+        card.script_code == code || card.data.code == code || script_info(card.script_code).loads.contains(&code)
     });
     loaded.then(|| script_info(code))
 }

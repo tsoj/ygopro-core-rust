@@ -4,7 +4,7 @@ use super::prelude::*;
 
 pub const ID: u32 = 57030525;
 // s.listed_names={980973} (Armed Dragon LV3), s.listed_series, s.LVnum, s.LVset
-pub const INFO: ScriptInfo = ScriptInfo {
+pub const INFO: ScriptInfo = ScriptInfo { loads: &[980973],
     listed_names: &[980973],
     listed_series: &[SET_ARMED_DRAGON],
     lv: Some((3, SET_ARMED_DRAGON_THUNDER)),
@@ -12,7 +12,7 @@ pub const INFO: ScriptInfo = ScriptInfo {
 };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
-    // Duel.LoadCardScript("c980973.lua") does nothing in Rust (all scripts are compiled in)
+    // Duel.LoadCardScript("c980973.lua"): INFO.loads
     // This card's name becomes "Armed Dragon LV3" while on the field or in the GY
     // local e1=Effect.CreateEffect(c)
     let e1 = effect::create_effect(d, c);

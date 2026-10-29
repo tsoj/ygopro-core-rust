@@ -3,7 +3,7 @@ use super::prelude::*;
 
 pub const ID: u32 = 75402014;
 
-pub const INFO: ScriptInfo = ScriptInfo { listed_series: &[SET_ZW], xyz_number: Some(39), ..ScriptInfo::DEFAULT };
+pub const INFO: ScriptInfo = ScriptInfo { loads: &[56840427], listed_series: &[SET_ZW], xyz_number: Some(39), ..ScriptInfo::DEFAULT };
 
 pub fn initial_effect(d: &mut Duel, c: CardId) {
     // Xyz summon

@@ -288,13 +288,13 @@ impl EffectContainer {
     }
     /// The effects filed under `code` (`equal_range`), in order.
     #[inline]
-    pub fn range(&self, code: u32) -> Vec<EffectId> {
+    pub fn range(&self, code: u32) -> EffectRange {
         if self.codes & code_bit(code) == 0 {
-            return Vec::new();
+            return EffectRange::default();
         }
         self.range_slow(code)
     }
-    fn range_slow(&self, code: u32) -> Vec<EffectId> {
+    fn range_slow(&self, code: u32) -> EffectRange {
         // (small containers: a scan beats two binary searches)
         if self.items.len() <= 16 {
             return self.items.iter().filter(|&&(c, _)| c == code).map(|&(_, e)| e).collect();
@@ -324,6 +324,87 @@ impl EffectContainer {
     }
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
+    }
+}
+
+/// The effects of a container under one code (`EffectContainer::range`): up to `INLINE` of them
+/// without an allocation (most lookups find none or a few).
+#[derive(Clone, Debug)]
+pub enum EffectRange {
+    Inline(usize, [EffectId; EffectRange::INLINE]),
+    Heap(Vec<EffectId>),
+}
+
+impl EffectRange {
+    const INLINE: usize = 8;
+
+    pub fn as_slice(&self) -> &[EffectId] {
+        match self {
+            EffectRange::Inline(n, a) => &a[..*n],
+            EffectRange::Heap(v) => v,
+        }
+    }
+    pub fn len(&self) -> usize {
+        self.as_slice().len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.as_slice().is_empty()
+    }
+    pub fn first(&self) -> Option<&EffectId> {
+        self.as_slice().first()
+    }
+    pub fn to_vec(&self) -> Vec<EffectId> {
+        self.as_slice().to_vec()
+    }
+}
+
+impl Default for EffectRange {
+    fn default() -> Self {
+        EffectRange::Inline(0, [EffectId(0); EffectRange::INLINE])
+    }
+}
+
+impl FromIterator<EffectId> for EffectRange {
+    fn from_iter<I: IntoIterator<Item = EffectId>>(iter: I) -> Self {
+        let mut r = EffectRange::default();
+        for e in iter {
+            match &mut r {
+                EffectRange::Inline(n, a) if *n < EffectRange::INLINE => {
+                    a[*n] = e;
+                    *n += 1;
+                }
+                EffectRange::Inline(n, a) => {
+                    let mut v = a[..*n].to_vec();
+                    v.push(e);
+                    r = EffectRange::Heap(v);
+                }
+                EffectRange::Heap(v) => v.push(e),
+            }
+        }
+        r
+    }
+}
+
+/// The effects of an `EffectRange`, in order.
+pub struct EffectRangeIter {
+    range: EffectRange,
+    next: usize,
+}
+
+impl Iterator for EffectRangeIter {
+    type Item = EffectId;
+    fn next(&mut self) -> Option<EffectId> {
+        let e = self.range.as_slice().get(self.next).copied();
+        self.next += 1;
+        e
+    }
+}
+
+impl IntoIterator for EffectRange {
+    type Item = EffectId;
+    type IntoIter = EffectRangeIter;
+    fn into_iter(self) -> EffectRangeIter {
+        EffectRangeIter { range: self, next: 0 }
     }
 }
 
@@ -737,8 +818,8 @@ pub struct Duel {
     pub lua_ccalls: u32,
     /// The card scripts (code -> initial_effect), shared by all copies.
     pub scripts: Arc<crate::script::Scripts>,
-    /// Values kept by card scripts (the globals of the Lua scripts), by (code, key); shared by
-    /// copies until one changes them.
+    /// Values kept by card scripts (the globals of the Lua scripts), by (code, key), sorted by it;
+    /// shared by copies until one changes them.
     pub script_vars: Arc<Vec<((u32, u64), Value)>>,
     /// The replay scope of the card function being run (see DESIGN.md).
     pub scope: Option<Box<crate::scope::Scope>>,
@@ -873,13 +954,16 @@ impl Duel {
     }
     /// A value kept by card scripts (a Lua global or upvalue): `key` is (namespace, name).
     pub fn script_var(&self, key: (u32, u64)) -> Value {
-        self.script_vars.iter().find(|x| x.0 == key).map_or(Value::Nil, |x| x.1.clone())
+        match self.script_vars.binary_search_by_key(&key, |x| x.0) {
+            Ok(i) => self.script_vars[i].1.clone(),
+            Err(_) => Value::Nil,
+        }
     }
     pub fn set_script_var(&mut self, key: (u32, u64), v: Value) {
         let vars = Arc::make_mut(&mut self.script_vars);
-        match vars.iter_mut().find(|x| x.0 == key) {
-            Some(x) => x.1 = v,
-            None => vars.push((key, v)),
+        match vars.binary_search_by_key(&key, |x| x.0) {
+            Ok(i) => vars[i].1 = v,
+            Err(i) => vars.insert(i, (key, v)),
         }
     }
     /// `duel::read_card`

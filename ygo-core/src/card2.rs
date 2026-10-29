@@ -1423,12 +1423,12 @@ impl CardId {
         if !self.cc(d).immune_effect.is_empty() {
             d.card_mut(self).immune_effect.clear();
         }
-        let single: Vec<_> = self.cc(d).single_effect.range(EFFECT_IMMUNE_EFFECT);
+        let single = self.cc(d).single_effect.range(EFFECT_IMMUNE_EFFECT);
         if !single.is_empty() {
             d.card_mut(self).immune_effect.extend(single);
         }
         for pc in public_order(d, &self.cc(d).equiping_cards) {
-            let v: Vec<_> = d.card(pc).equip_effect.range(EFFECT_IMMUNE_EFFECT);
+            let v = d.card(pc).equip_effect.range(EFFECT_IMMUNE_EFFECT);
             if !v.is_empty() {
                 d.card_mut(self).immune_effect.extend(v);
             }

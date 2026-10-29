@@ -549,6 +549,11 @@ fn query_insert_u32(buf: &mut Vec<u8>, query: u32, value: u32) {
     buf.extend_from_slice(&value.to_le_bytes());
 }
 
+/// Whether an effect of `c` has a condition (is in the condition scan while `c` is scanned).
+fn has_condition(d: &Duel, c: &EffectContainer) -> bool {
+    c.items.iter().any(|&(_, e)| d.effect(e).condition().is_some())
+}
+
 impl CardId {
     #[inline]
     fn c<'a>(&self, d: &'a Duel) -> &'a Card {
@@ -567,7 +572,9 @@ impl CardId {
         if cont != CONT_FIELD {
             d.count_card_effect(code, true);
         }
-        d.condition_scan_changed();
+        if d.effect(e).condition().is_some() {
+            d.condition_scan_changed();
+        }
     }
     /// Removes `e` from the container `cont`: the code it was filed under, if it was there.
     pub fn unfile_effect(self, d: &mut Duel, cont: u8, e: EffectId) -> Option<u32> {
@@ -584,32 +591,49 @@ impl CardId {
         {
             d.count_card_effect(code, false);
         }
-        d.condition_scan_changed();
+        if d.effect(e).condition().is_some() {
+            d.condition_scan_changed();
+        }
         code
     }
+    // (the relations below decide whether the card's equip, target and Xyz material effects are
+    // scanned: the scan changes when one starts or ends and the container has a condition)
     pub fn set_equiping_target(self, d: &mut Duel, target: Option<CardId>) {
-        d.card_mut(self).equiping_target = target;
-        d.condition_scan_changed();
+        let previous = std::mem::replace(&mut d.card_mut(self).equiping_target, target);
+        if previous.is_some() != target.is_some() && has_condition(d, &self.c(d).equip_effect) {
+            d.condition_scan_changed();
+        }
     }
     /// Returns the previous overlay target.
     pub fn set_overlay_target(self, d: &mut Duel, target: Option<CardId>) -> Option<CardId> {
         let previous = std::mem::replace(&mut d.card_mut(self).overlay_target, target);
-        d.condition_scan_changed();
+        if previous.is_some() != target.is_some() && has_condition(d, &self.c(d).xmaterial_effect) {
+            d.condition_scan_changed();
+        }
         previous
     }
     pub fn insert_effect_target(self, d: &mut Duel, target: CardId) {
+        let was_empty = self.c(d).effect_target_cards.is_empty();
         d.card_mut(self).effect_target_cards.insert(target);
-        d.condition_scan_changed();
+        self.effect_targets_changed(d, was_empty);
     }
     /// Whether `target` was a target.
     pub fn remove_effect_target(self, d: &mut Duel, target: CardId) -> bool {
+        let was_empty = self.c(d).effect_target_cards.is_empty();
         let removed = d.card_mut(self).effect_target_cards.remove(target);
-        d.condition_scan_changed();
+        self.effect_targets_changed(d, was_empty);
         removed
     }
     pub fn clear_effect_targets(self, d: &mut Duel) {
+        let was_empty = self.c(d).effect_target_cards.is_empty();
         d.card_mut(self).effect_target_cards.clear();
-        d.condition_scan_changed();
+        self.effect_targets_changed(d, was_empty);
+    }
+    fn effect_targets_changed(self, d: &mut Duel, was_empty: bool) {
+        let c = self.c(d);
+        if c.effect_target_cards.is_empty() != was_empty && has_condition(d, &c.target_effect) {
+            d.condition_scan_changed();
+        }
     }
 
     pub fn is_extra_deck_monster(self, d: &Duel) -> bool {

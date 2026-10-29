@@ -851,8 +851,9 @@ impl Duel {
             *n = if filed { *n + 1 } else { *n - 1 };
         }
     }
-    /// Marks `refresh_effect_conditions`' scan as outdated: an effect was filed or removed, a
-    /// condition set, or an equip, target or Xyz material relation changed.
+    /// Marks `refresh_effect_conditions`' scan as outdated: an effect with a condition was filed or
+    /// removed, a condition set, or an equip, target or Xyz material relation of a container with
+    /// a condition started or ended.
     pub(crate) fn condition_scan_changed(&mut self) {
         self.condition_scan = None;
     }
@@ -889,12 +890,16 @@ impl Duel {
     /// Files the aura `e` under `code`.
     pub fn file_aura(&mut self, code: u32, e: EffectId) {
         self.field_effects.aura_effect.insert(code, e);
-        self.condition_scan_changed();
+        if self.effect(e).condition().is_some() {
+            self.condition_scan_changed();
+        }
     }
     /// Removes the aura `e`: the code it was filed under, if it was there.
     pub fn unfile_aura(&mut self, e: EffectId) -> Option<u32> {
         let code = self.field_effects.aura_effect.remove_any(e);
-        self.condition_scan_changed();
+        if self.effect(e).condition().is_some() {
+            self.condition_scan_changed();
+        }
         code
     }
     /// Whether a card may have an effect under `code` in its single, equip, target or Xyz

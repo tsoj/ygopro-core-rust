@@ -108,11 +108,13 @@ fn oracle_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../oracle")
 }
 
-pub fn init(lib_path: &Path, root: &Path, db: Arc<CardDb>) {
+/// The card data and scripts; the oracle library too unless `lib_path` is `None` (Rust only).
+pub fn init(lib_path: Option<&Path>, root: &Path, db: Arc<CardDb>) {
     let _ = DB.set(db);
     let _ = ROOT.set(root.to_path_buf());
     let _ = SETCODES.set(Mutex::new(HashMap::new()));
     let _ = SCRIPTS.set(Mutex::new(HashMap::new()));
+    let Some(lib_path) = lib_path else { return };
     if API.get().is_some() {
         return;
     }

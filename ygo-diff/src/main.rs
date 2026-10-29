@@ -781,7 +781,7 @@ fn main() {
     let root = root.canonicalize().unwrap();
     let db = Arc::new(CardDb::load(&root.join("external").join("BabelCDB")).expect("card database"));
     let core_lib = core_ffi::oracle_lib();
-    core_ffi::init(&core_lib, &root, db.clone());
+    core_ffi::init((!args.rust_only).then_some(core_lib.as_path()), &root, db.clone());
     let scripts = Arc::new(ygo_cards::scripts());
     let pool = vanilla_pool(&db);
     let scripted: Vec<u32> = args.cards.clone().unwrap_or_else(|| ygo_cards::cards::ALL.iter().map(|x| x.0).collect());

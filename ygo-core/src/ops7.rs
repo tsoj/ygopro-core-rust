@@ -67,6 +67,13 @@ impl Duel {
         true
     }
 
+    /// Whether `c` is a target of a destruction in progress other than the running one: it cannot
+    /// also be destroyed instead of another card (e.g. a Union card whose substitution is still
+    /// being carried out when the equipped monster's self-destruction is checked again, which
+    /// otherwise substituted again without end).
+    fn is_being_destroyed(&self, c: CardId) -> bool {
+        self.core.units.iter().any(|u| matches!(u, units::Unit::Destroy(d) if d.targets.is_some_and(|g| self.group(g).contains(c))))
+    }
     pub fn process_destroy(&mut self, arg: &mut units::Destroy) -> bool {
         let g = arg.targets.unwrap();
         let (reason_effect, reason, reason_player) = (arg.reason_effect, arg.reason, arg.reason_player);
@@ -155,7 +162,7 @@ impl Duel {
                         let mut sub = false;
                         for peff in eset {
                             self.add_indes_params(pcard);
-                            if peff.check_value_condition(self, 3) {
+                            if peff.check_value_condition(self, 3) && !self.is_being_destroyed(self.effect(peff).handler.unwrap()) {
                                 extra.insert(self.effect(peff).handler.unwrap());
                                 sub = true;
                             }
@@ -337,7 +344,7 @@ impl Duel {
                         let mut sub = false;
                         for peff in eset {
                             self.add_indes_params(pcard);
-                            if peff.check_value_condition(self, 3) {
+                            if peff.check_value_condition(self, 3) && !self.is_being_destroyed(self.effect(peff).handler.unwrap()) {
                                 let h = self.effect(peff).handler.unwrap();
                                 self.core.battle_destroy_rep.insert(h);
                                 sub = true;

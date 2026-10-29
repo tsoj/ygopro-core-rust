@@ -620,7 +620,9 @@ fn play(game: u64, args: &Args, db: &Arc<CardDb>, scripts: &Arc<Scripts>, pool: 
             let (a, b) = (mc.get(i), mr.get(i));
             if a != b {
                 let mut s = format!("game {game} (seed {:?}), decision {}: message {i} differs\n", seed, out.decisions);
-                for h in history.iter().rev().take(6).rev() {
+                // ($YGO_DIFF_HISTORY: how many earlier messages to show, default 6)
+                let shown = std::env::var("YGO_DIFF_HISTORY").ok().and_then(|v| v.parse().ok()).unwrap_or(6);
+                for h in history.iter().rev().take(shown).rev() {
                     s += &format!("  before: {}\n", hex(h));
                 }
                 for j in i.saturating_sub(3)..i {

@@ -31,7 +31,7 @@ case_pair2394 --games 3 --seed 1 --decks decks/pair2394_a.ydk,decks/pair2394_b.y
 case_pair9294 --games 3 --seed 1 --decks decks/pair9294_a.ydk,decks/pair9294_b.ydk
 case_pair15254 --games 3 --seed 1 --decks decks/pair15254_a.ydk,decks/pair15254_b.ydk
 case_pair16976 --games 3 --seed 1 --decks decks/pair16976_a.ydk,decks/pair16976_b.ydk
-# Block Dragon could not return to its owner's full Monster Zones and could not be destroyed: each adjust tried again (the Kaiju loop of TODO.md)
+# Block Dragon could not return to its owner's full Monster Zones and could not be destroyed: each adjust tried again (the Kaiju loop of TODO.md); such a monster is sent to the GY, not destroyed
 case_control_return_no_zone_8 --from 169 --games 170 --seed 8 --scripted 0.9 --cards 744887,4031928,5291803,6327734,6327735,7194917,11161666,11163040,16310544,16433136,17255673,18377261,21900719,28674152,29726552,29913783,36956512,42705243,43527730,44649322,48770333,48770334,53174748,54862960,55063751,57566760,57736667,63519819,63941210,75771170,78199891,79575620,79912449,80044027,81057455,81260679,81260680,84550369,84769941,93332803,94689206,94766498,99330325 --focus 744887,4031928,5291803,6327734,6327735,7194917,11161666,11163040,16310544,16433136,17255673,18377261,21900719,28674152,29726552,29913783,36956512,42705243,43527730,44649322,48770333,48770334,53174748,54862960,55063751,57566760,57736667,63519819,63941210,75771170,78199891,79575620,79912449,80044027,81057455,81260679,81260680,84550369,84769941,93332803,94689206,94766498,99330325
 # MiSolfachord Eliteia's target check called IsController (does not exist): Cairngorgon, Antiluminescent Knight (lua_fixes)
 case_cairngorgon_1042 --from 180 --games 181 --seed 1042

@@ -128,35 +128,16 @@ impl Duel {
                 false
             }
             6 => {
+                // (a monster without a zone for its new controller is sent to the GY, not destroyed:
+                // "cannot be destroyed" does not keep it, e.g. Block Dragon that cannot return to its
+                // owner's full Monster Zones)
                 if !arg.destroy_set.is_empty() {
                     let ds = arg.destroy_set.clone();
-                    self.destroy(ds, None, REASON_RULE, PLAYER_NONE as u8, PLAYER_NONE as u8, 0, 0);
+                    self.send_to(ds, None, REASON_RULE, PLAYER_NONE as u8, PLAYER_NONE as u8, LOCATION_GRAVE as u16, 0, POS_FACEUP as u8, false);
                 }
                 false
             }
             7 => {
-                // (a monster that returns by rule (no reason effect) but has no zone and cannot be
-                // destroyed stays: the return happened and failed, so its controller is now the
-                // current one; otherwise each adjust would try again without end, e.g. Block
-                // Dragon that cannot return to its owner's full Monster Zones)
-                if reason_effect.is_none() {
-                    for c in public_order(self, &std::mem::take(&mut arg.destroy_set)) {
-                        let cc = self.card(c);
-                        if cc.current.location as u32 == LOCATION_MZONE && cc.current.controler != playerid {
-                            let ctrl = cc.current.controler;
-                            let pe = self.new_effect();
-                            let e = self.effect_mut(pe);
-                            e.owner = Some(c);
-                            e.handler = Some(c);
-                            e.type_ = EFFECT_TYPE_SINGLE as u16;
-                            e.code = EFFECT_SET_CONTROL;
-                            e.value = ctrl as i32;
-                            e.flag[0] = EFFECT_FLAG_CANNOT_DISABLE;
-                            e.reset_flag = RESET_EVENT | 0xc6c0000;
-                            c.add_effect(self, pe);
-                        }
-                    }
-                }
                 let set = self.group(tg).clone();
                 self.returns.set_i32(0, set.len() as i32);
                 self.core.operated_set = set;
@@ -418,8 +399,9 @@ impl Duel {
             }
             5 => {
                 if !arg.destroy_set.is_empty() {
+                    // (sent to the GY, not destroyed: see process_get_control)
                     let ds = std::mem::take(&mut arg.destroy_set);
-                    self.destroy(ds, None, REASON_RULE, PLAYER_NONE as u8, PLAYER_NONE as u8, 0, 0);
+                    self.send_to(ds, None, REASON_RULE, PLAYER_NONE as u8, PLAYER_NONE as u8, LOCATION_GRAVE as u16, 0, POS_FACEUP as u8, false);
                 }
                 true
             }

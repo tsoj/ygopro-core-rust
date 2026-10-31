@@ -299,7 +299,7 @@ fn strip_prompt(m: &Msg, viewer: u32) -> Msg {
             strip_prompt_cards(chains, viewer, true);
             // (the core's timing hints for the client's auto-pass: what happened since the windows
             // were last passed, including windows only the opponent's hidden cards opened, e.g. a
-            // hand trap's; a player at a table sees none)
+            // hand trap's; the play gives the player's own, `Timing`)
             *hint_timing = None;
             *hint_timing_other = None;
             // (spe_count counts the offered effects whose hint timing matches those timings: the
@@ -633,6 +633,161 @@ fn hide_unpublic(codes: &mut [u32], public: &[bool]) {
     for (i, c) in codes.iter_mut().enumerate() {
         if !public.get(i).copied().unwrap_or(false) {
             *c = 0;
+        }
+    }
+}
+
+/// The chain prompts' timing hints (SELECT_CHAIN's `hint_timing`, `hint_timing_other`: what
+/// happened since the chain windows were last passed, TIMING_* bits per player) as a player can
+/// know them. The core's own hints also reset at windows only the opponent's hidden cards opened
+/// (they are stripped, `strip_prompt`); these follow the core's rules (where it sets the bits)
+/// but see only the player's messages (`filter_message`), its own prompts and responses: a
+/// window ends when the player passed and no chain link follows.
+#[derive(Debug, Clone, Default)]
+pub struct Timing {
+    /// the bits of each player's actions
+    hints: [u32; 2],
+    turn_player: u32,
+    /// the player passed a chain window: it ends unless a chain link follows
+    passed: bool,
+    /// a chain is open (CHAINING to CHAIN_END); a link resolves (CHAIN_SOLVING to CHAIN_SOLVED)
+    chain: bool,
+    solving: bool,
+    /// the players of the summons under way (a summon's bit is set once it succeeded)
+    summoning: Vec<u32>,
+}
+
+impl Timing {
+    /// What survives the end of a chain window (`QuickEffect`, `break_effect`).
+    const KEPT: u32 = TIMING_DAMAGE_STEP | TIMING_DAMAGE_CAL;
+
+    /// A message as the player sees it (`filter_message`'s).
+    pub fn message(&mut self, m: &Msg) {
+        use Msg::*;
+        if std::mem::take(&mut self.passed) && !matches!(m, Chaining { .. }) {
+            self.window_end();
+        }
+        let tp = self.turn_player as usize;
+        let h = &mut self.hints;
+        match m {
+            NewTurn { player } => {
+                h[tp] = 0;
+                self.turn_player = *player;
+            }
+            // (a phase's window: at its start, the Draw Phase's after the draw; the end of a
+            // phase clears the turn player's hints)
+            NewPhase { phase } => {
+                h[tp] = match *phase {
+                    PHASE_STANDBY => TIMING_STANDBY_PHASE,
+                    PHASE_BATTLE_START => TIMING_BATTLE_START,
+                    PHASE_END => TIMING_END_PHASE,
+                    _ => 0,
+                }
+            }
+            // (the events the core announces where it sets the hints: a phase's last window,
+            // the end of the Main Phase, the steps of a battle)
+            Hint { hint_type: HINT_EVENT, data, .. } => match data {
+                20 => h[tp] = TIMING_DRAW_PHASE,
+                21 => h[tp] = TIMING_STANDBY_PHASE,
+                28 => h[tp] = TIMING_BATTLE_START,
+                25 => h[tp] = TIMING_BATTLE_END,
+                26 => h[tp] = TIMING_END_PHASE,
+                23 => h[tp] = TIMING_MAIN_END,
+                24 => *h = [TIMING_BATTLE_PHASE; 2],
+                29 => h[tp] = TIMING_BATTLE_STEP_END,
+                41 => h[tp] = TIMING_DAMAGE_STEP,
+                42 | 45 => h[tp] = TIMING_DAMAGE_CAL,
+                43 => h.iter_mut().for_each(|x| *x |= TIMING_BATTLED),
+                _ => {}
+            },
+            Attack { .. } => h[tp] = TIMING_ATTACK,
+            DamageStepStart {} | Battle { .. } => h[tp] = 0,
+            Chaining { .. } => self.chain = true,
+            // (after an activation's costs and targets: `break_effect`)
+            Chained { .. } => h.iter_mut().for_each(|x| *x &= Self::KEPT),
+            ChainSolving { .. } => {
+                self.solving = true;
+                h.iter_mut().for_each(|x| *x &= Self::KEPT);
+            }
+            ChainSolved { .. } => self.solving = false,
+            ChainEnd {} => {
+                (self.chain, self.solving) = (false, false);
+                h.iter_mut().for_each(|x| *x |= TIMING_CHAIN_END);
+            }
+            // (a summon by an effect: at once; by the rules: once it succeeded, outside a chain)
+            // (a summon by the rules starts after its tributes and materials: `break_effect`)
+            Summoning { con, .. } | Flipsummoning { con, .. } => {
+                h.iter_mut().for_each(|x| *x &= Self::KEPT);
+                self.summoning = vec![*con];
+            }
+            Spsummoning { con, .. } if self.solving => h[*con as usize & 1] |= TIMING_SPSUMMON,
+            Spsummoning { con, .. } => {
+                if self.summoning.is_empty() {
+                    h.iter_mut().for_each(|x| *x &= Self::KEPT);
+                }
+                self.summoning.push(*con);
+            }
+            Summoned {} | Spsummoned {} | Flipsummoned {} => {
+                let bit = match m {
+                    Summoned {} => TIMING_SUMMON,
+                    Spsummoned {} => TIMING_SPSUMMON,
+                    _ => TIMING_FLIPSUMMON,
+                };
+                for c in std::mem::take(&mut self.summoning) {
+                    if !self.chain {
+                        h[c as usize & 1] |= bit;
+                    }
+                }
+            }
+            // (by the rules, not by an effect)
+            Set { con, loc, .. } if !self.solving => h[*con as usize & 1] |= if *loc == LOCATION_MZONE { TIMING_MSET } else { TIMING_SSET },
+            // (a Set Spell or Trap turned face-up to activate it: not a change of position)
+            PosChange { con, loc, .. } if *loc != LOCATION_SZONE => h[*con as usize & 1] |= TIMING_POS_CHANGE,
+            Draw { player, .. } => h[*player as usize & 1] |= TIMING_DRAW | TIMING_TOHAND,
+            Damage { player, .. } => h[*player as usize & 1] |= TIMING_DAMAGE,
+            Recover { player, .. } => h[*player as usize & 1] |= TIMING_RECOVER,
+            Equip { target, .. } => h[target.con as usize & 1] |= TIMING_EQUIP,
+            Move { from, to, reason, .. } if from.loc != 0 => {
+                let c = from.con as usize & 1;
+                if reason & REASON_DESTROY != 0 {
+                    h[c] |= TIMING_DESTROY;
+                }
+                h[c] |= match to.loc {
+                    LOCATION_GRAVE => TIMING_TOGRAVE,
+                    LOCATION_HAND => TIMING_TOHAND,
+                    LOCATION_DECK => TIMING_TODECK,
+                    LOCATION_REMOVED => TIMING_REMOVE,
+                    _ => 0,
+                };
+            }
+            _ => {}
+        }
+    }
+
+    fn window_end(&mut self) {
+        self.hints.iter_mut().for_each(|x| *x &= Self::KEPT);
+    }
+
+    /// The player's chain prompt with its hints, from its own view: (its, the opponent's).
+    pub fn prompt(&mut self, m: &mut Msg, player: u32) {
+        if let Msg::SelectChain { hint_timing, hint_timing_other, .. } = m {
+            // (a new window of the player's after it passed: the last one ended)
+            if std::mem::take(&mut self.passed) {
+                self.window_end();
+            }
+            *hint_timing = Some(self.hints[player as usize & 1]);
+            *hint_timing_other = Some(self.hints[1 - (player as usize & 1)]);
+        }
+    }
+
+    /// The player's response to its prompt `m`.
+    pub fn response(&mut self, m: &Msg, r: &Response) {
+        match m {
+            Msg::SelectChain { .. } if r.index.is_none_or(|i| i < 0) => self.passed = true,
+            Msg::SelectIdlecmd { player, .. } if matches!(r.kind, Some(crate::actions::Command::ToBp | crate::actions::Command::ToEp)) => {
+                self.hints[*player as usize & 1] = TIMING_MAIN_END;
+            }
+            _ => {}
         }
     }
 }

@@ -27,7 +27,7 @@ use ygo_arbiter::edopro::{decode_response, encode, start, update_data};
 use ygo_arbiter::game::{Bot, BotError, DuelConfig, InitInfo, Observer, PlayOptions, card_db, init, new_record, play};
 use ygo_arbiter::matchrun::load_book;
 use ygo_arbiter::messages::{Msg, parse};
-use ygo_arbiter::observe::filter_prompt;
+use ygo_arbiter::observe::{Timing, filter_message, filter_prompt};
 use ygo_arbiter::protocol::{BotOption, Identity};
 use ygo_arbiter::random::RandomBot;
 use ygo_arbiter::state::Snapshot;
@@ -247,10 +247,74 @@ struct Check {
     messages: usize,
     responses: usize,
     errors: Vec<String>,
+    /// each player's `Timing` against the core's hints: chain prompts, agreeing ones, and the
+    /// bits that differed (own, other) with how often
+    timings: [Timing; 2],
+    chains: usize,
+    agree: usize,
+    differ: std::collections::BTreeMap<(u32, u32), (usize, String)>,
+    /// each player's last messages (names), for the examples
+    recent: [Vec<String>; 2],
+    last_responses: Vec<String>,
 }
 
 impl Observer for Check {
     fn message(&mut self, m: &Msg) {
+        if !m.is_select() {
+            for p in 0..2 {
+                if let Some(o) = filter_message(m, p) {
+                    self.timings[p as usize].message(&o);
+                    let r = &mut self.recent[p as usize];
+                    r.push(match &o {
+                        Msg::NewPhase { phase } => format!("NEW_PHASE {phase:#x}"),
+                        Msg::Hint { hint_type, data, .. } => format!("HINT {hint_type} {data}"),
+                        Msg::Move { from, to, .. } => format!("MOVE {:#x}->{:#x}", from.loc, to.loc),
+                        o => o.name().to_string(),
+                    });
+                    if r.len() > 8 {
+                        r.remove(0);
+                    }
+                }
+            }
+        }
+        self.encoding(m);
+    }
+    fn prompt(&mut self, prompt: &Msg, _duel: &mut Duel) {
+        self.encoding(prompt);
+        self.prompt = prompt.player().map(|p| filter_prompt(prompt, p));
+        if let (Some(p), Msg::SelectChain { hint_timing: Some(h0), hint_timing_other: Some(h1), .. }) = (prompt.player(), prompt) {
+            let mut ours = self.prompt.clone().unwrap();
+            self.timings[p as usize].prompt(&mut ours, p);
+            let Msg::SelectChain { hint_timing: Some(o0), hint_timing_other: Some(o1), .. } = ours else { unreachable!() };
+            self.chains += 1;
+            if (o0, o1) == (*h0, *h1) {
+                self.agree += 1;
+            } else {
+                let e = self.differ.entry((o0 ^ h0, o1 ^ h1)).or_insert_with(|| {
+                    (0, format!("ours {o0:#x}/{o1:#x} core {h0:#x}/{h1:#x}, player {p}; {}; then the prompt (responses: {:?})", self.recent[p as usize].join(", "), self.last_responses))
+                });
+                e.0 += 1;
+            }
+        }
+    }
+    fn response(&mut self, player: u32, r: &Response) {
+        let Some(m) = self.prompt.clone() else { return };
+        self.last_responses.push(format!("p{player} {} {}", m.name(), serde_json::to_string(r).unwrap_or_default()));
+        if self.last_responses.len() > 3 {
+            self.last_responses.remove(0);
+        }
+        self.timings[player as usize].response(&m, r);
+        let Ok(bytes) = encode_response(&m, r) else { return };
+        self.responses += 1;
+        match decode_response(&m, &bytes).map(|back| encode_response(&m, &back)) {
+            Ok(Ok(b)) if b == bytes => {}
+            x => self.errors.push(format!("{}: {r:?} -> {x:?}", m.name())),
+        }
+    }
+}
+
+impl Check {
+    fn encoding(&mut self, m: &Msg) {
         // (this core's additions are not in EDOPro's form)
         if matches!(m, Msg::ShuffleHand { .. } | Msg::ShuffleExtra { .. } | Msg::ShuffleSetCard { .. }) {
             return;
@@ -259,19 +323,6 @@ impl Observer for Check {
         match parse(&encode(m)) {
             Ok(back) if back == *m => {}
             r => self.errors.push(format!("{m:?} -> {r:?}")),
-        }
-    }
-    fn prompt(&mut self, prompt: &Msg, _duel: &mut Duel) {
-        self.message(prompt);
-        self.prompt = prompt.player().map(|p| filter_prompt(prompt, p));
-    }
-    fn response(&mut self, _player: u32, r: &Response) {
-        let Some(m) = &self.prompt else { return };
-        let Ok(bytes) = encode_response(m, r) else { return };
-        self.responses += 1;
-        match decode_response(m, &bytes).map(|back| encode_response(m, &back)) {
-            Ok(Ok(b)) if b == bytes => {}
-            x => self.errors.push(format!("{}: {r:?} -> {x:?}", m.name())),
         }
     }
 }
@@ -287,6 +338,12 @@ fn check(book: &str, games: usize) -> Result<(), String> {
         eprintln!("{e}");
     }
     println!("{} messages, {} responses: {} errors", c.messages, c.responses, c.errors.len());
+    println!("chain timing hints: {} of {} as the core's", c.agree, c.chains);
+    let mut differ: Vec<_> = c.differ.iter().collect();
+    differ.sort_by_key(|(_, (n, _))| std::cmp::Reverse(*n));
+    for ((own, other), (n, example)) in differ.iter().take(15) {
+        println!("  {n:6} differ in own {own:#x}, other {other:#x}: {example}");
+    }
     if c.errors.is_empty() { Ok(()) } else { Err("the encodings do not read back".into()) }
 }
 

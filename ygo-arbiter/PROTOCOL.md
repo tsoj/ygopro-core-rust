@@ -306,6 +306,31 @@ If a response does not have the necessary members, or if an index is out of rang
 the game (`bot_error`). If the duel does not accept the response, the bot loses the game
 (`illegal_response`).
 
+### Chain timing
+
+A `SELECT_CHAIN` prompt has `hint_timing` and `hint_timing_other`. Each is a set of `TIMING_*`
+bits: the events since the last chain window ended. `hint_timing` has the events of the player,
+`hint_timing_other` the events of the opponent.
+
+| Bit | Event |
+|---|---|
+| 0x4 | End of the Main Phase |
+| 0x40, 0x80, 0x100 | Normal Summon, Special Summon, Flip Summon |
+| 0x1000 | Attack declaration |
+| 0x2000, 0x4000 | Damage Step, damage calculation |
+| 0x8000 | End of a chain |
+| 0x800000 | A card was sent to the GY |
+
+All bits: `ygo-core/src/constants.rs`.
+
+1. The arbiter calculates the bits from the messages that the player can see, its prompts and
+   its responses (`src/observe.rs`, `Timing`).
+2. The core also calculates these bits. The values of the core can show chain windows that only
+   hidden cards of the opponent opened. Thus the arbiter does not send them.
+3. In tests, the bits of the arbiter are equal to the bits of the core at 97% of the prompts.
+   Most differences: a card script stops the events of an effect before the effect ends. No
+   message shows this.
+
 ## State
 
 `state` is what the player can see of the whole duel at the prompt.

@@ -21,7 +21,7 @@ use ygo_core::script::Scripts;
 
 use crate::actions::{Response, encode};
 use crate::messages::{Msg, parse, split_messages};
-use crate::observe::{auto_response, filter_message, filter_prompt, is_hidden_prompt, to_core_response};
+use crate::observe::{Timing, auto_response, filter_message, filter_prompt, is_hidden_prompt, to_core_response};
 use crate::pyrandom::PyRandom;
 use crate::state::{Snapshot, viewer_view};
 
@@ -403,30 +403,46 @@ pub struct ObservationLog {
     pub with_state: bool,
     pub items: Vec<ObsItem>,
     hidden: bool,
+    timing: Timing,
+    prompt: Option<Msg>,
 }
 
 impl ObservationLog {
     pub fn new(player: u32, with_state: bool) -> ObservationLog {
-        ObservationLog { player, with_state, items: Vec::new(), hidden: false }
+        ObservationLog { player, with_state, items: Vec::new(), hidden: false, timing: Timing::default(), prompt: None }
     }
 }
 
 impl Observer for ObservationLog {
     fn message(&mut self, msg: &Msg) {
         if let Some(o) = filter_message(msg, self.player) {
+            self.timing.message(&o);
             self.items.push(ObsItem::Msg(o));
         }
     }
     fn prompt(&mut self, prompt: &Msg, duel: &mut Duel) {
         self.hidden = is_hidden_prompt(prompt);
-        if prompt.player() != Some(self.player) || self.hidden {
+        if prompt.player() != Some(self.player) {
+            self.prompt = None;
+            return;
+        }
+        let mut shown = filter_prompt(prompt, self.player);
+        self.timing.prompt(&mut shown, self.player);
+        self.prompt = Some(shown.clone());
+        if self.hidden {
             return;
         }
         let state = self.with_state.then(|| viewer_view(duel, self.player));
-        self.items.push(ObsItem::Prompt(filter_prompt(prompt, self.player), state));
+        self.items.push(ObsItem::Prompt(shown, state));
     }
     fn response(&mut self, player: u32, response: &Response) {
-        if player == self.player && !self.hidden {
+        if player != self.player {
+            return;
+        }
+        if let Some(p) = &self.prompt {
+            self.timing.response(p, response);
+        }
+        if !self.hidden {
             self.items.push(ObsItem::Response(response.clone()));
         }
     }
@@ -499,6 +515,8 @@ pub fn play(
     let mut time_used = [0.0f64; 2];
     let mut result: Option<serde_json::Map<String, Value>> = None;
     let mut last_player: Option<u32> = None;
+    // (each player's chain timing hints, from what it sees)
+    let mut timings = [Timing::default(), Timing::default()];
     while result.is_none() {
         let step = run_until_prompt(&mut duel, prompt.as_ref())?;
         for m in &step.messages {
@@ -516,6 +534,7 @@ pub fn play(
             }
             for (p, bot) in bots.iter_mut().enumerate() {
                 if let Some(o) = filter_message(m, p as u32) {
+                    timings[p].message(&o);
                     bot.observe(&o);
                 }
             }
@@ -552,6 +571,8 @@ pub fn play(
             obs.prompt(&p, &mut duel);
         }
         let clock = opts.clocks.map(|c| (c[player as usize].remaining, c[player as usize].increment));
+        let mut shown = filter_prompt(&p, player);
+        timings[player as usize].prompt(&mut shown, player);
         let t_move = Instant::now();
         let answered = (|| {
             let response = if is_hidden_prompt(&p) {
@@ -559,7 +580,7 @@ pub fn play(
             } else {
                 let bot = &mut bots[player as usize];
                 let state = bot.wants_state().then(|| viewer_view(&mut duel, player));
-                bot.respond(&filter_prompt(&p, player), state.as_ref(), clock)?
+                bot.respond(&shown, state.as_ref(), clock)?
             };
             let core = to_core_response(&p, player, &response).map_err(|e| BotError::Failed(format!("InvalidResponse: {e}")))?;
             let raw = encode(&p, &core).map_err(|e| BotError::Failed(format!("InvalidResponse: {e}")))?;
@@ -592,6 +613,7 @@ pub fn play(
             let (time, search_time) = (Some(t_used), (secs > 0.0).then_some(secs));
             record.labels.push(Label { decision: record.responses.len(), player, value, depth, nodes: Some(nodes), time, search_time });
         }
+        timings[player as usize].response(&shown, &response);
         record.responses.push(RecordedResponse { player, response: response.clone() });
         for obs in observers.iter_mut() {
             obs.response(player, &response);

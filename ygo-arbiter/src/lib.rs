@@ -5,6 +5,7 @@
 //! * [`messages`]: parsing of the core's binary messages
 //! * [`observe`]: what each player may see of them, prompts in canonical order
 //! * [`actions`]: responses to prompts and their binary form
+//! * [`edopro`]: a player's side of a duel as an EDOPro server sends it (for EDOPro bots)
 //! * [`state`]: god view snapshots of a duel and each player's view
 //! * [`game`]: setting up, playing and replaying games, game records
 //! * [`protocol`]: a bot process, for the arbiter; [`bot`]: the bot side
@@ -17,6 +18,7 @@
 
 pub mod actions;
 pub mod bot;
+pub mod edopro;
 pub mod game;
 pub mod matchrun;
 pub mod messages;

@@ -37,6 +37,7 @@ use ygo_core::duel::Duel;
 // (EDOPro's packets: a u16 length, then the type and its data)
 const CTOS_RESPONSE: u8 = 0x1;
 const CTOS_UPDATE_DECK: u8 = 0x2;
+const CTOS_HS_READY: u8 = 0x22;
 const STOC_GAME_MSG: u8 = 0x1;
 const STOC_JOIN_GAME: u8 = 0x12;
 const STOC_TYPE_CHANGE: u8 = 0x13;
@@ -217,6 +218,7 @@ impl Bot for WindBot {
         loop {
             match recv(s) {
                 Ok((CTOS_RESPONSE, data)) => return decode_response(prompt, &data).map_err(failed),
+                Ok((CTOS_HS_READY, _)) => {}
                 Ok((typ, data)) => eprintln!("ygo-windbot: packet {typ:#x} ({} bytes) at {}", data.len(), prompt.name()),
                 Err(e) if matches!(e.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut) => {
                     if !warned {

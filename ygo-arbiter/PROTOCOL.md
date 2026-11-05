@@ -190,7 +190,7 @@ The arbiter sends `end` when the game is over.
 | Member of `result` | Meaning |
 |---|---|
 | `winner` | The player that won, or `null` for a draw. |
-| `reason` | A number: the win reason of the duel. Or a string: `time_forfeit`, `illegal_response`, `bot_error: ...` (the bot failed), `turn_limit`, `decision_limit`, `retry_limit`, `ended`. |
+| `reason` | A number: the win reason of the duel. Or a string: `time_forfeit`, `illegal_response`, `bot_error: ...` (the bot failed), `turn_limit`, `decision_limit`, `turn_decision_limit` (MAX_TURN_DECISIONS decisions in one turn: lost by the player who made more of them; a draw if both made as many), `retry_limit`, `ended`. |
 | `turns`, `decisions`, `retries` | Counts for the game. |
 | `script_errors` | The number of card script errors in the duel. |
 | `time` | The seconds that each player used. |

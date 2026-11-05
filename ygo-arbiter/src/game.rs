@@ -463,15 +463,22 @@ impl Clock {
 
 pub struct PlayOptions {
     pub max_decisions: usize,
+    /// decisions in one turn (both players'): past them the game is lost by the player who made
+    /// more of them (a loop; a draw if both made as many)
+    pub max_turn_decisions: usize,
     pub max_turns: u32,
     pub time_limit: Option<f64>,
     pub clocks: Option<[Clock; 2]>,
     pub illegal_is_loss: bool,
 }
 
+/// (in 28214 SPRT games of 2026-11-05 the busiest turn had at most 554 decisions outside 2
+/// loops; 99.99% of the games at most 540)
+pub const MAX_TURN_DECISIONS: usize = 1000;
+
 impl Default for PlayOptions {
     fn default() -> Self {
-        PlayOptions { max_decisions: 20000, max_turns: 100, time_limit: None, clocks: None, illegal_is_loss: false }
+        PlayOptions { max_decisions: 20000, max_turn_decisions: MAX_TURN_DECISIONS, max_turns: 100, time_limit: None, clocks: None, illegal_is_loss: false }
     }
 }
 
@@ -510,6 +517,8 @@ pub fn play(
     duel.ocg_start_duel();
     let mut prompt: Option<Msg> = None;
     let (mut decisions, mut turns, mut retries) = (0usize, 0u32, 0u32);
+    // (each player's decisions in the current turn)
+    let mut turn_decisions = [0usize; 2];
     let t0 = Instant::now();
     // (seconds each player's decisions took on the arbiter's clock, in the result as "time")
     let mut time_used = [0.0f64; 2];
@@ -539,7 +548,10 @@ pub fn play(
                 }
             }
             match m {
-                Msg::NewTurn { .. } => turns += 1,
+                Msg::NewTurn { .. } => {
+                    turns += 1;
+                    turn_decisions = [0, 0];
+                }
                 Msg::Win { player, reason } => {
                     result = Some(result_of((*player < 2).then_some(*player), json!(reason)));
                 }
@@ -559,6 +571,16 @@ pub fn play(
         }
         if decisions >= opts.max_decisions {
             result = Some(result_of(None, json!("decision_limit")));
+            break;
+        }
+        if turn_decisions.iter().sum::<usize>() >= opts.max_turn_decisions {
+            let [a, b] = turn_decisions;
+            let winner = match a.cmp(&b) {
+                std::cmp::Ordering::Greater => Some(1),
+                std::cmp::Ordering::Less => Some(0),
+                std::cmp::Ordering::Equal => None,
+            };
+            result = Some(result_of(winner, json!("turn_decision_limit")));
             break;
         }
         if opts.time_limit.is_some_and(|l| t0.elapsed().as_secs_f64() > l) {
@@ -622,6 +644,7 @@ pub fn play(
         duel.ocg_set_response(&raw);
         last_player = Some(player);
         decisions += 1;
+        turn_decisions[player as usize] += 1;
         prompt = Some(p);
     }
     let mut result = result.unwrap();

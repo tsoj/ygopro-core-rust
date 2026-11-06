@@ -41,13 +41,14 @@ struct Args {
     pool: usize,
     nps_nodes: Option<u64>,
     resume: Option<PathBuf>,
+    report_every: usize,
 }
 
 fn usage(msg: &str) -> ! {
     eprintln!("ygo-arbiter: {msg}");
     eprintln!(
         "usage: ygo-arbiter --bot NAME=COMMAND --bot NAME=COMMAND --book BOOK [-n N] [--tc BASE+INC] \
-         [--sprt ELO0 ELO1] [--alpha A] [--beta B] [-c J] [--records PATH] [--shuffle SEED] [--pool N] [--max-turns N] [--nps-nodes N] [--resume RECORDS] [--option BOT.NAME=VALUE ...]"
+         [--sprt ELO0 ELO1] [--alpha A] [--beta B] [-c J] [--records PATH] [--shuffle SEED] [--pool N] [--max-turns N] [--nps-nodes N] [--resume RECORDS] [--report-every PAIRS] [--option BOT.NAME=VALUE ...]"
     );
     std::process::exit(2)
 }
@@ -110,6 +111,7 @@ fn parse_args() -> Args {
         pool: usize::MAX,
         nps_nodes: None,
         resume: None,
+        report_every: 10,
     };
     let mut options = Vec::new();
     let argv: Vec<String> = std::env::args().skip(1).collect();
@@ -150,6 +152,7 @@ fn parse_args() -> Args {
             "--records" => a.records = Some(next(&mut i, &arg).into()),
             "--book" => a.book = Some(next(&mut i, &arg).into()),
             "--pool" => a.pool = num(next(&mut i, &arg), &arg) as usize,
+            "--report-every" => a.report_every = (num(next(&mut i, &arg), &arg) as usize).max(1),
             "--resume" => a.resume = Some(next(&mut i, &arg).into()),
             "--nps-nodes" => a.nps_nodes = Some(num(next(&mut i, &arg), &arg) as u64),
             "--shuffle" => a.shuffle = Some(next(&mut i, &arg).parse().unwrap_or_else(|_| usage("--shuffle takes an integer seed"))),
@@ -273,7 +276,7 @@ fn main() {
             }
             let _ = f.flush();
         }
-        if i % 10 == 0 || i == n {
+        if i % args.report_every == 0 || i == n {
             println!("[{:6.0}s] {}{}", t0.elapsed().as_secs_f64(), stats.summary(args.sprt), nps_line(&nps));
         }
         if let Some((e0, e1)) = args.sprt {

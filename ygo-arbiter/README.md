@@ -57,6 +57,7 @@ A match goes like this:
 | `--records FILE` | Write each game to FILE as one JSON line (see [Records](#records)). |
 | `--resume FILE` | Continue a stopped match. FILE is its `--records` file; its finished pairs count. |
 | `--nps-nodes N` | A node limit for each decision: the second bot searches N nodes, the first N times the ratio of their speeds (nodes per second). |
+| `--report-every N` | Print the result after every N pairs (default 10) and after the last pair. |
 
 ## Opening books
 

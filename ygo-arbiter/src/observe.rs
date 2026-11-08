@@ -606,9 +606,11 @@ fn filter_raw(m: &Msg, viewer: u32) -> Option<Msg> {
         }
         ConfirmCards { player, cards } => {
             if *player != viewer {
-                // a player sees its own cards it reveals (even from the deck: it takes them out
-                // to show them)
-                for c in cards.iter_mut().filter(|c| c.con != viewer) {
+                // The viewer sees its own cards that are shown to the opponent, but not its own
+                // Main Deck cards: the message is the same when the opponent looks at them (e.g.
+                // the top card), and then the owner does not see them. When the owner reveals a
+                // Main Deck card itself, it knows the card from its own selection.
+                for c in cards.iter_mut().filter(|c| c.con != viewer || c.loc == LOCATION_DECK) {
                     c.code = 0;
                 }
             }

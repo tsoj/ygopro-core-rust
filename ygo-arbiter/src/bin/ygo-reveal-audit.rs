@@ -16,33 +16,27 @@
 //! time. Test cards that the rules alone keep from the destination (a card that cannot be Set, a
 //! monster that the effect cannot Special Summon) do not count as rejected ("excluded").
 //!
-//! One JSON line per game with its decks' cards ("deck_cards"), and one per move: the game, the
-//! move, the selecting player, the arbiter's key of the selection (`reveal::SelKey`), the
-//! verdict ("requirement", "free", "no_selection", "skipped" or "undecided" with the reason),
-//! the added cards accepted, the time of the check, whether the card's script confirms the card to
-//! the opponent and whether the arbiter's filter shows it. tools/reveal_table.py makes the
-//! arbiter's table (ygo-arbiter/data/reveals.tsv) from these lines.
+//! One JSON line per move: the game, the move, the verdict ("requirement", "free",
+//! "no_selection" or "undecided" with the reason), the added cards accepted, the time of the
+//! check, whether the card's script shows the card to the opponent and whether the arbiter's
+//! filter shows it. A "requirement" row where neither shows the card is a script that misses the
+//! reveal (fix it: lua_fixes/ and the Rust card, with a `ConfirmCards`).
 //!
-//!   ygo-reveal-audit RECORDS.jsonl [--games N] [--threads T] [--codes N] [--discover] > OUT.jsonl
-//!
-//! --discover: check only the selections that the built-in table does not know, each at most a
-//! few times ("skipped" for the others).
+//!   ygo-reveal-audit RECORDS.jsonl [--games N] [--threads T] [--codes N] > OUT.jsonl
 //!
 //! --codes N: only every k-th test card (about N cards), for a quick run. A move from the Extra
-//! Deck is checked with the Extra Deck cards. "script_confirms": the card's code was confirmed to
-//! the opponent since the action started (the step's messages when there is no selection).
+//! Deck is checked with the Extra Deck cards. "script_confirms": the card's code was shown to the
+//! opponent (`ConfirmCards`, or `ConfirmDecktop` after a move to the Deck) since the action started,
+//! up to the next prompt after the move (the step's messages when there is no selection).
 
 use std::io::{BufRead, Write};
-use std::collections::BTreeMap;
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Instant;
 
 use serde_json::{Value, json};
 use ygo_arbiter::actions::{Response, encode};
-use ygo_arbiter::game::{GameRecord, card_db, run_until_prompt, run_until_prompt_raw};
-use ygo_arbiter::reveal;
-use ygo_core::ext::EffectKey;
+use ygo_arbiter::game::{GameRecord, card_db, run_until_prompt};
 use ygo_arbiter::messages::{Card, Loc, Msg};
 use ygo_arbiter::observe::{filter_message, li_visible, to_core_response};
 use ygo_core::constants::*;
@@ -59,15 +53,6 @@ const CHUNK: usize = 1000;
 const HISTORY: usize = 48;
 /// A row lists the rejected test cards when there are at most this many.
 const MAX_REJECTED_LISTED: usize = 64;
-/// --discover: check only the selections that the built-in table does not know (`reveal`), and
-/// each at most this many times (decided rows, in this run).
-static DISCOVER: AtomicBool = AtomicBool::new(false);
-const DISCOVER_ROWS: usize = 3;
-static DECIDED: Mutex<BTreeMap<reveal::SelKey, usize>> = Mutex::new(BTreeMap::new());
-
-fn decided(k: &reveal::SelKey) -> usize {
-    DECIDED.lock().unwrap().get(k).copied().unwrap_or(0)
-}
 
 /// The test cards of a choice among the top cards of the Deck (a sample of all).
 const TOP_SAMPLE: usize = 120;
@@ -106,7 +91,7 @@ fn test_codes(extra: bool) -> Vec<u32> {
 }
 
 /// (in the hand, Deck and Extra Deck without the position: it shifts when other selected cards
-/// leave first, e.g. Magical Mallet's; the arbiter's notes match the same way, reveal::selected_moves)
+/// leave first, e.g. Magical Mallet's)
 fn same_card(c: &Card, code: u32, l: &Loc) -> bool {
     let pile = l.loc & (LOCATION_HAND | LOCATION_DECK | LOCATION_EXTRA) != 0;
     c.code == code && c.con == l.con && c.loc == l.loc && (pile || c.seq == l.seq)
@@ -225,10 +210,14 @@ fn same_choice(orig: &Past, now: &Msg) -> Result<Response, String> {
 
 /// Whether `m` confirms this card to the opponent: its code in the place it moves from or to
 /// (not another copy elsewhere).
+/// (`ConfirmDecktop` shows the top cards of the Deck to both players.)
 fn reveals(m: &Msg, opp: u32, code: u32, from: &Loc, to: &Loc) -> bool {
-    let Msg::ConfirmCards { player, cards } = m else { return false };
-    *player == opp
-        && cards.iter().any(|c| c.code == code && ((c.con, c.loc) == (from.con, from.loc) || (c.con, c.loc) == (to.con, to.loc)))
+    let at = |c: &Card| c.code == code && ((c.con, c.loc) == (from.con, from.loc) || (c.con, c.loc) == (to.con, to.loc));
+    match m {
+        Msg::ConfirmCards { player, cards } => *player == opp && cards.iter().any(at),
+        Msg::ConfirmDecktop { cards, .. } => to.loc == LOCATION_DECK && cards.iter().any(at),
+        _ => false,
+    }
 }
 
 /// A prompt that starts an action: an activation (or a pass) in an idle, battle or chain prompt.
@@ -378,9 +367,6 @@ fn deck_top_only(hist: &Past, con: u32) -> bool {
 }
 
 fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u32], out: &mut Vec<Value>) -> Result<(), String> {
-    // (the audited cards: the table's "card" lines)
-    let deck: std::collections::BTreeSet<u32> = rec.decks.iter().flat_map(|d| d.main.iter().chain(&d.extra).copied()).collect();
-    out.push(json!({"game": gi, "deck_cards": deck}));
     let mut all_msgs: Vec<Msg> = Vec::new();
     let mut duel = rec.setup(None).map_err(|e| e.0)?;
     duel.ocg_start_duel();
@@ -389,12 +375,8 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
     let mut chain: Vec<u32> = Vec::new();
     let mut turn = 0u32;
     for entry in rec.responses.iter().map(Some).chain([None]) {
-        let step = run_until_prompt_raw(&mut duel, prompt.as_ref()).map_err(|e| e.0)?;
-        // (the arbiter's key of each move of a selected hidden card: reveal::selected_moves)
-        // (with the prompt: at an action prompt the arbiter drops the notes that are left)
-        let with_prompt: Vec<Msg> = step.messages.iter().chain(step.prompt.iter()).cloned().collect();
-        let keys = reveal::selected_moves(&mut duel, &with_prompt);
-        for (m, key) in step.messages.iter().zip(&keys) {
+        let step = run_until_prompt(&mut duel, prompt.as_ref()).map_err(|e| e.0)?;
+        for m in &step.messages {
             match m {
                 Msg::NewTurn { .. } => turn += 1,
                 Msg::Chaining { code, .. } => chain.push(*code),
@@ -422,10 +404,6 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
                 "reason": reason, "chain_top": chain.last(), "script_confirms": confirm_step,
                 "filter_shows": shown,
             });
-            if let Some(k) = key {
-                let e = k.effect.unwrap_or(EffectKey { card: 0, desc: 0, typ: 0 });
-                row["key"] = json!([e.card, e.desc, e.typ, k.from, k.to, k.cost]);
-            }
             let Some(sel) = sel else {
                 row["verdict"] = json!("no_selection");
                 out.push(row);
@@ -472,16 +450,6 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
                 .any(|x| reveals(x, opp, *code, from, to));
             row["script_confirms"] = json!(confirmed);
             row["activated"] = json!(activated(&hist[base].prompt, &hist[base].core));
-            // (--discover: only the arbiter's selections that the table does not know, each at
-            // most DISCOVER_ROWS times)
-            if DISCOVER.load(Ordering::Relaxed) {
-                let known = key.is_none_or(|k| reveal::table().selections.contains_key(&k) || decided(&k) >= DISCOVER_ROWS);
-                if known {
-                    row["verdict"] = json!("skipped");
-                    out.push(row);
-                    continue;
-                }
-            }
             let t0 = Instant::now();
             // (in chunks: the time of one check grows about with the square of the added cards)
             let (mut accepted, mut tested, mut rejected, mut error) = (0, 0, false, None);
@@ -521,11 +489,6 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
             } else {
                 "undecided"
             });
-            if let Some(k) = key
-                && (rejected || error.is_none())
-            {
-                *DECIDED.lock().unwrap().entry(*k).or_insert(0) += 1;
-            }
             out.push(row);
         }
         all_msgs.extend(step.messages.iter().cloned());
@@ -548,8 +511,7 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let path = args.get(1).expect("usage: ygo-reveal-audit RECORDS.jsonl [--games N] [--threads T] [--codes N] [--discover]");
-    DISCOVER.store(args.iter().any(|a| a == "--discover"), Ordering::Relaxed);
+    let path = args.get(1).expect("usage: ygo-reveal-audit RECORDS.jsonl [--games N] [--threads T] [--codes N]");
     let opt = |name: &str| args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).map(|v| v.parse::<usize>().expect(name));
     let max_games = opt("--games").unwrap_or(usize::MAX);
     let threads = opt("--threads").unwrap_or(8);

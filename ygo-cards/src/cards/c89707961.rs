@@ -158,6 +158,9 @@ fn spop(d: &mut Duel, a: &EffArgs) {
     // if #g>0 then
     if !g.is_empty() {
         // Duel.SpecialSummon(g,0,tp,tp,true,false,POS_FACEDOWN_DEFENSE)
-        duel::special_summon(d, g, 0, tp, tp, true, false, POS_FACEDOWN_DEFENSE as u8, None);
+        duel::special_summon(d, g.clone(), 0, tp, tp, true, false, POS_FACEDOWN_DEFENSE as u8, None);
+        // (ygoai override lua_fixes/c89707961.lua: the Level 5 Rock monster Special Summoned face-down from the hand or Deck was not shown to the opponent; shown here)
+        // Duel.ConfirmCards(1-tp,g)
+        duel::confirm_cards(d, 1 - tp, &g);
     }
 }

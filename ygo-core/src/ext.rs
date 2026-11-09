@@ -81,35 +81,10 @@ impl Clone for PropReadLog {
     }
 }
 
-/// The effect that asked for a selection (`core.reason_effect` when the response is accepted), as
-/// a key that stays the same across duels: its owner's original code, description and type. (Not
-/// its event code: the copies of one effect for several events, e.g. "if this card is Normal or
-/// Special Summoned", are the same effect.)
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct EffectKey {
-    pub card: u32,
-    pub desc: u64,
-    pub typ: u16,
-}
-
-/// A card a player chose in a card selection, where it was then. The arbiter matches the moves of
-/// hidden cards against these to decide whether the opponent sees the card, and removes them as it
-/// reads the messages (`ygo_arbiter::reveal`; at the next action prompt it drops the rest).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Selected {
-    pub player: u8,
-    pub code: u32,
-    pub con: u8,
-    pub loc: u8,
-    pub effect: Option<EffectKey>,
-}
-
 /// `Duel::ext`
 #[derive(Clone, Debug, Default)]
 pub struct Ext {
     pub state: ExtState,
-    /// The cards chosen in card selections that the arbiter did not match yet (`Selected`).
-    pub selected: Vec<Selected>,
     /// The property read log (an analysis aid, `duel::read_log_on`/`read_log` of the patch): per
     /// card id a mask of the properties the game read (see `ext_read_log`).
     pub prop_read_on: bool,
@@ -235,20 +210,6 @@ impl Duel {
     }
 
     /// `ocgext::on_random_select`: at the end of `Group.RandomSelect`, may replace the selection.
-    /// A card selection of `playerid` was accepted (`return_cards`): notes its cards (`Selected`).
-    pub fn ext_note_selection(&mut self, playerid: u8) {
-        let effect = self.core.reason_effect.map(|e| {
-            let fx = self.effect(e);
-            let card = fx.owner.map_or(0, |o| crate::api::card::get_original_code(self, o));
-            EffectKey { card, desc: fx.description, typ: fx.type_ }
-        });
-        for i in 0..self.return_cards.list.len() {
-            let c = self.card(self.return_cards.list[i]);
-            let (code, con, loc) = (c.data.code, c.current.controler, c.current.location);
-            self.ext.selected.push(Selected { player: playerid, code, con, loc, effect });
-        }
-    }
-
     pub fn ext_on_random_select(&mut self, from: &CardSet, selected: &mut CardSet) {
         let Some(wanted) = self.ext.state.forced_random_selects.pop_front() else { return };
         self.ext.state.consumed += 1;

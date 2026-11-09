@@ -56,5 +56,8 @@ fn op(d: &mut Duel, a: &EffArgs) {
     // local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,3,nil)
     let g = duel::select_matching_card(d, a.tp, Some(&filter), a.tp, LOCATION_DECK, 0, 1, 3, false, NO_EX).unwrap_or_default();
     // Duel.SendtoHand(g,nil,REASON_EFFECT)
-    duel::send_to_hand(d, g, None, REASON_EFFECT, None);
+    duel::send_to_hand(d, g.clone(), None, REASON_EFFECT, None);
+    // (ygoai override lua_fixes/c10456559.lua: the searched "T.A.D.P.O.L.E." cards were not shown to the opponent; shown here)
+    // Duel.ConfirmCards(1-tp,g)
+    duel::confirm_cards(d, 1 - a.tp, &g);
 }

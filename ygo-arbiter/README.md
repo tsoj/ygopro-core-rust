@@ -33,8 +33,7 @@ YGO_ROOT=/path/to/data ./target/release/ygo-arbiter \
 A match goes like this:
 
 1. The arbiter reads the opening book and checks each line it uses (see
-   [Opening books](#opening-books)). It also checks that the reveal table knows all cards of the
-   decks (see [Shown cards](#shown-cards)).
+   [Opening books](#opening-books)).
 2. It starts each bot once. It prints the bot's identity and checks the options you set.
 3. It plays each opening twice. The bots change seats, and each seat keeps its deck. So each bot
    plays each deck once, with the same draws.
@@ -59,32 +58,6 @@ A match goes like this:
 | `--resume FILE` | Continue a stopped match. FILE is its `--records` file; its finished pairs count. |
 | `--nps-nodes N` | A node limit for each decision: the second bot searches N nodes, the first N times the ratio of their speeds (nodes per second). |
 | `--report-every N` | Print the result after every N pairs (default 10) and after the last pair. |
-| `--ignore-unknown-reveals` | Play also with cards and selections that the reveal table does not know. The arbiter shows these selected cards to the opponent. This can rarely give a player more information than the rules allow. |
-
-## Shown cards
-
-When a player selects a card and the card moves between two places that the opponent cannot see
-(for example a search from the Deck, or a card from the hand to the Deck as a cost), the rule is:
-
-- If the selection has a requirement ("1 Spellcaster monster"), the player shows the card to the
-  opponent.
-- If the selection is free ("1 card from your hand"), the card stays hidden.
-
-The core does not know which selections have a requirement. The table `data/reveals.tsv` gives it
-for each effect. The arbiter shows the card with a `CONFIRM_CARDS` message to the opponent before
-the move, unless the card script shows it itself (see `src/reveal.rs`).
-
-The arbiter stops when a deck has a card that is not in the table, or when a game has a selection
-that is not in the table. To add the cards, do these steps:
-
-1. Play games with the decks, and write the records (`--records`).
-2. Run `ygo-reveal-audit RECORDS.jsonl > audit.jsonl`. For each selection, it adds all official
-   cards to the source and examines which ones the selection accepts.
-3. Run `tools/reveal_table.py audit.jsonl --merge > data/reveals.tsv.new`, then replace
-   `data/reveals.tsv` with it.
-4. Build the arbiter again. The table is part of the program.
-
-Or use `--ignore-unknown-reveals`.
 
 ## Opening books
 
@@ -167,6 +140,19 @@ With `--records FILE`, the arbiter writes one JSON object for each game:
 
 `ygo-diff-replays` converts records into `ygo-diff` replays, to replay the games on the C++ core
 (`tools/replay_records.py`).
+
+## Shown cards
+
+A player selects a card with a requirement ("1 Spellcaster monster") and moves it to a place that
+the opponent cannot see (for example a search from the Deck, or a card from the hand to the Deck).
+Then the rules make the player show the card to the opponent. The card script does this
+(`ConfirmCards`, or `ConfirmDecktop` for the top of the Deck). The arbiter adds no reveals.
+
+To find card scripts that do not show such a card, run `ygo-reveal-audit RECORDS.jsonl > audit.jsonl`.
+For each move of a selected hidden card, it adds all official cards to the source and examines which
+ones the selection accepts. A row with `"verdict": "requirement"` and `"script_confirms": false` can
+be a script that misses the reveal. Make sure that it is, then fix the script in `lua_fixes/` (main
+repository) and in the Rust card.
 
 ## Writing a bot
 

@@ -99,6 +99,10 @@ fn spproctg(d: &mut Duel, a: &EffArgs) -> bool {
 fn spprocop(d: &mut Duel, a: &EffArgs) {
     let Some(g) = effect::get_label_object(d, a.e).as_group().cloned() else { return };
     duel::hint_selection(d, g.clone(), true);
+    // (ygoai override lua_fixes/c26746975.lua: "Sanga of the Thunder", "Kazejin" and "Suijin" from the hand were not shown to the opponent; shown here)
+    // Duel.ConfirmCards(1-tp,g:Filter(Card.IsLocation,nil,LOCATION_HAND))
+    let shown = group::filter(d, &g, &|d, c| card::is_location(d, c, LOCATION_HAND), NO_EX);
+    duel::confirm_cards(d, 1 - a.tp, &shown);
     duel::send_to_deck(d, g, None, SEQ_DECKSHUFFLE as i32, REASON_COST, None);
     // g:DeleteGroup() does nothing in Rust (groups are values)
 }

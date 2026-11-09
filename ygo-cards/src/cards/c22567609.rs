@@ -47,7 +47,10 @@ fn op(d: &mut Duel, a: &EffArgs) {
             duel::break_effect(d);
             duel::hint(d, HINT_SELECTMSG as u8, tp, HINTMSG_SPSUMMON as u64);
             let sg = group::select(d, &g, tp, 1, ft as u16, false, NO_EX).nil();
-            duel::special_summon(d, sg, 0, tp, tp, false, false, POS_FACEDOWN_DEFENSE as u8, None);
+            duel::special_summon(d, sg.clone(), 0, tp, tp, false, false, POS_FACEDOWN_DEFENSE as u8, None);
+            // (ygoai override lua_fixes/c22567609.lua: the "Nimble Momonga" Special Summoned face-down from the Deck were not shown to the opponent; shown here)
+            // Duel.ConfirmCards(1-tp,sg)
+            duel::confirm_cards(d, 1 - tp, &sg);
         }
     }
 }

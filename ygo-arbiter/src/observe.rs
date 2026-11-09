@@ -546,8 +546,8 @@ fn filter_raw(m: &Msg, viewer: u32) -> Option<Msg> {
             if to.con == viewer || li_visible(to, viewer) {
                 return Some(m);
             }
-            // (a selected card that the player has to show, e.g. a cost with a requirement, gets a
-            // confirmation before the move: reveal::annotate)
+            // (a selected card that the player has to show, e.g. a cost with a requirement, is
+            // shown by its card script, CONFIRM_CARDS)
             *code = 0;
         }
         Draw { player, cards } => {

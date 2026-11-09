@@ -21,7 +21,6 @@ use ygo_core::script::Scripts;
 
 use crate::actions::{Response, encode};
 use crate::messages::{Msg, parse, split_messages};
-use crate::reveal::{self, SelKey};
 use crate::observe::{Timing, auto_response, filter_message, filter_prompt, is_hidden_prompt, to_core_response};
 use crate::pyrandom::PyRandom;
 use crate::state::{Snapshot, viewer_view};
@@ -196,8 +195,6 @@ pub struct Step {
     pub messages: Vec<Msg>,
     pub prompt: Option<Msg>,
     pub ended: bool,
-    /// the selections of hidden cards that the reveal table does not know (`reveal::annotate`)
-    pub unknown_reveals: Vec<SelKey>,
 }
 
 /// (`run_until_prompt`: the core's process calls before it gives up on a duel that loops without
@@ -207,37 +204,23 @@ pub const MAX_PROCESS_CALLS: usize = 100_000;
 /// Processes until a player has to respond or the duel ends (an error after MAX_PROCESS_CALLS
 /// process calls).
 pub fn run_until_prompt(duel: &mut Duel, pending_prompt: Option<&Msg>) -> Result<Step, GameError> {
-    run(duel, pending_prompt, true)
-}
-
-/// `run_until_prompt` without the arbiter's confirmations of selected hidden cards
-/// (`reveal::annotate`): the core's messages only.
-pub fn run_until_prompt_raw(duel: &mut Duel, pending_prompt: Option<&Msg>) -> Result<Step, GameError> {
-    run(duel, pending_prompt, false)
-}
-
-fn run(duel: &mut Duel, pending_prompt: Option<&Msg>, annotate: bool) -> Result<Step, GameError> {
     let mut msgs = Vec::new();
-    let mut unknown_reveals = Vec::new();
     for _ in 0..MAX_PROCESS_CALLS {
         let status = duel.ocg_process() as i32;
-        let mut batch: Vec<Msg> =
+        let batch: Vec<Msg> =
             split_messages(duel.ocg_get_message()).into_iter().map(parse).collect::<Result<_, _>>().map_err(|e| GameError(e.0))?;
-        if annotate {
-            unknown_reveals.extend(reveal::annotate(duel, &mut batch));
-        }
         let last_is_prompt = batch.last().is_some_and(|m| !matches!(m, Msg::Retry {}));
         msgs.extend(batch);
         if status == 0 {
-            return Ok(Step { messages: msgs, prompt: None, ended: true, unknown_reveals });
+            return Ok(Step { messages: msgs, prompt: None, ended: true });
         }
         if status == 1 {
             if last_is_prompt {
                 let prompt = msgs.pop();
-                return Ok(Step { messages: msgs, prompt, ended: false, unknown_reveals });
+                return Ok(Step { messages: msgs, prompt, ended: false });
             }
             let Some(p) = pending_prompt else { return Err(GameError("core awaits a response but no prompt was sent".into())) };
-            return Ok(Step { messages: msgs, prompt: Some(p.clone()), ended: false, unknown_reveals });
+            return Ok(Step { messages: msgs, prompt: Some(p.clone()), ended: false });
         }
     }
     if std::env::var_os("YGO_DEBUG_BROKEN").is_some() {
@@ -517,12 +500,6 @@ pub fn play(
     observers: &mut [&mut dyn Observer],
     opts: &mut PlayOptions,
 ) -> Result<(), GameError> {
-    if !reveal::ignore_unknown() {
-        let unknown = reveal::unknown_cards(record.decks.iter().flat_map(|d| d.main.iter().chain(&d.extra).copied()));
-        if !unknown.is_empty() {
-            return Err(GameError(format!("cards that the reveal table does not know: {unknown:?}. {}", reveal::HELP)));
-        }
-    }
     let mut duel = record.setup(None)?;
     for (p, bot) in bots.iter_mut().enumerate() {
         let info = init_info(record, &duel, p as u32);
@@ -551,11 +528,6 @@ pub fn play(
     let mut timings = [Timing::default(), Timing::default()];
     while result.is_none() {
         let step = run_until_prompt(&mut duel, prompt.as_ref())?;
-        if let Some(k) = step.unknown_reveals.first()
-            && !reveal::ignore_unknown()
-        {
-            return Err(GameError(format!("a selection that the reveal table does not know: {k}. {}", reveal::HELP)));
-        }
         for m in &step.messages {
             for obs in observers.iter_mut() {
                 obs.message(m);
@@ -741,11 +713,6 @@ pub fn replay(record: &GameRecord, observers: &mut [&mut dyn Observer], upto: Op
     let mut prompt: Option<Msg> = None;
     for entry in responses {
         let step = run_until_prompt(&mut duel, prompt.as_ref())?;
-        if let Some(k) = step.unknown_reveals.first()
-            && !reveal::ignore_unknown()
-        {
-            return Err(GameError(format!("a selection that the reveal table does not know: {k}. {}", reveal::HELP)));
-        }
         for m in &step.messages {
             for obs in observers.iter_mut() {
                 obs.message(m);
@@ -774,11 +741,6 @@ pub fn replay(record: &GameRecord, observers: &mut [&mut dyn Observer], upto: Op
     }
     if upto.is_none() {
         let step = run_until_prompt(&mut duel, prompt.as_ref())?;
-        if let Some(k) = step.unknown_reveals.first()
-            && !reveal::ignore_unknown()
-        {
-            return Err(GameError(format!("a selection that the reveal table does not know: {k}. {}", reveal::HELP)));
-        }
         for m in &step.messages {
             for obs in observers.iter_mut() {
                 obs.message(m);

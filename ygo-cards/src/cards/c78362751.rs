@@ -150,6 +150,10 @@ fn spop(d: &mut Duel, a: &EffArgs) {
         duel::break_effect(d);
         // Duel.HintSelection(sg)
         duel::hint_selection(d, sg.clone(), true);
+        // (ygoai override lua_fixes/c78362751.lua: the "Gunkan Suship Shari" placed from the Deck on top of the Deck were not shown to the opponent; shown here)
+        // Duel.ConfirmCards(1-tp,sg:Filter(Card.IsLocation,nil,LOCATION_DECK))
+        let shown = group::filter(d, &sg, &|d, c| card::is_location(d, c, LOCATION_DECK), NO_EX);
+        duel::confirm_cards(d, 1 - tp, &shown);
         // Duel.SendtoDeck(sg,nil,SEQ_DECKTOP,REASON_EFFECT)
         duel::send_to_deck(d, sg.clone(), None, SEQ_DECKTOP as i32, REASON_EFFECT, None);
         // Duel.MoveToDeckTop(sg)

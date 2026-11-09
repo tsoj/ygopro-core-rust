@@ -118,17 +118,19 @@ fn activate(d: &mut Duel, a: &EffArgs) {
             NO_EX,
         )
         .nil();
-        // if #g>0 and Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP_ATTACK|POS_FACEDOWN_DEFENSE)~=0
-        //   and tc:IsCanTurnSet() and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-        if !g.is_empty()
-            && duel::special_summon(d, g, 0, a.tp, a.tp, false, false, (POS_FACEUP_ATTACK | POS_FACEDOWN_DEFENSE) as u8, None) != 0
-            && card::is_can_turn_set(d, tc)
-            && duel::select_yes_no(d, a.tp, aux::stringid(ID, 2))
-        {
-            // Duel.BreakEffect()
-            duel::break_effect(d);
-            // Duel.ChangePosition(tc,POS_FACEDOWN_DEFENSE)
-            duel::change_position(d, tc, POS_FACEDOWN_DEFENSE as u8, None, None, None, false);
+        // (ygoai override lua_fixes/c45508030.lua: the monster Special Summoned face-down from the hand or Deck was not shown to the opponent; shown here)
+        // if #g>0 and Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP_ATTACK|POS_FACEDOWN_DEFENSE)~=0 then
+        if !g.is_empty() && duel::special_summon(d, g.clone(), 0, a.tp, a.tp, false, false, (POS_FACEUP_ATTACK | POS_FACEDOWN_DEFENSE) as u8, None) != 0 {
+            // Duel.ConfirmCards(1-tp,g:Filter(Card.IsFacedown,nil))
+            let shown = group::filter(d, &g, &|d, c| card::is_facedown(d, c), NO_EX);
+            duel::confirm_cards(d, 1 - a.tp, &shown);
+            // if tc:IsCanTurnSet() and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+            if card::is_can_turn_set(d, tc) && duel::select_yes_no(d, a.tp, aux::stringid(ID, 2)) {
+                // Duel.BreakEffect()
+                duel::break_effect(d);
+                // Duel.ChangePosition(tc,POS_FACEDOWN_DEFENSE)
+                duel::change_position(d, tc, POS_FACEDOWN_DEFENSE as u8, None, None, None, false);
+            }
         }
     }
 }

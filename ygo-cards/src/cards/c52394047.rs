@@ -100,6 +100,10 @@ fn atkcost(d: &mut Duel, a: &EffArgs) -> bool {
     duel::hint(d, HINT_SELECTMSG as u8, a.tp, HINTMSG_TODECK as u64);
     // local g=Duel.SelectMatchingCard(tp,s.atkcfilter,tp,LOCATION_HAND|LOCATION_GRAVE,0,1,1,nil)
     let g = duel::select_matching_card(d, a.tp, Some(&atkcfilter), a.tp, LOCATION_HAND | LOCATION_GRAVE, 0, 1, 1, false, NO_EX).nil();
+    // (ygoai override lua_fixes/c52394047.lua: the "Gladiator Beast" monster from the hand was not shown to the opponent; shown here)
+    // Duel.ConfirmCards(1-tp,g:Filter(Card.IsLocation,nil,LOCATION_HAND))
+    let shown = group::filter(d, &g, &|d, c| card::is_location(d, c, LOCATION_HAND), NO_EX);
+    duel::confirm_cards(d, 1 - a.tp, &shown);
     // Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
     duel::send_to_deck(d, g, None, SEQ_DECKSHUFFLE as i32, REASON_EFFECT, None);
     true

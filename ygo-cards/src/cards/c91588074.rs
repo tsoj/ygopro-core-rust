@@ -118,6 +118,9 @@ fn spop(d: &mut Duel, a: Args) {
     let Value::Group(rg) = effect::get_label_object(d, a.e(0)) else {
         return;
     };
+    // (ygoai override lua_fixes/c91588074.lua: the 10 cards with different names from the hand and field were not shown to the opponent; shown here)
+    // Duel.ConfirmCards(1-tp,rg)
+    duel::confirm_cards(d, 1 - a.p(1), &rg);
     // Duel.SendtoDeck(rg,nil,SEQ_DECKSHUFFLE,REASON_COST)
     duel::send_to_deck(d, rg, None, SEQ_DECKSHUFFLE as i32, REASON_COST, None);
     // rg:DeleteGroup()

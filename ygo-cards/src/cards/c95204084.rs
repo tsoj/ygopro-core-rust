@@ -41,6 +41,9 @@ fn cost_fn(d: &mut Duel, a: &EffArgs) -> bool {
     duel::hint(d, HINT_SELECTMSG as u8, a.tp, HINTMSG_TODECK as u64);
     // local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_HAND,0,1,1,nil)
     let g = duel::select_matching_card(d, a.tp, Some(&cfilter), a.tp, LOCATION_HAND, 0, 1, 1, false, NO_EX).nil();
+    // (ygoai override lua_fixes/c95204084.lua: the "Iron Core of Koa'ki Meiru" placed from the hand on top of the Deck was not shown to the opponent; shown here)
+    // Duel.ConfirmCards(1-tp,g)
+    duel::confirm_cards(d, 1 - a.tp, &g);
     // Duel.SendtoDeck(g,nil,SEQ_DECKTOP,REASON_COST)
     duel::send_to_deck(d, g, None, SEQ_DECKTOP as i32, REASON_COST, None);
     true

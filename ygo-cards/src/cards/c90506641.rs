@@ -89,6 +89,9 @@ fn thop(d: &mut Duel, a: &EffArgs) {
     };
     // sg=sg-sc
     group::remove_card(&mut sg, &sc);
+    // (ygoai override lua_fixes/c90506641.lua: the Normal Monster added from the Deck was not shown to the opponent; shown here)
+    // Duel.ConfirmCards(1-tp,sc)
+    duel::confirm_cards(d, 1 - a.tp, &sc);
     // if #sg>0 and Duel.SendtoHand(sc,nil,REASON_EFFECT)==0 then
     if !sg.is_empty() && duel::send_to_hand(d, sc.clone(), None, REASON_EFFECT, None) == 0 {
         // Duel.SendtoGrave(sc,REASON_RULE)

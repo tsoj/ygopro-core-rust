@@ -132,6 +132,10 @@ fn spprocop(d: &mut Duel, a: &EffArgs) {
     };
     // Duel.HintSelection(g,true)
     duel::hint_selection(d, &g, true);
+    // (ygoai override lua_fixes/c23288411.lua: the "Memento" monsters from the hand were not shown to the opponent; shown here)
+    // Duel.ConfirmCards(1-tp,g:Filter(Card.IsLocation,nil,LOCATION_HAND))
+    let shown = group::filter(d, &g, &|d, c| card::is_location(d, c, LOCATION_HAND), NO_EX);
+    duel::confirm_cards(d, 1 - a.tp, &shown);
     // Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_COST)
     duel::send_to_deck(d, g, None, SEQ_DECKSHUFFLE as i32, REASON_COST, None);
     // g:DeleteGroup()

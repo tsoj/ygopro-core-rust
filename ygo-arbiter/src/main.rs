@@ -48,7 +48,7 @@ fn usage(msg: &str) -> ! {
     eprintln!("ygo-arbiter: {msg}");
     eprintln!(
         "usage: ygo-arbiter --bot NAME=COMMAND --bot NAME=COMMAND --book BOOK [-n N] [--tc BASE+INC] \
-         [--sprt ELO0 ELO1] [--alpha A] [--beta B] [-c J] [--records PATH] [--shuffle SEED] [--pool N] [--max-turns N] [--nps-nodes N] [--resume RECORDS] [--report-every PAIRS] [--ignore-unknown-reveals] [--option BOT.NAME=VALUE ...]"
+         [--sprt ELO0 ELO1] [--alpha A] [--beta B] [-c J] [--records PATH] [--shuffle SEED] [--pool N] [--max-turns N] [--nps-nodes N] [--resume RECORDS] [--report-every PAIRS] [--option BOT.NAME=VALUE ...]"
     );
     std::process::exit(2)
 }
@@ -155,8 +155,6 @@ fn parse_args() -> Args {
             "--report-every" => a.report_every = (num(next(&mut i, &arg), &arg) as usize).max(1),
             "--resume" => a.resume = Some(next(&mut i, &arg).into()),
             "--nps-nodes" => a.nps_nodes = Some(num(next(&mut i, &arg), &arg) as u64),
-            // (see ygo_arbiter::reveal::HELP)
-            "--ignore-unknown-reveals" => ygo_arbiter::reveal::set_ignore_unknown(true),
             "--shuffle" => a.shuffle = Some(next(&mut i, &arg).parse().unwrap_or_else(|_| usage("--shuffle takes an integer seed"))),
             _ => usage(&format!("unknown argument {arg}")),
         }
@@ -200,13 +198,6 @@ fn main() {
         println!("book shuffled with seed {seed}");
     }
     openings.truncate(args.openings);
-    if !ygo_arbiter::reveal::ignore_unknown() {
-        let codes = openings.iter().flat_map(|o| o.decks.iter().flat_map(|d| d.main.iter().chain(&d.extra).copied()));
-        let unknown = ygo_arbiter::reveal::unknown_cards(codes);
-        if !unknown.is_empty() {
-            usage(&format!("the book has cards that the reveal table does not know: {unknown:?}. {}", ygo_arbiter::reveal::HELP));
-        }
-    }
     let (a, b) = (args.bots[0].clone(), args.bots[1].clone());
     println!("{} vs {}: {} openings x 2 games", a.name, b.name, openings.len());
     let nps = args.nps_nodes.map(|n| Arc::new(NpsNodes::new(n)));

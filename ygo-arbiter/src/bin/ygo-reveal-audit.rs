@@ -194,6 +194,14 @@ fn same_choice(orig: &Past, now: &Msg) -> Result<Response, String> {
     Ok(r)
 }
 
+/// Whether `m` confirms this card to the opponent: its code in the place it moves from or to
+/// (not another copy elsewhere).
+fn reveals(m: &Msg, opp: u32, code: u32, from: &Loc, to: &Loc) -> bool {
+    let Msg::ConfirmCards { player, cards } = m else { return false };
+    *player == opp
+        && cards.iter().any(|c| c.code == code && ((c.con, c.loc) == (from.con, from.loc) || (c.con, c.loc) == (to.con, to.loc)))
+}
+
 /// A prompt that starts an action: an activation (or a pass) in an idle, battle or chain prompt.
 /// Scripts collect their candidates after it (at the activation for costs, at the resolution
 /// for effects), so the check starts there.
@@ -303,7 +311,7 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
             });
             let confirm_step = step.messages
                 .iter()
-                .any(|x| matches!(x, Msg::ConfirmCards { player, cards } if *player == opp && cards.iter().any(|c| c.code == *code)));
+                .any(|x| reveals(x, opp, *code, from, to));
             let shown = filter_message(m, opp).is_some_and(|x| matches!(x, Msg::Move { code, .. } if code != 0));
             let mut row = json!({
                 "game": gi, "turn": turn, "code": code, "from": [from.con, from.loc, from.seq], "to": [to.con, to.loc, to.pos],
@@ -346,7 +354,7 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
             let confirmed = all_msgs[hist[base].msg_at..]
                 .iter()
                 .chain(step.messages.iter())
-                .any(|x| matches!(x, Msg::ConfirmCards { player, cards } if *player == opp && cards.iter().any(|c| c.code == *code)));
+                .any(|x| reveals(x, opp, *code, from, to));
             row["script_confirms"] = json!(confirmed);
             row["activated"] = json!(activated(&hist[base].prompt, &hist[base].core));
             let t0 = Instant::now();

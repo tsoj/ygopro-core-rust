@@ -105,8 +105,11 @@ fn test_codes(extra: bool) -> Vec<u32> {
     codes
 }
 
+/// (in the hand, Deck and Extra Deck without the position: it shifts when other selected cards
+/// leave first, e.g. Magical Mallet's; the arbiter's notes match the same way, reveal::selected_moves)
 fn same_card(c: &Card, code: u32, l: &Loc) -> bool {
-    c.code == code && c.con == l.con && c.loc == l.loc && c.seq == l.seq
+    let pile = l.loc & (LOCATION_HAND | LOCATION_DECK | LOCATION_EXTRA) != 0;
+    c.code == code && c.con == l.con && c.loc == l.loc && (pile || c.seq == l.seq)
 }
 
 /// The cards a card selection chose (core-order response), with the selection's candidates.

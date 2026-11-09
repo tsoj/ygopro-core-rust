@@ -546,15 +546,8 @@ fn filter_raw(m: &Msg, viewer: u32) -> Option<Msg> {
             if to.con == viewer || li_visible(to, viewer) {
                 return Some(m);
             }
-            if from.loc == LOCATION_HAND
-                && to.loc & (LOCATION_DECK | LOCATION_EXTRA) != 0
-                && *reason & (REASON_COST | REASON_MATERIAL) != 0
-            {
-                // a card returned from the hand to the Deck as a cost or material has to meet a
-                // requirement: it is shown to the opponent first (the core moves it face-down),
-                // e.g. the materials of Mementoal Tecuhtlica
-                return Some(m);
-            }
+            // (a selected card that the player has to show, e.g. a cost with a requirement, gets a
+            // confirmation before the move: reveal::annotate)
             *code = 0;
         }
         Draw { player, cards } => {

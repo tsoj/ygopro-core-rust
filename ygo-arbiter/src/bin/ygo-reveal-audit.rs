@@ -11,26 +11,38 @@
 //! plays the same responses again (by meaning) up to the selection, and counts the added cards among its candidates.
 //! All added cards selectable: no requirement; some not: a requirement.
 //!
-//! One JSON line per move: the game, the move, the selecting player, the card whose effect it is,
-//! the verdict ("requirement", "free", "no_selection", "deck_top" (a choice among the top cards
-//! of the Deck) or "undecided" with the reason), the
-//! added cards accepted, the time of the check, whether the card's script confirms the card to
-//! the opponent and whether the arbiter's filter shows it.
+//! A choice among the top cards of the Deck ("look at the top 3 cards, add 1"; "deck_top") is
+//! checked with test cards on top of the Deck, a sample of them, as many as the candidates at a
+//! time. Test cards that the rules alone keep from the destination (a card that cannot be Set, a
+//! monster that the effect cannot Special Summon) do not count as rejected ("excluded").
 //!
-//!   ygo-reveal-audit RECORDS.jsonl [--games N] [--threads T] [--codes N] > OUT.jsonl
+//! One JSON line per game with its decks' cards ("deck_cards"), and one per move: the game, the
+//! move, the selecting player, the arbiter's key of the selection (`reveal::SelKey`), the
+//! verdict ("requirement", "free", "no_selection", "skipped" or "undecided" with the reason),
+//! the added cards accepted, the time of the check, whether the card's script confirms the card to
+//! the opponent and whether the arbiter's filter shows it. tools/reveal_table.py makes the
+//! arbiter's table (ygo-arbiter/data/reveals.tsv) from these lines.
+//!
+//!   ygo-reveal-audit RECORDS.jsonl [--games N] [--threads T] [--codes N] [--discover] > OUT.jsonl
+//!
+//! --discover: check only the selections that the built-in table does not know, each at most a
+//! few times ("skipped" for the others).
 //!
 //! --codes N: only every k-th test card (about N cards), for a quick run. A move from the Extra
 //! Deck is checked with the Extra Deck cards. "script_confirms": the card's code was confirmed to
 //! the opponent since the action started (the step's messages when there is no selection).
 
 use std::io::{BufRead, Write};
+use std::collections::BTreeMap;
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Instant;
 
 use serde_json::{Value, json};
 use ygo_arbiter::actions::{Response, encode};
-use ygo_arbiter::game::{GameRecord, card_db, run_until_prompt};
+use ygo_arbiter::game::{GameRecord, card_db, run_until_prompt, run_until_prompt_raw};
+use ygo_arbiter::reveal;
+use ygo_core::ext::EffectKey;
 use ygo_arbiter::messages::{Card, Loc, Msg};
 use ygo_arbiter::observe::{filter_message, li_visible, to_core_response};
 use ygo_core::constants::*;
@@ -45,6 +57,20 @@ const MAX_CHECK_PROMPTS: usize = 64;
 const CHUNK: usize = 1000;
 /// The prompts kept per game (each with a copy of the duel).
 const HISTORY: usize = 48;
+/// A row lists the rejected test cards when there are at most this many.
+const MAX_REJECTED_LISTED: usize = 64;
+/// --discover: check only the selections that the built-in table does not know (`reveal`), and
+/// each at most this many times (decided rows, in this run).
+static DISCOVER: AtomicBool = AtomicBool::new(false);
+const DISCOVER_ROWS: usize = 3;
+static DECIDED: Mutex<BTreeMap<reveal::SelKey, usize>> = Mutex::new(BTreeMap::new());
+
+fn decided(k: &reveal::SelKey) -> usize {
+    DECIDED.lock().unwrap().get(k).copied().unwrap_or(0)
+}
+
+/// The test cards of a choice among the top cards of the Deck (a sample of all).
+const TOP_SAMPLE: usize = 120;
 
 /// One prompt of the game: the duel before the response, the prompt, the response in core order.
 struct Past {
@@ -220,16 +246,56 @@ fn candidates_in(p: &Msg, con: u32, loc: u32) -> usize {
     cards.iter().filter(|c| c.con == con && c.loc == loc).count()
 }
 
+/// A check's result: the accepted test cards, those that the rules do not allow at the
+/// destination anyway (`rule_excluded`), and (some of) the others, which the selection rejects.
+#[derive(Default)]
+struct Checked {
+    accepted: usize,
+    excluded: usize,
+    rejected: Vec<u32>,
+}
+
+/// Whether the rules alone keep the test card from the move's destination: a Set Spell/Trap
+/// that cannot be Set (e.g. Spirit Message "I"), a monster that this effect cannot Special
+/// Summon or that cannot be Set. Such a limit is no requirement of the selection: the player
+/// does not have to show that the card meets it (like a Set from the hand by the rules).
+fn rule_excluded(d: &mut Duel, id: ygo_core::types::CardId, con: u32, to: &Loc, reason: u32) -> bool {
+    use ygo_core::api::card;
+    match to.loc {
+        LOCATION_SZONE => !card::is_s_setable(d, id, true, Some(con as u8)),
+        LOCATION_MZONE if reason & REASON_SPSUMMON != 0 => match d.core.reason_effect {
+            Some(e) => !card::is_can_be_special_summoned(d, id, e, 0, con as u8, false, false, Some(to.pos as u8), None, None),
+            None => false,
+        },
+        LOCATION_MZONE => !card::is_m_setable(d, id, true, None, 0, None),
+        _ => false,
+    }
+}
+
+/// The codes of a card selection's candidates in one place (player, location).
+fn candidate_codes(p: &Msg, con: u32, loc: u32) -> Vec<u32> {
+    let cards: Vec<&Card> = match p {
+        Msg::SelectCard { cards, .. } | Msg::SelectTribute { cards, .. } => cards.iter().collect(),
+        Msg::SelectSum { cards, must_cards, .. } => must_cards.iter().chain(cards.iter()).collect(),
+        Msg::SelectUnselectCard { select_cards, .. } => select_cards.iter().collect(),
+        _ => vec![],
+    };
+    cards.iter().filter(|c| c.con == con && c.loc == loc).map(|c| c.code).collect()
+}
+
 /// The check: from `hist[base]`, with the test cards in (con, loc), up to the selection
 /// `hist[sel]` (the selections `hist[base+1..sel]` answered as in the game). Returns the
 /// accepted test cards.
-fn check(hist: &[Past], base: usize, sel: usize, con: u32, loc: u32, codes: &[u32]) -> Result<usize, String> {
+fn check(hist: &[Past], base: usize, sel: usize, con: u32, loc: u32, to: &Loc, reason: u32, codes: &[u32], top: bool) -> Result<Checked, String> {
     let mut d = hist[base].duel.clone();
-    // (at the bottom of the Deck: effects that take or look at its top cards stay the same)
-    let seq = if loc == LOCATION_DECK { 1 } else { 0 };
+    // (at the bottom of the Deck: effects that take or look at its top cards stay the same; `top`:
+    // on top, for a choice among the top cards)
+    let seq = if loc == LOCATION_DECK && !top { 1 } else { 0 };
+    let mut added = Vec::with_capacity(codes.len());
     for &code in codes {
-        ygo_core::api::debug::add_card(&mut d, code, con as u8, con as u8, loc, seq, POS_FACEDOWN_DEFENSE as u8, false)
+        let id = ygo_core::api::debug::add_card(&mut d, code, con as u8, con as u8, loc, seq, POS_FACEDOWN_DEFENSE as u8, false)
             .ok_or("cannot add a test card")?;
+        added.push((code, id));
     }
     d.ocg_set_response(&hist[base].raw);
     let mut prev = hist[base].prompt.clone();
@@ -245,12 +311,40 @@ fn check(hist: &[Past], base: usize, sel: usize, con: u32, loc: u32, codes: &[u3
             if next == sel {
                 let (_, before) = chosen(&orig.prompt, &orig.core).ok_or("not a card selection")?;
                 let (_, after) = chosen(&p, &orig.core).ok_or("not a card selection")?;
-                if !all_in(&before, &after) {
-                    return Err("another selection: an original candidate is missing".into());
+                // (on top, the test cards take the original candidates' places: count them)
+                let acc = if top {
+                    let cand = candidate_codes(&p, con, loc);
+                    codes.iter().filter(|c| cand.contains(c)).count()
+                } else {
+                    if !all_in(&before, &after) {
+                        return Err("another selection: an original candidate is missing".into());
+                    }
+                    let n0 = candidates_in(&orig.prompt, con, loc);
+                    let n1 = candidates_in(&p, con, loc);
+                    n1.checked_sub(n0).ok_or_else(|| "fewer candidates with the test cards".to_string())?
+                };
+                // (the test cards that are not candidates, by code: few when the requirement is
+                // only what the rules allow anyway)
+                let mut out = Checked { accepted: acc, ..Default::default() };
+                if acc < codes.len() {
+                    let mut cand: Vec<u32> = candidate_codes(&p, con, loc);
+                    for c in candidate_codes(&orig.prompt, con, loc) {
+                        if let Some(i) = cand.iter().position(|&x| x == c) {
+                            cand.swap_remove(i);
+                        }
+                    }
+                    for &(code, id) in &added {
+                        if cand.contains(&code) {
+                            continue;
+                        }
+                        if rule_excluded(&mut d, id, con, to, reason) {
+                            out.excluded += 1;
+                        } else if out.rejected.len() < MAX_REJECTED_LISTED {
+                            out.rejected.push(code);
+                        }
+                    }
                 }
-                let n0 = candidates_in(&orig.prompt, con, loc);
-                let n1 = candidates_in(&p, con, loc);
-                return n1.checked_sub(n0).ok_or_else(|| "fewer candidates with the test cards".to_string());
+                return Ok(out);
             }
             next += 1;
             same_choice(orig, &p)?
@@ -281,6 +375,9 @@ fn deck_top_only(hist: &Past, con: u32) -> bool {
 }
 
 fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u32], out: &mut Vec<Value>) -> Result<(), String> {
+    // (the audited cards: the table's "card" lines)
+    let deck: std::collections::BTreeSet<u32> = rec.decks.iter().flat_map(|d| d.main.iter().chain(&d.extra).copied()).collect();
+    out.push(json!({"game": gi, "deck_cards": deck}));
     let mut all_msgs: Vec<Msg> = Vec::new();
     let mut duel = rec.setup(None).map_err(|e| e.0)?;
     duel.ocg_start_duel();
@@ -289,8 +386,12 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
     let mut chain: Vec<u32> = Vec::new();
     let mut turn = 0u32;
     for entry in rec.responses.iter().map(Some).chain([None]) {
-        let step = run_until_prompt(&mut duel, prompt.as_ref()).map_err(|e| e.0)?;
-        for m in &step.messages {
+        let step = run_until_prompt_raw(&mut duel, prompt.as_ref()).map_err(|e| e.0)?;
+        // (the arbiter's key of each move of a selected hidden card: reveal::selected_moves)
+        // (with the prompt: at an action prompt the arbiter drops the notes that are left)
+        let with_prompt: Vec<Msg> = step.messages.iter().chain(step.prompt.iter()).cloned().collect();
+        let keys = reveal::selected_moves(&mut duel, &with_prompt);
+        for (m, key) in step.messages.iter().zip(&keys) {
             match m {
                 Msg::NewTurn { .. } => turn += 1,
                 Msg::Chaining { code, .. } => chain.push(*code),
@@ -318,6 +419,10 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
                 "reason": reason, "chain_top": chain.last(), "script_confirms": confirm_step,
                 "filter_shows": shown,
             });
+            if let Some(k) = key {
+                let e = k.effect.unwrap_or(EffectKey { card: 0, desc: 0, typ: 0 });
+                row["key"] = json!([e.card, e.desc, e.typ, k.from, k.to, k.cost]);
+            }
             let Some(sel) = sel else {
                 row["verdict"] = json!("no_selection");
                 out.push(row);
@@ -334,11 +439,9 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
                 out.push(row);
                 continue;
             };
-            if from.loc == LOCATION_DECK && deck_top_only(&hist[sel], from.con) {
-                row["verdict"] = json!("deck_top");
-                out.push(row);
-                continue;
-            }
+            // (a choice among the top cards of the Deck: test cards on top, as many as the
+            // candidates at a time, from a sample of the test cards that are not in the duel)
+            let top = from.loc == LOCATION_DECK && deck_top_only(&hist[sel], from.con);
             // (to the field face-down: only the cards that can be Set there)
             let codes: Vec<u32> = if from.loc == LOCATION_EXTRA {
                 extra_codes.to_vec()
@@ -349,6 +452,15 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
             } else {
                 main_codes.to_vec()
             };
+            let codes: Vec<u32> = if top {
+                let in_duel: std::collections::BTreeSet<u32> = hist[sel].duel.ext_get_all_cards().iter().map(|c| c[4]).collect();
+                let free: Vec<u32> = codes.into_iter().filter(|c| !in_duel.contains(c)).collect();
+                let step = free.len().div_ceil(TOP_SAMPLE).max(1);
+                free.into_iter().step_by(step).collect()
+            } else {
+                codes
+            };
+            let chunk_size = if top { candidates_in(&hist[sel].prompt, from.con, LOCATION_DECK).max(1) } else { CHUNK };
             let codes = &codes[..];
             // the reveals since the action started
             let confirmed = all_msgs[hist[base].msg_at..]
@@ -357,15 +469,29 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
                 .any(|x| reveals(x, opp, *code, from, to));
             row["script_confirms"] = json!(confirmed);
             row["activated"] = json!(activated(&hist[base].prompt, &hist[base].core));
+            // (--discover: only the arbiter's selections that the table does not know, each at
+            // most DISCOVER_ROWS times)
+            if DISCOVER.load(Ordering::Relaxed) {
+                let known = key.is_none_or(|k| reveal::table().selections.contains_key(&k) || decided(&k) >= DISCOVER_ROWS);
+                if known {
+                    row["verdict"] = json!("skipped");
+                    out.push(row);
+                    continue;
+                }
+            }
             let t0 = Instant::now();
             // (in chunks: the time of one check grows about with the square of the added cards)
             let (mut accepted, mut tested, mut rejected, mut error) = (0, 0, false, None);
-            for chunk in codes.chunks(CHUNK) {
-                match check(&hist, base, sel, from.con, from.loc, chunk) {
-                    Ok(acc) => {
-                        accepted += acc;
+            let mut rejected_codes: Vec<u32> = Vec::new();
+            let mut excluded = 0;
+            for chunk in codes.chunks(chunk_size) {
+                match check(&hist, base, sel, from.con, from.loc, to, *reason, chunk, top) {
+                    Ok(c) => {
+                        accepted += c.accepted;
+                        excluded += c.excluded;
                         tested += chunk.len();
-                        rejected |= acc < chunk.len();
+                        rejected |= c.accepted + c.excluded < chunk.len();
+                        rejected_codes.extend(c.rejected);
                     }
                     Err(e) => error = error.or(Some(e)),
                 }
@@ -374,6 +500,13 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
             row["accepted"] = json!(accepted);
             row["tested"] = json!(tested);
             row["added"] = json!(codes.len());
+            if top {
+                row["deck_top"] = json!(true);
+            }
+            row["excluded"] = json!(excluded);
+            if rejected && tested - accepted - excluded <= MAX_REJECTED_LISTED {
+                row["rejected"] = json!(rejected_codes);
+            }
             if let Some(e) = &error {
                 row["why"] = json!(e);
             }
@@ -385,6 +518,11 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
             } else {
                 "undecided"
             });
+            if let Some(k) = key
+                && (rejected || error.is_none())
+            {
+                *DECIDED.lock().unwrap().entry(*k).or_insert(0) += 1;
+            }
             out.push(row);
         }
         all_msgs.extend(step.messages.iter().cloned());
@@ -407,7 +545,8 @@ fn audit_game(gi: usize, rec: &GameRecord, main_codes: &[u32], extra_codes: &[u3
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let path = args.get(1).expect("usage: ygo-reveal-audit RECORDS.jsonl [--games N] [--threads T] [--codes N]");
+    let path = args.get(1).expect("usage: ygo-reveal-audit RECORDS.jsonl [--games N] [--threads T] [--codes N] [--discover]");
+    DISCOVER.store(args.iter().any(|a| a == "--discover"), Ordering::Relaxed);
     let opt = |name: &str| args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).map(|v| v.parse::<usize>().expect(name));
     let max_games = opt("--games").unwrap_or(usize::MAX);
     let threads = opt("--threads").unwrap_or(8);

@@ -4,6 +4,7 @@
 //!
 //! * [`messages`]: parsing of the core's binary messages
 //! * [`observe`]: what each player may see of them, prompts in canonical order
+//! * [`reveal`]: which selected hidden cards a player shows to the opponent (`data/reveals.tsv`)
 //! * [`actions`]: responses to prompts and their binary form
 //! * [`edopro`]: a player's side of a duel as an EDOPro server sends it (for EDOPro bots)
 //! * [`state`]: god view snapshots of a duel and each player's view
@@ -26,4 +27,5 @@ pub mod observe;
 pub mod protocol;
 pub mod pyrandom;
 pub mod random;
+pub mod reveal;
 pub mod state;

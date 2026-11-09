@@ -400,6 +400,7 @@ impl Duel {
                 self.return_cards.clear();
                 return self.retry();
             }
+            self.ext_note_selection(playerid);
             true
         }
     }
@@ -502,6 +503,7 @@ impl Duel {
             }
             let c = if retval >= ns { self.core.unselect_cards[(retval - ns) as usize] } else { self.core.select_cards[retval as usize] };
             self.return_cards.list.push(c);
+            self.ext_note_selection(playerid);
             true
         }
     }
@@ -736,6 +738,7 @@ impl Duel {
                 self.return_cards.clear();
                 return self.retry();
             }
+            self.ext_note_selection(playerid);
             true
         }
     }
@@ -853,6 +856,7 @@ impl Duel {
                     self.return_cards.clear();
                     return self.retry();
                 }
+                self.ext_note_selection(playerid);
                 true
             } else {
                 let mut sum: i32 = 0;
@@ -872,6 +876,7 @@ impl Duel {
                     self.return_cards.clear();
                     return self.retry();
                 }
+                self.ext_note_selection(playerid);
                 true
             }
         }

@@ -10,8 +10,10 @@
 //!   ygo-windbot                       (the bot; option WindBot: the directory of WindBot's
 //!                                      build, with the card databases (all its *.cdb, e.g.
 //!                                      BabelCDB's); Debug: its log on stderr)
-//!   ygo-windbot --check BOOK [GAMES]  (the encodings: every message and response of random-bot
-//!                                      games on the book's first openings, encoded and read back)
+//!   ygo-windbot --check BOOK [GAMES] [--ignore-unknown-reveals]
+//!                                     (the encodings: every message and response of random-bot
+//!                                      games on the book's first openings, encoded and read back;
+//!                                      the flag: see ygo_arbiter::reveal::HELP)
 
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -354,11 +356,15 @@ fn main() {
         eprintln!("ygo-windbot: {e}");
         std::process::exit(1);
     }
-    let args: Vec<String> = std::env::args().collect();
+    let mut args: Vec<String> = std::env::args().collect();
+    if let Some(i) = args.iter().position(|a| a == "--ignore-unknown-reveals") {
+        ygo_arbiter::reveal::set_ignore_unknown(true);
+        args.remove(i);
+    }
     let result = if args.get(1).map(String::as_str) == Some("--check") {
         match args.get(2) {
             Some(book) => check(book, args.get(3).and_then(|n| n.parse().ok()).unwrap_or(20)),
-            None => Err("usage: ygo-windbot --check BOOK [GAMES]".into()),
+            None => Err("usage: ygo-windbot --check BOOK [GAMES] [--ignore-unknown-reveals]".into()),
         }
     } else {
         let id = Identity { name: "windbot".into(), more: Map::from_iter([("version".into(), env!("CARGO_PKG_VERSION").into())]) };

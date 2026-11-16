@@ -96,6 +96,8 @@ pub enum BotOption {
     Check { name: String, default: bool },
     /// an integer from min to max
     Spin { name: String, default: i64, min: i64, max: i64 },
+    /// a number from min to max
+    Float { name: String, default: f64, min: f64, max: f64 },
     /// one of values
     Combo { name: String, default: String, values: Vec<String> },
     /// any text
@@ -105,7 +107,7 @@ pub enum BotOption {
 impl BotOption {
     pub fn name(&self) -> &str {
         match self {
-            BotOption::Check { name, .. } | BotOption::Spin { name, .. } | BotOption::Combo { name, .. } | BotOption::String { name, .. } => name,
+            BotOption::Check { name, .. } | BotOption::Spin { name, .. } | BotOption::Float { name, .. } | BotOption::Combo { name, .. } | BotOption::String { name, .. } => name,
         }
     }
 
@@ -113,6 +115,7 @@ impl BotOption {
         match self {
             BotOption::Check { default, .. } => json!(default),
             BotOption::Spin { default, .. } => json!(default),
+            BotOption::Float { default, .. } => json!(default),
             BotOption::Combo { default, .. } | BotOption::String { default, .. } => json!(default),
         }
     }
@@ -126,6 +129,7 @@ impl BotOption {
                 _ => return Err(format!("option {}: {text:?} is not true or false", self.name())),
             },
             BotOption::Spin { .. } => json!(text.parse::<i64>().map_err(|_| format!("option {}: {text:?} is not an integer", self.name()))?),
+            BotOption::Float { .. } => json!(text.parse::<f64>().ok().filter(|x| x.is_finite()).ok_or_else(|| format!("option {}: {text:?} is not a number", self.name()))?),
             BotOption::Combo { .. } | BotOption::String { .. } => json!(text),
         };
         self.check(&v)?;
@@ -137,6 +141,7 @@ impl BotOption {
         let ok = match self {
             BotOption::Check { .. } => v.is_boolean(),
             BotOption::Spin { min, max, .. } => v.as_i64().is_some_and(|x| (*min..=*max).contains(&x)),
+            BotOption::Float { min, max, .. } => v.as_f64().is_some_and(|x| (*min..=*max).contains(&x)),
             BotOption::Combo { values, .. } => v.as_str().is_some_and(|x| values.iter().any(|c| c == x)),
             BotOption::String { .. } => v.is_string(),
         };
@@ -332,6 +337,10 @@ mod tests {
         let spin = BotOption::Spin { name: "Hash".into(), default: 16, min: 1, max: 64 };
         assert_eq!(spin.parse("64"), Ok(json!(64)));
         assert!(spin.parse("65").is_err() && spin.parse("x").is_err() && spin.check(&json!("16")).is_err());
+        let float = BotOption::Float { name: "Margin".into(), default: 1.5, min: 0.0, max: 10.0 };
+        assert_eq!(float.parse("2.25"), Ok(json!(2.25)));
+        assert!(float.check(&json!(3)).is_ok());
+        assert!(float.parse("10.5").is_err() && float.parse("nan").is_err() && float.parse("x").is_err() && float.check(&json!("1")).is_err());
         let combo = BotOption::Combo { name: "Style".into(), default: "a".into(), values: vec!["a".into(), "b".into()] };
         assert_eq!(combo.parse("b"), Ok(json!("b")));
         assert!(combo.parse("c").is_err());

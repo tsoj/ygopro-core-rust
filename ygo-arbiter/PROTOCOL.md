@@ -97,6 +97,7 @@ The bot replies with its identity and its options:
 |---|---|---|
 | `check` | `name`, `default` | `true` or `false` |
 | `spin` | `name`, `default`, `min`, `max` | An integer from `min` to `max` |
+| `float` | `name`, `default`, `min`, `max` | A number from `min` to `max` |
 | `combo` | `name`, `default`, `values` | One of the strings in `values` |
 | `string` | `name`, `default` | Any string |
 
@@ -109,7 +110,7 @@ The bot replies with its identity and its options:
 1. The arbiter sends `setoption` only after `hello` and before `isready`.
 2. The arbiter sends `setoption` only for an option that the bot declared.
 3. The arbiter sends only valid values. The type of `value` is the JSON type of the option: boolean,
-   integer or string.
+   integer, number or string.
 4. Options that the arbiter does not set keep their default values.
 5. The bot does not reply.
 
